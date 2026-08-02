@@ -8,7 +8,7 @@ Documento de diseño completo: [ideas.md](ideas.md).
 
 | Fase | Estado | Descripción |
 |------|--------|-------------|
-| **0** | **Actual** | Depurador de mando directo (sin gptokeyb) |
+| **0** | **Actual** | Depurador de mando (nombres estándar: `LJOY_*`, `DPAD_*`, …) |
 | 1 | Pendiente | UI base 640×480, panel + diagrama ASCII |
 | 2 | Pendiente | Grafo simple: 3 nodos, energía y comida |
 | 3+ | Pendiente | Desgaste, investigación, exploración, finales |
@@ -30,9 +30,11 @@ Activa `SOLITUDINE_DEV=1`: el teclado emula el mando (solo en PC; no va en la SD
 | Q / E / 1 / 2 | L1 / R1 / L2 / R2 |
 | Backspace / Enter | SELECT / START |
 | U / O / F | L3 / R3 / FN |
-| I / K / J / L | Cruceta |
-| WASD | Stick izquierdo |
-| Flechas | Stick derecho |
+| I / K / J / L | DPAD_UP / DOWN / LEFT / RIGHT |
+| WASD | LJOY_UP / DOWN / LEFT / RIGHT |
+| Flechas | RJOY_UP / DOWN / LEFT / RIGHT |
+
+Nombres estándar definidos en [src/gamepad.py](src/gamepad.py): `A`, `DPAD_*`, `LJOY_*`, `RJOY_*`, etc.
 
 ## Instalar en R36S (PortMaster)
 
@@ -64,7 +66,7 @@ Definido en [src/gamepad.py](src/gamepad.py):
 | 13 | FN |
 | 14–17 | DPAD_UP, DOWN, LEFT, RIGHT |
 
-Ejes analógicos (clone cruzado): ver constantes `LEFT_STICK_*` / `RIGHT_STICK_*` en [src/gamepad.py](src/gamepad.py).
+Botones: ver tabla en [src/gamepad.py](src/gamepad.py). Sticks: `LJOY_*` y `RJOY_*` (el hardware cruzado se resuelve solo ahí).
 
 ## Resolución
 

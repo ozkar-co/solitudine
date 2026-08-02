@@ -7,7 +7,7 @@ from collections import deque
 
 import pygame
 
-from gamepad import DEADZONE, axis_active, button_name
+from gamepad import DEADZONE, diff_actions, format_actions, read_actions
 
 WIDTH = 640
 HEIGHT = 480
@@ -17,7 +17,6 @@ MAX_EVENTS = 12
 BG = (16, 32, 16)
 FG = (80, 255, 120)
 DIM = (40, 120, 60)
-ACTIVE = (255, 200, 80)
 DEV_COLOR = (120, 180, 255)
 
 
@@ -73,12 +72,15 @@ def main() -> int:
 
     joysticks = open_joysticks() if not dev_mode else []
     events_log: deque[str] = deque(maxlen=MAX_EVENTS)
-    held: dict[tuple[int, int], int] = {}
+    held_btns: dict[tuple[int, int], int] = {}
+    prev_actions: dict[int, frozenset[str]] = {}
 
     if dev_mode:
         events_log.appendleft("dev: clic ventana, luego teclado")
     for i, joy in enumerate(joysticks):
         events_log.appendleft(f"joy{i}: {joy.get_name()}")
+
+    dev_actions: frozenset[str] = frozenset()
 
     while True:
         for event in pygame.event.get():
@@ -91,16 +93,9 @@ def main() -> int:
                         events_log.appendleft(entry)
                 continue
             if event.type == pygame.JOYBUTTONDOWN:
-                held[(event.joy, event.button)] = event.button
-                events_log.appendleft(f"DOWN  j{event.joy} {button_name(event.button)}")
+                held_btns[(event.joy, event.button)] = event.button
             elif event.type == pygame.JOYBUTTONUP:
-                held.pop((event.joy, event.button), None)
-                events_log.appendleft(f"UP    j{event.joy} {button_name(event.button)}")
-            elif event.type == pygame.JOYAXISMOTION:
-                if axis_active(event.value):
-                    events_log.appendleft(
-                        f"AXIS  j{event.joy} ax{event.axis} {event.value:+.2f}"
-                    )
+                held_btns.pop((event.joy, event.button), None)
             elif event.type == pygame.JOYDEVICEADDED:
                 joy = pygame.joystick.Joystick(event.device_index)
                 joy.init()
@@ -110,12 +105,17 @@ def main() -> int:
                 events_log.appendleft(f"REM   id {event.device_instance_id}")
 
         if dev_mode and dev_kb is not None:
-            dev_state, dev_events = dev_kb.tick()
-            held = {(0, btn): btn for btn in dev_state.held}
+            dev_actions, dev_events = dev_kb.tick()
             for entry in dev_events:
                 events_log.appendleft(entry)
         else:
-            dev_state = None
+            for ji, joy in enumerate(joysticks):
+                buttons = {b for (j, b) in held_btns if j == ji}
+                curr = read_actions(joy, buttons)
+                prev = prev_actions.get(ji, frozenset())
+                for entry in diff_actions(ji, prev, curr):
+                    events_log.appendleft(entry)
+                prev_actions[ji] = curr
 
         screen.fill(BG)
         pygame.draw.rect(screen, FG, (0, 0, WIDTH, 4))
@@ -127,43 +127,21 @@ def main() -> int:
             screen.blit(f.render(text, True, color), (12, y))
             y += 17 if small else 22
 
-        line("SOLITUDINE — Mando directo", FG, small=False)
+        line("SOLITUDINE — Input Debug", FG, small=False)
         mode = "DEV teclado" if dev_mode else f"{len(joysticks)} dispositivo(s)"
         line(f"{mode}  |  deadzone: {DEADZONE}", DEV_COLOR if dev_mode else DIM)
         y += 4
 
-        if dev_mode and dev_state is not None:
+        if dev_mode:
             line("[0] keyboard (dev)", DEV_COLOR)
-            names = [button_name(b).split(" (")[0] for b in sorted(dev_state.held)]
-            line(f"  btns: {', '.join(names) if names else '-'}", FG if names else DIM)
-            parts = [
-                f"{ax}:{val:+.2f}"
-                for ax, val in sorted(dev_state.axes.items())
-                if axis_active(val)
-            ]
-            line(
-                f"  ejes: {' '.join(parts) if parts else '(WASD / flechas)'}",
-                ACTIVE if parts else DIM,
-            )
+            line(f"  {format_actions(dev_actions)}", FG if dev_actions else DIM)
             y += 2
         else:
             for ji, joy in enumerate(joysticks):
+                buttons = {b for (j, b) in held_btns if j == ji}
+                actions = read_actions(joy, buttons)
                 line(f"[{ji}] {joy.get_name()}", DIM)
-                names = [
-                    button_name(b).split(" (")[0]
-                    for (j, b) in sorted(held)
-                    if j == ji
-                ]
-                line(f"  btns: {', '.join(names) if names else '-'}", FG if names else DIM)
-                parts = [
-                    f"{ax}:{joy.get_axis(ax):+.2f}"
-                    for ax in range(joy.get_numaxes())
-                    if axis_active(joy.get_axis(ax))
-                ]
-                line(
-                    f"  ejes: {' '.join(parts) if parts else '(mueve sticks)'}",
-                    ACTIVE if parts else DIM,
-                )
+                line(f"  {format_actions(actions)}", FG if actions else DIM)
                 y += 2
 
         y += 4
