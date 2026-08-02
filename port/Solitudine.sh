@@ -51,7 +51,6 @@ if [[ "$CFW_NAME" == *"ArkOS"* ]]; then
   export SDL_VIDEODRIVER=kmsdrm
 fi
 
-$GPTOKEYB "python" -c "$GAMEDIR/solitudine.gptk" &
 pm_platform_helper "$PYGAME_DIR/bin/python"
 
 source "$PYGAME_DIR/bin/activate"
