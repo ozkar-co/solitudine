@@ -1,0 +1,6 @@
+.venv/
+dist/
+port/runtime/
+__pycache__/
+*.pyc
+log.txt

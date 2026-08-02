@@ -57,21 +57,32 @@ roms/ports/
     └── log.txt          (se crea al ejecutar)
 ```
 
-### 3. Python / Pygame en la consola
+### 3. Runtime pygame-ce (obligatorio)
 
-El script intenta `python3` del sistema. Si no hay pygame instalado, añade el runtime opcional:
+La R36S **no trae pygame**. Hay que incluir el runtime en el paquete:
+
+```bash
+./scripts/fetch_runtime.sh   # descarga ~22 MB (una vez)
+./scripts/build_dist.sh        # incluye runtime/ en dist/
+```
+
+En la SD debe quedar:
 
 ```
-roms/ports/solitudine/runtime/pygame-ce.squashfs
+roms/ports/solitudine/runtime/pygame-ce_2.5.6_python_3.12.8.squashfs
 ```
 
-Puedes generarlo con [pygame-ce-runtime](https://github.com/viniciusfs/pygame-ce-runtime) o instalar pygame en el firmware si tu CFW lo permite.
+Runtime de [pygame-ce-runtime](https://github.com/viniciusfs/pygame-ce-runtime) (aarch64).
 
 ### 4. Probar
 
 1. Abre PortMaster → **Solitudine**
-2. Pulsa teclas del mando; deben aparecer como eventos de teclado en pantalla
-3. Si falla, revisa `roms/ports/solitudine/log.txt`
+2. Deberías ver texto verde sobre fondo oscuro y una línea verde arriba
+3. Pulsa botones del mando; deben aparecer como eventos de teclado
+4. **Select** para salir (mapeado a ESC)
+5. Si falla, copia `roms/ports/solitudine/log.txt` al PC y revisa
+
+Si la pantalla queda negra pero el log dice `primer frame dibujado`, prueba en la R36S: **Options → Advanced → Change Ports SDL** y cambia a otra versión (p. ej. 2.28.2).
 
 ## Controles (fase 0)
 
@@ -107,6 +118,7 @@ solitudine/
 │   ├── Solitudine.sh
 │   └── solitudine.gptk
 ├── scripts/
+│   ├── fetch_runtime.sh  # descarga runtime (una vez)
 │   ├── build_dist.sh     # genera dist/
 │   └── run_dev.sh        # prueba en PC
 └── dist/                 # generado — copiar a SD

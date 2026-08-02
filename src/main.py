@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Fase 0: depurador de entrada para PortMaster / R36S."""
 
+import os
 import sys
 from collections import deque
 
@@ -11,7 +12,7 @@ HEIGHT = 480
 FPS = 60
 MAX_EVENTS = 14
 
-BG = (8, 12, 8)
+BG = (16, 32, 16)
 FG = (80, 255, 120)
 DIM = (40, 120, 60)
 WARN = (255, 200, 80)
@@ -24,16 +25,39 @@ def key_label(key: int) -> str:
     return f"KEY_{key}"
 
 
+def load_font(size: int) -> pygame.font.Font:
+    # Font(None) usa la fuente incluida en pygame (sin fc-list del sistema)
+    return pygame.font.Font(None, size)
+
+
+def create_display() -> pygame.Surface:
+    handheld = os.environ.get("SOLITUDINE_HANDHELD") == "1"
+    if handheld:
+        for flags in (pygame.SCALED | pygame.NOFRAME, pygame.SCALED, 0):
+            try:
+                screen = pygame.display.set_mode((WIDTH, HEIGHT), flags)
+                print(f"display ok: {screen.get_size()} flags={flags}")
+                return screen
+            except pygame.error as exc:
+                print(f"display fallo flags={flags}: {exc}")
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    print(f"display ok: {screen.get_size()} (ventana)")
+    return screen
+
+
 def main() -> int:
+    print("iniciando solitudine fase 0")
+    print(f"SDL_VIDEODRIVER={os.environ.get('SDL_VIDEODRIVER', '(auto)')}")
+
     pygame.init()
     pygame.joystick.init()
 
-    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    screen = create_display()
     pygame.display.set_caption("SOLITUDINE — Input Debug")
     clock = pygame.time.Clock()
 
-    font = pygame.font.SysFont("monospace", 18)
-    font_sm = pygame.font.SysFont("monospace", 14)
+    font = load_font(24)
+    font_sm = load_font(18)
 
     events_log: deque[str] = deque(maxlen=MAX_EVENTS)
     held_keys: set[int] = set()
@@ -48,6 +72,7 @@ def main() -> int:
         events_log.appendleft(f"JOY {i}: {joy.get_name()}")
 
     running = True
+    frames = 0
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -87,6 +112,7 @@ def main() -> int:
                 events_log.appendleft(f"JOY REM   id {event.device_instance_id}")
 
         screen.fill(BG)
+        pygame.draw.rect(screen, FG, (0, 0, WIDTH, 4))
         y = 12
 
         def line(text: str, color=FG, small=False) -> None:
@@ -96,7 +122,7 @@ def main() -> int:
             y += 22 if not small else 18
 
         line("SOLITUDINE — Input Debug (fase 0)", FG)
-        line("Teclado + mando → eventos en pantalla", DIM, small=True)
+        line("Teclado + mando -> eventos en pantalla", DIM, small=True)
         y += 6
 
         line(f"Joysticks: {len(joysticks)}", DIM, small=True)
@@ -127,19 +153,26 @@ def main() -> int:
                 line(f"  joy{j} hat{h} ({hx:+d},{hy:+d})", FG, small=True)
             y += 4
 
-        line("Últimos eventos:")
+        line("Ultimos eventos:")
         if events_log:
             for entry in events_log:
                 line(f"  {entry}", FG, small=True)
         else:
-            line("  (esperando entrada…)", DIM, small=True)
+            line("  (esperando entrada...)", DIM, small=True)
 
-        footer = "ESC/Q salir  ·  gptokeyb mapea mando → teclado"
+        footer = "Select=ESC salir  |  gptokeyb -> teclado"
         screen.blit(font_sm.render(footer, True, WARN), (16, HEIGHT - 28))
 
         pygame.display.flip()
         clock.tick(FPS)
 
+        frames += 1
+        if frames == 1:
+            print("primer frame dibujado")
+        elif frames % 300 == 0:
+            print(f"heartbeat: {frames} frames")
+
+    print("salida normal")
     pygame.quit()
     return 0
 
