@@ -22,6 +22,18 @@ Documento de diseño completo: [ideas.md](ideas.md).
 ./scripts/run_dev.sh
 ```
 
+Activa `SOLITUDINE_DEV=1`: el teclado emula el mando (solo en PC; no va en la SD).
+
+| Teclas | Mando |
+|--------|-------|
+| Z / X / C / V | A / B / X / Y |
+| Q / E / 1 / 2 | L1 / R1 / L2 / R2 |
+| Backspace / Enter | SELECT / START |
+| U / O / F | L3 / R3 / FN |
+| I / K / J / L | Cruceta |
+| WASD | Stick izquierdo |
+| Flechas | Stick derecho |
+
 ## Instalar en R36S (PortMaster)
 
 ```bash
@@ -52,7 +64,7 @@ Definido en [src/gamepad.py](src/gamepad.py):
 | 13 | FN |
 | 14–17 | DPAD_UP, DOWN, LEFT, RIGHT |
 
-Los ejes analógicos se muestran en vivo; anota qué `ax0`, `ax1`… corresponde a cada stick para completar el mapeo.
+Ejes analógicos (clone cruzado): ver constantes `LEFT_STICK_*` / `RIGHT_STICK_*` en [src/gamepad.py](src/gamepad.py).
 
 ## Resolución
 

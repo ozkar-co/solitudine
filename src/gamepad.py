@@ -2,7 +2,6 @@
 
 DEADZONE = 0.15
 
-# btn index -> nombre (R36S / play_joystick)
 BUTTONS: dict[int, str] = {
     0: "A",
     1: "B",
@@ -22,6 +21,18 @@ BUTTONS: dict[int, str] = {
     16: "DPAD_LEFT",
     17: "DPAD_RIGHT",
 }
+
+# Stick físico izquierdo: X=axis0, Y=axis3 (arriba = negativo en hardware)
+LEFT_STICK_X = 0
+LEFT_STICK_Y = 3
+
+# Stick físico derecho: X=axis2 (derecha = negativo), Y=axis1 (arriba = positivo)
+RIGHT_STICK_X = 2
+RIGHT_STICK_Y = 1
+
+# Tras leer get_axis: multiplicar por -1 para obtener “arriba/derecha = +” lógico
+LEFT_STICK_Y_INVERT = True
+RIGHT_STICK_X_INVERT = True
 
 
 def button_name(btn: int) -> str:
