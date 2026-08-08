@@ -7,18 +7,16 @@ import time
 
 import pygame
 
-from camera import Camera
+from camera import Camera, movement_rates
 from config import (
     CAMERA_MARGIN,
-    CAMERA_SPEED,
-    CURSOR_SCROLL_EDGE,
     FPS,
     HABITAT_X,
     HABITAT_Y,
-    JOY_CAMERA_SPEED,
     SCREEN_H,
     SCREEN_W,
 )
+from gamepad import LJOY_DOWN, LJOY_LEFT, LJOY_RIGHT, LJOY_UP
 from i18n import load, t
 from input_state import Input
 from ui import (
@@ -31,6 +29,43 @@ from ui import (
     map_rect,
 )
 from world import generate_world
+
+
+def _axis_active(held: frozenset[str], pressed: frozenset[str], *names: str) -> tuple[bool, bool]:
+    h = any(n in held for n in names)
+    p = any(n in pressed for n in names)
+    return h, p
+
+
+def _step_cursor_axis(
+    value: int,
+    acc: float,
+    neg_held: bool,
+    pos_held: bool,
+    neg_pressed: bool,
+    pos_pressed: bool,
+    rate: float,
+    dt: float,
+) -> tuple[int, float]:
+    if neg_pressed:
+        value -= 1
+        acc = 0.0
+    elif pos_pressed:
+        value += 1
+        acc = 0.0
+    elif neg_held:
+        acc -= rate * dt
+        while acc <= -1.0:
+            value -= 1
+            acc += 1.0
+    elif pos_held:
+        acc += rate * dt
+        while acc >= 1.0:
+            value += 1
+            acc -= 1.0
+    else:
+        acc = 0.0
+    return value, acc
 
 
 def create_display() -> pygame.Surface:
@@ -81,9 +116,13 @@ def run() -> int:
     layer = MapLayer.TERRAIN
     day = 1
     cam_bounds = world.camera_bounds(CAMERA_MARGIN)
+    mrect = map_rect()
+    cursor_acc_x = 0.0
+    cursor_acc_y = 0.0
 
     while True:
         frame_start = time.perf_counter()
+        dt = clock.get_time() / 1000.0
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -97,35 +136,58 @@ def run() -> int:
             pygame.quit()
             return 0
 
-        if inp.was_pressed(frame, "L1"):
-            camera.zoom_in()
-        if inp.was_pressed(frame, "L2"):
-            camera.zoom_out()
+        camera.update_zoom(dt, "L1" in frame.held, "L2" in frame.held)
+        cursor_rate, pan_rate = movement_rates(camera.zoom)
+
         if inp.was_pressed(frame, "X"):
             layer = MapLayer((layer.value + 1) % 3)
 
-        cdx, cdy = inp.cursor_delta(frame)
-        if cdx or cdy:
-            cursor_x = max(0, min(world.size - 1, cursor_x + cdx))
-            cursor_y = max(0, min(world.size - 1, cursor_y + cdy))
-            _edge_scroll(camera, cursor_x, cursor_y, cdx, cdy, cam_bounds)
+        lx_h, lx_p = _axis_active(frame.held, frame.pressed, LJOY_LEFT, "DPAD_LEFT")
+        rx_h, rx_p = _axis_active(frame.held, frame.pressed, LJOY_RIGHT, "DPAD_RIGHT")
+        uy_h, uy_p = _axis_active(frame.held, frame.pressed, LJOY_UP, "DPAD_UP")
+        dy_h, dy_p = _axis_active(frame.held, frame.pressed, LJOY_DOWN, "DPAD_DOWN")
+
+        cursor_x, cursor_acc_x = _step_cursor_axis(
+            cursor_x, cursor_acc_x, lx_h, rx_h, lx_p, rx_p, cursor_rate, dt
+        )
+        cursor_y, cursor_acc_y = _step_cursor_axis(
+            cursor_y, cursor_acc_y, uy_h, dy_h, uy_p, dy_p, cursor_rate, dt
+        )
+        cursor_x, cursor_y = camera.clamp_cursor(
+            cursor_x,
+            cursor_y,
+            mrect.x,
+            mrect.y,
+            mrect.w,
+            mrect.h,
+            cam_bounds,
+            world.size,
+        )
 
         pdx, pdy = inp.pan_delta(frame)
         if pdx or pdy:
-            camera.pan(pdx * JOY_CAMERA_SPEED, pdy * JOY_CAMERA_SPEED, cam_bounds)
+            camera.pan(pdx * pan_rate * dt, pdy * pan_rate * dt, cam_bounds)
 
         if inp.was_pressed(frame, "A"):
             select_x, select_y = cursor_x, cursor_y
 
-        camera.clamp(cam_bounds)
+        camera.keep_tile_visible(
+            cursor_x,
+            cursor_y,
+            mrect.x,
+            mrect.y,
+            mrect.w,
+            mrect.h,
+            cam_bounds,
+        )
 
         screen.fill((0, 0, 0))
-        draw_top_bar(screen, font, font_sm, day)
         tiles_drawn = draw_map(screen, world, camera, layer, cursor_x, cursor_y)
+        draw_top_bar(screen, font, font_sm, day)
         draw_panel(screen, font, font_sm, world, select_x, select_y, layer)
 
-        help_text = t("help.selected") if select_x is not None else t("help.default")
         if not dev_mode:
+            help_text = t("help.selected") if select_x is not None else t("help.default")
             draw_bottom_bar(screen, font_sm, help_text)
         else:
             draw_bottom_bar(screen, font_sm, t("help.default"))
@@ -138,31 +200,8 @@ def run() -> int:
                 gen_ms=gen_ms,
                 held=frame.held,
                 keymap=DEV_KEYMAP,
+                zoom_pct=camera.zoom * 100.0,
             )
 
         pygame.display.flip()
         clock.tick(FPS)
-
-
-def _edge_scroll(
-    camera: Camera,
-    cx: int,
-    cy: int,
-    dx: int,
-    dy: int,
-    bounds: tuple[int, int, int, int],
-) -> None:
-    rect = map_rect()
-    px = camera.tile_px
-    sx, sy = camera.tile_to_screen(cx, cy, rect.x, rect.y, rect.w, rect.h)
-    margin = CURSOR_SCROLL_EDGE * px
-    step = CAMERA_SPEED * 0.05
-
-    if dx < 0 and sx < rect.x + margin:
-        camera.pan(-step, 0, bounds)
-    elif dx > 0 and sx > rect.right - margin - px:
-        camera.pan(step, 0, bounds)
-    if dy < 0 and sy < rect.y + margin:
-        camera.pan(0, -step, bounds)
-    elif dy > 0 and sy > rect.bottom - margin - px:
-        camera.pan(0, step, bounds)

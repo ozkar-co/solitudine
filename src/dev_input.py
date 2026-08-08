@@ -15,6 +15,8 @@ KEY_TO_ACTION: dict[int, str] = {
     pygame.K_v: "Y",
     pygame.K_q: "L1",
     pygame.K_e: "R1",
+    pygame.K_LEFTBRACKET: "L2",
+    pygame.K_RIGHTBRACKET: "R2",
     pygame.K_1: "L2",
     pygame.K_2: "R2",
     pygame.K_BACKSPACE: "SELECT",
@@ -40,7 +42,7 @@ ALL_DEV_KEYS = frozenset(KEY_TO_ACTION)
 
 DEV_KEYMAP = """
 DEV teclado -> mando
-Z=A  X=B  C=X  V=Y   Q=L1  E=R1  1=L2  2=R2
+Z=A  X=B  C=X  V=Y   Q=L1  E=R1  [=L2  ]=R2  1/2=L2/R2
 Bksp=SELECT  Enter=START  U=L3  O=R3  F=FN
 IJKL=DPAD   WASD=LJOY   Flechas=RJOY
 SELECT+START (Bksp+Enter)=salir

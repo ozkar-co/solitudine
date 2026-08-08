@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from enum import Enum
 
 import pygame
@@ -64,6 +65,15 @@ def draw_bottom_bar(surf: pygame.Surface, font_sm: pygame.font.Font, text: str) 
     surf.blit(font_sm.render(text, True, COL_DIM), (8, y + 5))
 
 
+def _tile_draw_rect(sx: float, sy: float, px: float) -> pygame.Rect:
+    """Rect contiguo — evita huecos/solapes con zoom fraccional."""
+    x0 = math.floor(sx)
+    y0 = math.floor(sy)
+    x1 = math.ceil(sx + px)
+    y1 = math.ceil(sy + px)
+    return pygame.Rect(x0, y0, max(1, x1 - x0), max(1, y1 - y0))
+
+
 def draw_map(
     surf: pygame.Surface,
     world: World,
@@ -73,7 +83,10 @@ def draw_map(
     cursor_y: int,
 ) -> int:
     rect = map_rect()
+    prev_clip = surf.get_clip()
+    surf.set_clip(rect)
     pygame.draw.rect(surf, (0, 0, 0), rect)
+
     px = camera.tile_px
     x0, y0, x1, y1 = camera.visible_tiles(rect.w, rect.h)
     drawn = 0
@@ -81,12 +94,10 @@ def draw_map(
     for ty in range(y0, y1):
         for tx in range(x0, x1):
             sx, sy = camera.tile_to_screen(tx, ty, rect.x, rect.y, rect.w, rect.h)
-            if sx + px < rect.x or sy + px < rect.y:
-                continue
-            if sx > rect.right or sy > rect.bottom:
+            tile_rect = _tile_draw_rect(sx, sy, px)
+            if not rect.colliderect(tile_rect):
                 continue
             drawn += 1
-            tile_rect = pygame.Rect(sx, sy, px - 1, px - 1)
             i = world.idx(tx, ty)
 
             if not world.explored[i]:
@@ -107,18 +118,20 @@ def draw_map(
 
             mod = world.module_at(tx, ty)
             if mod and world.visible[i]:
-                inner = tile_rect.inflate(-max(2, px // 5), -max(2, px // 5))
+                pad = max(2, tile_rect.w // 5)
+                inner = tile_rect.inflate(-pad, -pad)
                 pygame.draw.rect(surf, COL_HABITAT, inner)
 
     if world.in_bounds(cursor_x, cursor_y):
         csx, csy = camera.tile_to_screen(
             cursor_x, cursor_y, rect.x, rect.y, rect.w, rect.h
         )
-        cr = pygame.Rect(csx, csy, px - 1, px - 1)
+        cr = _tile_draw_rect(csx, csy, px)
         if rect.colliderect(cr):
             pygame.draw.rect(surf, COL_CURSOR, cr, 2)
 
     pygame.draw.rect(surf, COL_BORDER, rect, 1)
+    surf.set_clip(prev_clip)
     return drawn
 
 
@@ -132,13 +145,14 @@ def draw_dev_debug(
     gen_ms: float,
     held: frozenset[str],
     keymap: str,
+    zoom_pct: float,
 ) -> None:
     """Overlay solo modo dev."""
     from gamepad import format_actions
 
     rect = map_rect()
     lines = [
-        f"FPS {fps:4.1f}  frame {frame_ms:5.1f}ms  tiles {tiles_drawn}",
+        f"FPS {fps:4.1f}  frame {frame_ms:5.1f}ms  tiles {tiles_drawn}  zoom {zoom_pct:.0f}%",
         f"gen {gen_ms:.0f}ms  held: {format_actions(held)}",
     ]
     y = rect.y + 4
