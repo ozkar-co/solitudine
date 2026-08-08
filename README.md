@@ -2,16 +2,16 @@
 
 Juego de gestión / supervivencia en un planeta hostil. Controlas la red de módulos, recursos y automatización desde la consola del hábitat — sin salir al exterior. Inspiración: *Factorio*, *The Martian*, *Ur-Quan Masters* (radio final).
 
-Documento de diseño completo: [ideas.md](ideas.md).
+Documentación: [docs/diseno-juego.md](docs/diseno-juego.md) (diseño actual) · [docs/ideas.md](docs/ideas.md) (brainstorm original).
 
 ## Fases de desarrollo
 
 | Fase | Estado | Descripción |
 |------|--------|-------------|
-| **0** | **Actual** | Depurador de mando (nombres estándar: `LJOY_*`, `DPAD_*`, …) |
-| 1 | Pendiente | UI base 640×480, panel + diagrama ASCII |
-| 2 | Pendiente | Grafo simple: 3 nodos, energía y comida |
-| 3+ | Pendiente | Desgaste, investigación, exploración, finales |
+| **0** | **Hecho** | Input mando (`LJOY_*`, `DPAD_*`, …) |
+| **1** | **Actual** | Mapa + cámara + cursor + panel + capas |
+| 2 | Pendiente | Simulación: día 48s, recursos, conexiones |
+| 3+ | Pendiente | Construcción, eventos, investigación, finales |
 
 ## Requisitos (desarrollo en PC)
 
@@ -50,7 +50,7 @@ dist/Solitudine.sh   →  roms/ports/Solitudine.sh
 dist/solitudine/     →  roms/ports/solitudine/
 ```
 
-Input **directo** vía Pygame — no usa gptokeyb. Sal con el atajo de la consola.
+Input **directo** vía Pygame — no usa gptokeyb. **SELECT+START** cierra el juego.
 
 ## Mapeo de botones (R36S)
 
@@ -76,9 +76,16 @@ Pantalla fija **640×480** (R36S).
 
 ```
 solitudine/
+├── docs/
+│   ├── diseno-juego.md   # diseño actual — editar
+│   └── ideas.md          # brainstorm original
 ├── src/
-│   ├── main.py       # depurador fase 0
-│   └── gamepad.py    # nombres de botones / deadzone
+│   ├── main.py         # entrada
+│   ├── game.py         # bucle fase 1
+│   ├── world.py        # mapa 1024×1024
+│   ├── ui.py           # HUD + panel
+│   ├── gamepad.py
+│   └── locales/es.json
 ├── port/Solitudine.sh
 ├── scripts/
 │   ├── fetch_runtime.sh

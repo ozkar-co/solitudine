@@ -4,7 +4,7 @@ import os
 
 import pygame
 
-from gamepad import diff_actions, format_actions
+from gamepad import diff_actions
 
 DEV_JOY = 0
 
@@ -37,6 +37,14 @@ KEY_TO_ACTION: dict[int, str] = {
 }
 
 ALL_DEV_KEYS = frozenset(KEY_TO_ACTION)
+
+DEV_KEYMAP = """
+DEV teclado -> mando
+Z=A  X=B  C=X  V=Y   Q=L1  E=R1  1=L2  2=R2
+Bksp=SELECT  Enter=START  U=L3  O=R3  F=FN
+IJKL=DPAD   WASD=LJOY   Flechas=RJOY
+SELECT+START (Bksp+Enter)=salir
+""".strip()
 
 
 def setup_dev_env() -> None:
@@ -77,6 +85,3 @@ class DevKeyboard:
         logs = diff_actions(DEV_JOY, self._prev, curr)
         self._prev = curr
         return curr, logs
-
-
-HELP = "Clic ventana  |  WASD=LJOY  flechas=RJOY  ZXCV=ABXY  IJKL=DPAD"

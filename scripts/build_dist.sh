@@ -7,9 +7,10 @@ DIST="$ROOT/dist"
 RUNTIME="port/runtime/pygame-ce_2.5.6_python_3.12.8.squashfs"
 
 rm -rf "$DIST"
-mkdir -p "$DIST/solitudine/runtime"
+mkdir -p "$DIST/solitudine/runtime" "$DIST/solitudine/locales"
 
-cp "$ROOT/src/main.py" "$ROOT/src/gamepad.py" "$DIST/solitudine/"
+cp "$ROOT"/src/*.py "$DIST/solitudine/"
+cp "$ROOT"/src/locales/*.json "$DIST/solitudine/locales/"
 cp "$ROOT/port/Solitudine.sh" "$DIST/Solitudine.sh"
 chmod +x "$DIST/Solitudine.sh"
 

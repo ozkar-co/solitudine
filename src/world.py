@@ -1,0 +1,150 @@
+"""Mapa, terreno y visibilidad."""
+
+from __future__ import annotations
+
+import random
+from dataclasses import dataclass, field
+from enum import IntEnum
+
+from config import (
+    HABITAT_X,
+    HABITAT_Y,
+    INITIAL_VISION_RADIUS,
+    WORLD_SEED,
+    WORLD_SIZE,
+)
+
+
+class Tile(IntEnum):
+    GROUND = 0
+    WATER = 1
+    ROCK = 2
+
+
+@dataclass
+class Module:
+    kind: str
+    x: int
+    y: int
+
+
+@dataclass
+class World:
+    tiles: list[int]
+    explored: bytearray
+    visible: bytearray
+    modules: list[Module] = field(default_factory=list)
+    module_cells: dict[tuple[int, int], Module] = field(default_factory=dict)
+    size: int = WORLD_SIZE
+    expl_min_x: int = WORLD_SIZE
+    expl_min_y: int = WORLD_SIZE
+    expl_max_x: int = 0
+    expl_max_y: int = 0
+
+    def idx(self, x: int, y: int) -> int:
+        return y * self.size + x
+
+    def in_bounds(self, x: int, y: int) -> bool:
+        return 0 <= x < self.size and 0 <= y < self.size
+
+    def tile_at(self, x: int, y: int) -> Tile | None:
+        if not self.in_bounds(x, y):
+            return None
+        if not self.explored[self.idx(x, y)]:
+            return None
+        return Tile(self.tiles[self.idx(x, y)])
+
+    def module_at(self, x: int, y: int) -> Module | None:
+        return self.module_cells.get((x, y))
+
+    def reveal_vision(self) -> None:
+        self.visible[:] = b"\x00" * (self.size * self.size)
+        for mod in self.modules:
+            self._stamp_circle(mod.x, mod.y, INITIAL_VISION_RADIUS, self.visible)
+
+    def camera_bounds(self, margin: int) -> tuple[int, int, int, int]:
+        """Límites de cámara — O(1), sin escanear el mapa entero."""
+        if self.expl_max_x < self.expl_min_x:
+            r = INITIAL_VISION_RADIUS + margin
+            return (
+                HABITAT_X - r,
+                HABITAT_Y - r,
+                HABITAT_X + r,
+                HABITAT_Y + r,
+            )
+        return (
+            max(0, self.expl_min_x - margin),
+            max(0, self.expl_min_y - margin),
+            min(self.size - 1, self.expl_max_x + margin),
+            min(self.size - 1, self.expl_max_y + margin),
+        )
+
+    def _touch_explored(self, x: int, y: int) -> None:
+        self.expl_min_x = min(self.expl_min_x, x)
+        self.expl_min_y = min(self.expl_min_y, y)
+        self.expl_max_x = max(self.expl_max_x, x)
+        self.expl_max_y = max(self.expl_max_y, y)
+
+    def _stamp_circle(self, cx: int, cy: int, radius: int, mask: bytearray) -> None:
+        track = mask is self.explored
+        r2 = radius * radius
+        for dy in range(-radius, radius + 1):
+            for dx in range(-radius, radius + 1):
+                if dx * dx + dy * dy > r2:
+                    continue
+                x, y = cx + dx, cy + dy
+                if self.in_bounds(x, y):
+                    mask[self.idx(x, y)] = 1
+                    if track:
+                        self._touch_explored(x, y)
+
+
+def _seed_int(text: str) -> int:
+    h = 0
+    for ch in text:
+        h = (h * 31 + ord(ch)) & 0xFFFFFFFF
+    return h
+
+
+def generate_world(seed: str = WORLD_SEED) -> World:
+    rng = random.Random(_seed_int(seed))
+    size = WORLD_SIZE
+    n = size * size
+    tiles = [Tile.GROUND] * n
+    explored = bytearray(n)
+    visible = bytearray(n)
+
+    for _ in range(55):
+        _paint_blob(tiles, size, rng, Tile.WATER, blob_r=rng.randint(4, 11))
+    for _ in range(40):
+        _paint_blob(tiles, size, rng, Tile.ROCK, blob_r=rng.randint(3, 8))
+
+    world = World(tiles=tiles, explored=explored, visible=visible, size=size)
+    hab = Module("habitat", HABITAT_X, HABITAT_Y)
+    world.modules.append(hab)
+    world.module_cells[(HABITAT_X, HABITAT_Y)] = hab
+    tiles[world.idx(HABITAT_X, HABITAT_Y)] = Tile.GROUND
+
+    world._stamp_circle(HABITAT_X, HABITAT_Y, INITIAL_VISION_RADIUS, explored)
+    world.reveal_vision()
+    return world
+
+
+def _paint_blob(
+    tiles: list[int],
+    size: int,
+    rng: random.Random,
+    kind: Tile,
+    blob_r: int,
+) -> None:
+    cx = rng.randint(blob_r, size - blob_r - 1)
+    cy = rng.randint(blob_r, size - blob_r - 1)
+    r2 = blob_r * blob_r
+    for dy in range(-blob_r, blob_r + 1):
+        for dx in range(-blob_r, blob_r + 1):
+            if dx * dx + dy * dy > r2:
+                continue
+            x, y = cx + dx, cy + dy
+            i = y * size + x
+            if tiles[i] == Tile.GROUND:
+                tiles[i] = kind

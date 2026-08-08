@@ -10,5 +10,5 @@ if [ ! -d ".venv" ]; then
   .venv/bin/pip install -r requirements.txt
 fi
 
-.venv/bin/python -m py_compile src/main.py src/gamepad.py src/dev_input.py
+.venv/bin/python -m py_compile src/*.py
 cd "$ROOT/src" && SOLITUDINE_DEV=1 ../.venv/bin/python main.py </dev/null
