@@ -6,12 +6,17 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 
 from config import (
+    BUILD_DAYS_EXTRACTOR,
+    BUILD_DAYS_GREENHOUSE,
     BUILD_DAYS_RADAR,
     BUILD_DAYS_SOLAR,
     COST_CABLE,
+    COST_EXTRACTOR,
+    COST_GREENHOUSE,
     COST_RADAR,
     COST_SOLAR,
 )
+from world import Deposit
 from materials import Stockpile
 from network import compute_connected, is_adjacent_to_network
 from vision import on_cable_added, on_module_built, on_module_online_changed
@@ -22,9 +27,17 @@ class BuildKind(Enum):
     CABLE = auto()
     SOLAR = auto()
     RADAR = auto()
+    EXTRACTOR = auto()
+    GREENHOUSE = auto()
 
 
-BUILD_KINDS = (BuildKind.CABLE, BuildKind.SOLAR, BuildKind.RADAR)
+BUILD_KINDS = (
+    BuildKind.CABLE,
+    BuildKind.SOLAR,
+    BuildKind.RADAR,
+    BuildKind.EXTRACTOR,
+    BuildKind.GREENHOUSE,
+)
 
 
 class BuildMode(Enum):
@@ -38,6 +51,8 @@ def kind_cost(kind: BuildKind) -> float:
         BuildKind.CABLE: COST_CABLE,
         BuildKind.SOLAR: COST_SOLAR,
         BuildKind.RADAR: COST_RADAR,
+        BuildKind.EXTRACTOR: COST_EXTRACTOR,
+        BuildKind.GREENHOUSE: COST_GREENHOUSE,
     }[kind]
 
 
@@ -46,11 +61,25 @@ def kind_build_days(kind: BuildKind) -> float:
         BuildKind.CABLE: 0.0,
         BuildKind.SOLAR: BUILD_DAYS_SOLAR,
         BuildKind.RADAR: BUILD_DAYS_RADAR,
+        BuildKind.EXTRACTOR: BUILD_DAYS_EXTRACTOR,
+        BuildKind.GREENHOUSE: BUILD_DAYS_GREENHOUSE,
     }[kind]
 
 
 def module_kind_for(build: BuildKind) -> str:
-    return {BuildKind.SOLAR: "solar", BuildKind.RADAR: "radar"}[build]
+    return {
+        BuildKind.SOLAR: "solar",
+        BuildKind.RADAR: "radar",
+        BuildKind.EXTRACTOR: "extractor",
+        BuildKind.GREENHOUSE: "greenhouse",
+    }[build]
+
+
+def tile_has_water_source(world: World, x: int, y: int) -> bool:
+    i = world.idx(x, y)
+    if world.tiles[i] == Tile.WATER:
+        return True
+    return world.tiles[i] == Tile.GROUND and Deposit(world.deposits[i]) == Deposit.WATER
 
 
 @dataclass
@@ -93,19 +122,20 @@ class BuildController:
             self.mode = BuildMode.MENU
             self.cable_chain.clear()
 
-    def can_place_tile(self, world: World, x: int, y: int) -> bool:
+    def can_place_tile(self, world: World, x: int, y: int, kind: BuildKind | None = None) -> bool:
         if not world.in_bounds(x, y):
             return False
         if not world.explored[world.idx(x, y)]:
             return False
-        if world.tiles[world.idx(x, y)] != Tile.GROUND:
-            return False
         if (x, y) in world.module_cells or (x, y) in world.cables:
             return False
-        return True
+        tile = Tile(world.tiles[world.idx(x, y)])
+        if kind == BuildKind.EXTRACTOR:
+            return tile_has_water_source(world, x, y)
+        return tile == Tile.GROUND
 
     def _can_extend_cable(self, world: World, x: int, y: int, connected: set[tuple[int, int]]) -> bool:
-        if not self.can_place_tile(world, x, y):
+        if not self.can_place_tile(world, x, y, BuildKind.CABLE):
             return False
         if (x, y) in self.cable_chain:
             return False
@@ -123,7 +153,9 @@ class BuildController:
         connected = compute_connected(world)
         if self.selected == BuildKind.CABLE:
             return self._can_extend_cable(world, x, y, connected)
-        return self.can_place_tile(world, x, y) and stock.can_afford(kind_cost(self.selected))
+        return self.can_place_tile(world, x, y, self.selected) and stock.can_afford(
+            kind_cost(self.selected)
+        )
 
     def try_place(self, world: World, stock: Stockpile, x: int, y: int) -> bool:
         connected = compute_connected(world)
@@ -138,7 +170,7 @@ class BuildController:
             self._refresh_connection_states(world, compute_connected(world))
             return True
 
-        if not self.can_place_tile(world, x, y):
+        if not self.can_place_tile(world, x, y, self.selected):
             return False
         cost = kind_cost(self.selected)
         if not stock.spend(cost):

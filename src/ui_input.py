@@ -14,7 +14,9 @@ class InputPolicy:
     pause_time: bool = False
 
 
-def input_policy(build: BuildController) -> InputPolicy:
+def input_policy(build: BuildController, *, game_over: bool = False) -> InputPolicy:
+    if game_over:
+        return InputPolicy(block_cursor=True, block_camera_pan=True, pause_time=True)
     if build.mode == BuildMode.MENU:
         return InputPolicy(block_cursor=True, block_camera_pan=True, pause_time=True)
     if build.mode == BuildMode.PLACE:

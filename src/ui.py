@@ -16,6 +16,7 @@ from construction import (
     kind_cost,
 )
 from i18n import t
+from module_flow import module_flow_lines
 from module_power import format_energy_daily, module_energy_daily
 from resources import AlertLevel, ResourceId
 from simulation import Simulation
@@ -32,6 +33,8 @@ COL_CURSOR = (255, 255, 180)
 COL_HABITAT = (220, 200, 80)
 COL_SOLAR = (255, 140, 40)
 COL_RADAR = (80, 220, 220)
+COL_EXTRACTOR = (60, 150, 230)
+COL_GREENHOUSE = (90, 200, 70)
 COL_CABLE = (255, 230, 80)
 COL_FOG = (20, 32, 24)
 COL_PREVIEW_OK = (120, 255, 160)
@@ -52,6 +55,8 @@ MODULE_COLORS = {
     "habitat": COL_HABITAT,
     "solar": COL_SOLAR,
     "radar": COL_RADAR,
+    "extractor": COL_EXTRACTOR,
+    "greenhouse": COL_GREENHOUSE,
 }
 
 
@@ -146,17 +151,27 @@ def _panel_energy_line(mod) -> str:
     return t("panel.energy", value=value)
 
 
+def _panel_flow_line(key: str, value: float) -> str:
+    if value > 0:
+        return t(key, value=f"+{value:.1f}")
+    return t(key, value=f"{value:.1f}")
+
+
 def _draw_module_inspection(
     surf: pygame.Surface,
     font_sm: pygame.font.Font,
     x: int,
     y: int,
     mod,
+    world: World,
 ) -> int:
     _panel_line(surf, font_sm, x, y, t("panel.status", status=t(_module_status_key(mod))))
     y += 16
     _panel_line(surf, font_sm, x, y, _panel_energy_line(mod))
     y += 16
+    for key, value in module_flow_lines(mod, world):
+        _panel_line(surf, font_sm, x, y, _panel_flow_line(key, value))
+        y += 16
     if mod.state == ModuleState.BUILDING and mod.build_total > 0:
         pct = 100.0 * mod.build_progress / mod.build_total
         _panel_line(surf, font_sm, x, y, t("panel.build_pct", pct=f"{pct:.0f}"))
@@ -355,7 +370,29 @@ def _build_kind_label(kind: BuildKind) -> str:
         BuildKind.CABLE: t("build.cable"),
         BuildKind.SOLAR: t("build.solar"),
         BuildKind.RADAR: t("build.radar"),
+        BuildKind.EXTRACTOR: t("build.extractor"),
+        BuildKind.GREENHOUSE: t("build.greenhouse"),
     }[kind]
+
+
+def draw_game_over(
+    surf: pygame.Surface,
+    font: pygame.font.Font,
+    font_sm: pygame.font.Font,
+    sim: Simulation,
+) -> None:
+    overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 180))
+    surf.blit(overlay, (0, 0))
+
+    title = font.render(t("game_over.title"), True, COL_CRITICAL)
+    surf.blit(title, ((SCREEN_W - title.get_width()) // 2, SCREEN_H // 2 - 36))
+
+    cause = font_sm.render(t(sim.death_cause), True, COL_TEXT)
+    surf.blit(cause, ((SCREEN_W - cause.get_width()) // 2, SCREEN_H // 2 - 6))
+
+    hint = font_sm.render(t("game_over.restart"), True, COL_DIM)
+    surf.blit(hint, ((SCREEN_W - hint.get_width()) // 2, SCREEN_H // 2 + 24))
 
 
 def draw_panel(
@@ -410,7 +447,7 @@ def draw_panel(
 
     mod = world.module_at(sel_x, sel_y)
     if mod:
-        name = t(f"module.{mod.kind}") if mod.kind in ("habitat", "solar", "radar") else mod.kind
+        name = t("module.habitat") if mod.kind == "habitat" else t(f"module.{mod.kind}")
         _panel_line(surf, font_sm, rect.x + 8, y, t("panel.module", name=name))
         y += 18
         if mod.kind == "habitat":
@@ -418,7 +455,7 @@ def draw_panel(
             y += 16
             _draw_habitat_resources(surf, font_sm, rect, y, sim)
         else:
-            _draw_module_inspection(surf, font_sm, rect.x + 8, y, mod)
+            _draw_module_inspection(surf, font_sm, rect.x + 8, y, mod, world)
         return
 
     tile = world.tile_at(sel_x, sel_y)

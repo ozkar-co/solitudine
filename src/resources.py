@@ -111,3 +111,18 @@ class ResourcePool:
 
     def add_power(self, amount: float) -> None:
         self.power += amount
+
+    def add_water(self, amount: float) -> None:
+        self.water += amount
+
+    def add_food(self, amount: float) -> None:
+        self.food += amount
+
+    def check_death(self) -> str | None:
+        if self.o2 <= 0:
+            return "death.o2"
+        if self.water <= 0:
+            return "death.water"
+        if self.food <= 0:
+            return "death.food"
+        return None

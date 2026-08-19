@@ -24,6 +24,7 @@ from ui import (
     MapLayer,
     draw_bottom_bar,
     draw_dev_debug,
+    draw_game_over,
     draw_map,
     draw_panel,
     draw_top_bar,
@@ -123,6 +124,18 @@ def run() -> int:
     cursor_acc_x = 0.0
     cursor_acc_y = 0.0
 
+    def reset_session() -> None:
+        nonlocal world, sim, camera, cam_bounds, cursor_x, cursor_y
+        nonlocal select_x, select_y, layer, cursor_acc_x, cursor_acc_y
+        world = generate_world()
+        sim = Simulation()
+        camera = Camera(float(HABITAT_X), float(HABITAT_Y))
+        cam_bounds = world.camera_bounds(CAMERA_MARGIN)
+        cursor_x, cursor_y = HABITAT_X, HABITAT_Y
+        select_x, select_y = None, None
+        layer = MapLayer.TERRAIN
+        cursor_acc_x, cursor_acc_y = 0.0, 0.0
+
     while True:
         frame_start = time.perf_counter()
         dt = clock.get_time() / 1000.0
@@ -140,10 +153,13 @@ def run() -> int:
             return 0
 
         build = sim.build
-        policy = input_policy(build)
+        policy = input_policy(build, game_over=sim.game_over)
         sim.paused = policy.pause_time
 
-        if inp.was_pressed(frame, "B"):
+        if sim.game_over:
+            if inp.was_pressed(frame, "A"):
+                reset_session()
+        elif inp.was_pressed(frame, "B"):
             if build.mode == BuildMode.NONE:
                 build.enter_menu()
             elif build.mode == BuildMode.MENU:
@@ -151,23 +167,24 @@ def run() -> int:
             elif build.mode == BuildMode.PLACE:
                 build.back_to_menu()
 
-        if build.mode == BuildMode.MENU:
-            if inp.was_pressed(frame, "DPAD_UP") or inp.was_pressed(frame, LJOY_UP):
-                build.menu_up()
-            if inp.was_pressed(frame, "DPAD_DOWN") or inp.was_pressed(frame, LJOY_DOWN):
-                build.menu_down()
-            if inp.was_pressed(frame, "A"):
-                build.enter_place()
+        if not sim.game_over:
+            if build.mode == BuildMode.MENU:
+                if inp.was_pressed(frame, "DPAD_UP") or inp.was_pressed(frame, LJOY_UP):
+                    build.menu_up()
+                if inp.was_pressed(frame, "DPAD_DOWN") or inp.was_pressed(frame, LJOY_DOWN):
+                    build.menu_down()
+                if inp.was_pressed(frame, "A"):
+                    build.enter_place()
 
-        elif build.mode == BuildMode.PLACE:
-            if inp.was_pressed(frame, "A"):
-                build.try_place(world, sim.stock, cursor_x, cursor_y)
+            elif build.mode == BuildMode.PLACE:
+                if inp.was_pressed(frame, "A"):
+                    build.try_place(world, sim.stock, cursor_x, cursor_y)
 
-        else:
-            if inp.was_pressed(frame, "X"):
-                layer = MapLayer((layer.value + 1) % 3)
-            if inp.was_pressed(frame, "A"):
-                select_x, select_y = cursor_x, cursor_y
+            else:
+                if inp.was_pressed(frame, "X"):
+                    layer = MapLayer((layer.value + 1) % 3)
+                if inp.was_pressed(frame, "A"):
+                    select_x, select_y = cursor_x, cursor_y
 
         sim.update(dt, world)
 
@@ -217,7 +234,9 @@ def run() -> int:
         draw_top_bar(screen, font, font_sm, sim)
         draw_panel(screen, font, font_sm, world, sim, select_x, select_y, layer)
 
-        if build.mode == BuildMode.MENU:
+        if sim.game_over:
+            help_text = t("help.game_over")
+        elif build.mode == BuildMode.MENU:
             help_text = t("help.build_menu")
         elif build.mode == BuildMode.PLACE:
             help_text = t("help.build_place")
@@ -241,6 +260,9 @@ def run() -> int:
                 keymap=DEV_KEYMAP,
                 zoom_pct=camera.zoom * 100.0,
             )
+
+        if sim.game_over:
+            draw_game_over(screen, font, font_sm, sim)
 
         pygame.display.flip()
         clock.tick(FPS)

@@ -76,8 +76,9 @@ el espacio de los modulos es exclusivo, las conexiones si pueden compartir una v
 | 0 | Depurador de input; mando R36S sin gptokeyb; nombres semánticos en `gamepad.py` |
 | — | Runtime pygame-ce, deploy PortMaster, modo dev con teclado |
 | 1 | Mapa 1024², cámara, cursor, panel, capas terreno/agua/recursos |
-| 2a | Simulación: día 48 s, reservas hábitat (O₂, E, agua, comida), consumo horario |
+| 2a | Simulación: día 48 s, reservas hábitat (O₂, E, agua, comida), consumo continuo |
 | 2b | Construcción: componentes, cable manual, panel solar, radar; red desde hábitat |
+| 2c | Game over simple (O₂ / agua / comida a 0); extractor e invernadero; reservas starter cerca del hábitat |
 
 **Input estándar del juego:** `A`, `B`, `X`, `Y`, `L1`–`R2`, `SELECT`, `START`, `FN`, `DPAD_*`, `LJOY_*`, `RJOY_*`.
 
@@ -311,6 +312,8 @@ Pienso que la partida guardada se puede llevar en SQLite y asi cada partida es u
 | Cable | 1 / tile | Instantáneo | Trazado manual, solo suelo despejado |
 | Panel solar | 8 | 1 día | +4 E/día si en línea |
 | Radar | 12 | 1.5 días | −1 E/h; visión clara 16, neblina 24 |
+| Extractor de agua | 10 | 1 día | Sobre agua o depósito subterráneo; +12 agua/d, −2 E/d |
+| Invernadero | 10 | 1.5 días | +10 comida/d, −4 agua/d, −3 E/d |
 
 ### Red y estados
 
@@ -325,6 +328,12 @@ Pienso que la partida guardada se puede llevar en SQLite y asi cada partida es u
 - [x] Radio 17–24: neblina (explorado pero difuso).
 - [x] Hábitat y otros módulos no revelan subsuelo en capa Recursos.
 - [x] Depósitos generados: agua y carbono bajo suelo.
+- [x] Parches garantizados cerca del hábitat (agua superficial + depósitos starter).
+
+### Game over
+
+- [x] Sin sistema de malestar: muerte directa si O₂, agua o comida llegan a 0.
+- [x] Pantalla simple + `A` reinicia la partida.
 
 ### Visión incremental (R36S)
 

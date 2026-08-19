@@ -9,9 +9,9 @@ Documentación: [docs/diseno-juego.md](docs/diseno-juego.md) (diseño actual) ·
 | Fase | Estado | Descripción |
 |------|--------|-------------|
 | **0** | **Hecho** | Input mando (`LJOY_*`, `DPAD_*`, …) |
-| **1** | **Actual** | Mapa + cámara + cursor + panel + capas |
-| 2 | Pendiente | Simulación: día 48s, recursos, conexiones |
-| 3+ | Pendiente | Construcción, eventos, investigación, finales |
+| **1** | **Hecho** | Mapa + cámara + cursor + panel + capas |
+| **2** | **Actual** | Simulación (día 48 s, recursos), construcción, game over |
+| 3+ | Pendiente | Eventos, investigación, finales |
 
 ## Requisitos (desarrollo en PC)
 
@@ -81,7 +81,9 @@ solitudine/
 │   └── ideas.md          # brainstorm original
 ├── src/
 │   ├── main.py         # entrada
-│   ├── game.py         # bucle fase 1
+│   ├── game.py         # bucle principal
+│   ├── simulation.py   # tiempo, recursos, game over
+│   ├── construction.py # menú B, cables, módulos
 │   ├── world.py        # mapa 1024×1024
 │   ├── ui.py           # HUD + panel
 │   ├── gamepad.py

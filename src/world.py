@@ -12,6 +12,15 @@ from config import (
     HABITAT_Y,
     INITIAL_VISION_RADIUS,
     RADAR_VISION_CLEAR,
+    STARTER_DEP_CARBON_R,
+    STARTER_DEP_CARBON_X,
+    STARTER_DEP_CARBON_Y,
+    STARTER_DEP_WATER_R,
+    STARTER_DEP_WATER_X,
+    STARTER_DEP_WATER_Y,
+    STARTER_WATER_R,
+    STARTER_WATER_X,
+    STARTER_WATER_Y,
     WORLD_SEED,
     WORLD_SIZE,
 )
@@ -156,6 +165,8 @@ def generate_world(seed: str = WORLD_SEED) -> World:
     for _ in range(35):
         _paint_deposit(deposits, tiles, size, rng, Deposit.CARBON, blob_r=rng.randint(3, 8))
 
+    _guarantee_starter_patches(tiles, deposits, size)
+
     from vision import init_habitat, make_visible_count
 
     world = World(
@@ -193,6 +204,76 @@ def _paint_blob(
             i = y * size + x
             if tiles[i] == Tile.GROUND:
                 tiles[i] = kind
+
+
+def _paint_disc_tile(
+    tiles: list[int],
+    size: int,
+    cx: int,
+    cy: int,
+    radius: int,
+    kind: Tile,
+) -> None:
+    r2 = radius * radius
+    for dy in range(-radius, radius + 1):
+        for dx in range(-radius, radius + 1):
+            if dx * dx + dy * dy > r2:
+                continue
+            x, y = cx + dx, cy + dy
+            if not (0 <= x < size and 0 <= y < size):
+                continue
+            i = y * size + x
+            if tiles[i] != Tile.ROCK:
+                tiles[i] = kind
+
+
+def _paint_disc_deposit(
+    deposits: list[int],
+    tiles: list[int],
+    size: int,
+    cx: int,
+    cy: int,
+    radius: int,
+    kind: Deposit,
+) -> None:
+    r2 = radius * radius
+    for dy in range(-radius, radius + 1):
+        for dx in range(-radius, radius + 1):
+            if dx * dx + dy * dy > r2:
+                continue
+            x, y = cx + dx, cy + dy
+            if not (0 <= x < size and 0 <= y < size):
+                continue
+            i = y * size + x
+            if tiles[i] == Tile.GROUND:
+                deposits[i] = kind
+
+
+def _guarantee_starter_patches(tiles: list[int], deposits: list[int], size: int) -> None:
+    """Reservas pequeñas cerca del hábitat para arrancar la partida."""
+    wx = HABITAT_X + STARTER_WATER_X
+    wy = HABITAT_Y + STARTER_WATER_Y
+    _paint_disc_tile(tiles, size, wx, wy, STARTER_WATER_R, Tile.WATER)
+    _paint_disc_deposit(
+        deposits,
+        tiles,
+        size,
+        HABITAT_X + STARTER_DEP_WATER_X,
+        HABITAT_Y + STARTER_DEP_WATER_Y,
+        STARTER_DEP_WATER_R,
+        Deposit.WATER,
+    )
+    _paint_disc_deposit(
+        deposits,
+        tiles,
+        size,
+        HABITAT_X + STARTER_DEP_CARBON_X,
+        HABITAT_Y + STARTER_DEP_CARBON_Y,
+        STARTER_DEP_CARBON_R,
+        Deposit.CARBON,
+    )
+    tiles[HABITAT_Y * size + HABITAT_X] = Tile.GROUND
+    deposits[HABITAT_Y * size + HABITAT_X] = Deposit.NONE
 
 
 def _paint_deposit(
