@@ -61,4 +61,3 @@ class Simulation:
         self.resources.consume_dt(dt)
         self._apply_modules_dt(dt, world)
         self.build.update_sites(world, dt_days)
-        world.reveal_vision()

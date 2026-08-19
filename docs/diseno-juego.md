@@ -326,4 +326,10 @@ Pienso que la partida guardada se puede llevar en SQLite y asi cada partida es u
 - [x] Hábitat y otros módulos no revelan subsuelo en capa Recursos.
 - [x] Depósitos generados: agua y carbono bajo suelo.
 
+### Visión incremental (R36S)
+
+- [x] **Neblina/explorado** (`explored`): permanente, solo crece al descubrir; nunca se recomputa ni se borra.
+- [x] **Visión clara** (`visible`): contadores por tile; +/- O(radio²) al conectar/desconectar fuente.
+- [x] Sin recomputo global por frame — apto para cientos de fuentes.
+
 

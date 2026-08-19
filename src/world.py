@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import random
+from array import array
 from dataclasses import dataclass, field
 from enum import IntEnum
 
@@ -43,6 +44,8 @@ class Module:
     state: ModuleState = ModuleState.ONLINE
     build_progress: float = 0.0
     build_total: float = 0.0
+    shadow_stamped: bool = False
+    clear_active: bool = False
 
 
 @dataclass
@@ -51,6 +54,7 @@ class World:
     deposits: list[int]
     explored: bytearray
     visible: bytearray
+    visible_count: array
     modules: list[Module] = field(default_factory=list)
     module_cells: dict[tuple[int, int], Module] = field(default_factory=dict)
     cables: set[tuple[int, int]] = field(default_factory=set)
@@ -88,11 +92,6 @@ class World:
                 if (x - mod.x) ** 2 + (y - mod.y) ** 2 <= r2:
                     return True
         return False
-
-    def reveal_vision(self) -> None:
-        from vision import apply_vision
-
-        apply_vision(self)
 
     def camera_bounds(self, margin: int) -> tuple[int, int, int, int]:
         if self.expl_max_x < self.expl_min_x:
@@ -157,13 +156,22 @@ def generate_world(seed: str = WORLD_SEED) -> World:
     for _ in range(35):
         _paint_deposit(deposits, tiles, size, rng, Deposit.CARBON, blob_r=rng.randint(3, 8))
 
-    world = World(tiles=tiles, deposits=deposits, explored=explored, visible=visible, size=size)
+    from vision import init_habitat, make_visible_count
+
+    world = World(
+        tiles=tiles,
+        deposits=deposits,
+        explored=explored,
+        visible=visible,
+        visible_count=make_visible_count(n),
+        size=size,
+    )
     hab = Module("habitat", HABITAT_X, HABITAT_Y)
     world.modules.append(hab)
     world.module_cells[(HABITAT_X, HABITAT_Y)] = hab
     tiles[world.idx(HABITAT_X, HABITAT_Y)] = Tile.GROUND
 
-    world.reveal_vision()
+    init_habitat(world, hab)
     return world
 
 

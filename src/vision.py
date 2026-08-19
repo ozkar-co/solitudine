@@ -1,8 +1,8 @@
-"""Radios de visión y sombra por nodo — se fusionan en unión."""
+"""Visión incremental: neblina permanente + contadores de visión clara."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from array import array
 
 from config import (
     CABLE_SHADOW,
@@ -13,18 +13,9 @@ from config import (
     RADAR_VISION_FOG,
     SOLAR_VISION,
 )
-from network import compute_connected
 
 
-@dataclass(frozen=True)
-class VisionSource:
-    x: int
-    y: int
-    clear_r: int
-    shadow_r: int
-
-
-def _module_radii(kind: str) -> tuple[int, int] | None:
+def module_radii(kind: str) -> tuple[int, int] | None:
     if kind == "habitat":
         return INITIAL_VISION_RADIUS, INITIAL_VISION_RADIUS + HABITAT_SHADOW_BORDER
     if kind == "solar":
@@ -34,29 +25,93 @@ def _module_radii(kind: str) -> tuple[int, int] | None:
     return None
 
 
-def collect_sources(world) -> list[VisionSource]:
+def _each_disc(world, cx: int, cy: int, radius: int):
+    if radius <= 0:
+        return
+    r2 = radius * radius
+    for dy in range(-radius, radius + 1):
+        for dx in range(-radius, radius + 1):
+            if dx * dx + dy * dy > r2:
+                continue
+            x, y = cx + dx, cy + dy
+            if world.in_bounds(x, y):
+                yield x, y, world.idx(x, y)
+
+
+def stamp_shadow(world, cx: int, cy: int, radius: int) -> None:
+    """Neblina/explorado permanente — solo crece, nunca se borra."""
+    world._stamp_disc(world.explored, cx, cy, radius)
+
+
+def _adjust_clear(world, cx: int, cy: int, radius: int, delta: int) -> None:
+    for _x, _y, i in _each_disc(world, cx, cy, radius):
+        before = world.visible_count[i]
+        after = before + delta
+        if after < 0:
+            after = 0
+        world.visible_count[i] = after
+        if before == 0 and after > 0:
+            world.visible[i] = 1
+        elif before > 0 and after == 0:
+            world.visible[i] = 0
+
+
+def activate_clear(world, cx: int, cy: int, radius: int) -> None:
+    _adjust_clear(world, cx, cy, radius, 1)
+
+
+def deactivate_clear(world, cx: int, cy: int, radius: int) -> None:
+    _adjust_clear(world, cx, cy, radius, -1)
+
+
+def ensure_module_shadow(world, mod) -> None:
+    if mod.shadow_stamped:
+        return
+    radii = module_radii(mod.kind)
+    if radii is None:
+        return
+    stamp_shadow(world, mod.x, mod.y, radii[1])
+    mod.shadow_stamped = True
+
+
+def set_module_clear(world, mod, active: bool) -> None:
+    if mod.clear_active == active:
+        return
+    radii = module_radii(mod.kind)
+    if radii is None:
+        return
+    if active:
+        activate_clear(world, mod.x, mod.y, radii[0])
+    else:
+        deactivate_clear(world, mod.x, mod.y, radii[0])
+    mod.clear_active = active
+
+
+def on_module_built(world, mod) -> None:
+    """Obra terminada: marca neblina y activa visión clara si está en línea."""
     from world import ModuleState
 
-    connected = compute_connected(world)
-    sources: list[VisionSource] = []
-
-    for mod in world.modules:
-        radii = _module_radii(mod.kind)
-        if radii is None:
-            continue
-        if mod.kind == "habitat" or mod.state == ModuleState.ONLINE:
-            sources.append(VisionSource(mod.x, mod.y, radii[0], radii[1]))
-
-    for x, y in world.cables:
-        if (x, y) in connected:
-            sources.append(VisionSource(x, y, CABLE_VISION, CABLE_SHADOW))
-
-    return sources
+    ensure_module_shadow(world, mod)
+    set_module_clear(world, mod, mod.state == ModuleState.ONLINE)
 
 
-def apply_vision(world) -> None:
-    n = world.size * world.size
-    world.visible[:] = b"\x00" * n
-    for src in collect_sources(world):
-        world._stamp_disc(world.explored, src.x, src.y, src.shadow_r)
-        world._stamp_disc(world.visible, src.x, src.y, src.clear_r)
+def on_module_online_changed(world, mod, was_online: bool, is_online: bool) -> None:
+    if was_online == is_online:
+        return
+    if is_online:
+        ensure_module_shadow(world, mod)
+    set_module_clear(world, mod, is_online)
+
+
+def on_cable_added(world, x: int, y: int) -> None:
+    stamp_shadow(world, x, y, CABLE_SHADOW)
+    activate_clear(world, x, y, CABLE_VISION)
+
+
+def init_habitat(world, mod) -> None:
+    ensure_module_shadow(world, mod)
+    set_module_clear(world, mod, True)
+
+
+def make_visible_count(size: int) -> array:
+    return array("H", [0]) * size

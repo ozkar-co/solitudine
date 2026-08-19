@@ -161,8 +161,7 @@ def run() -> int:
 
         elif build.mode == BuildMode.PLACE:
             if inp.was_pressed(frame, "A"):
-                if build.try_place(world, sim.stock, cursor_x, cursor_y):
-                    world.reveal_vision()
+                build.try_place(world, sim.stock, cursor_x, cursor_y)
 
         else:
             if inp.was_pressed(frame, "X"):
