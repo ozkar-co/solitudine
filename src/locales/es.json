@@ -25,6 +25,7 @@
   "panel.cable": "Cable de conexion",
   "panel.resource": "{name}: {value} ({days}d)",
   "panel.build_pct": "Progreso: {pct}%",
+  "panel.energy": "E: {value}/d",
   "panel.deposit": "Subsuelo: {name}",
   "deposit.water": "Agua",
   "deposit.carbon": "Carbon",

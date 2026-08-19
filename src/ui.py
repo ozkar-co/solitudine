@@ -16,6 +16,7 @@ from construction import (
     kind_cost,
 )
 from i18n import t
+from module_power import format_energy_daily, module_energy_daily
 from resources import AlertLevel, ResourceId
 from simulation import Simulation
 from world import Deposit, ModuleState, Tile, World
@@ -138,6 +139,29 @@ def _tile_draw_rect(sx: float, sy: float, px: float) -> pygame.Rect:
     x1 = math.ceil(sx + px)
     y1 = math.ceil(sy + px)
     return pygame.Rect(x0, y0, max(1, x1 - x0), max(1, y1 - y0))
+
+
+def _panel_energy_line(mod) -> str:
+    value = format_energy_daily(module_energy_daily(mod))
+    return t("panel.energy", value=value)
+
+
+def _draw_module_inspection(
+    surf: pygame.Surface,
+    font_sm: pygame.font.Font,
+    x: int,
+    y: int,
+    mod,
+) -> int:
+    _panel_line(surf, font_sm, x, y, t("panel.status", status=t(_module_status_key(mod))))
+    y += 16
+    _panel_line(surf, font_sm, x, y, _panel_energy_line(mod))
+    y += 16
+    if mod.state == ModuleState.BUILDING and mod.build_total > 0:
+        pct = 100.0 * mod.build_progress / mod.build_total
+        _panel_line(surf, font_sm, x, y, t("panel.build_pct", pct=f"{pct:.0f}"))
+        y += 16
+    return y
 
 
 def _module_status_key(mod) -> str:
@@ -380,6 +404,8 @@ def draw_panel(
 
     if (sel_x, sel_y) in world.cables:
         _panel_line(surf, font_sm, rect.x + 8, y, t("panel.cable"))
+        y += 16
+        _panel_line(surf, font_sm, rect.x + 8, y, t("panel.energy", value="0.0"))
         return
 
     mod = world.module_at(sel_x, sel_y)
@@ -388,13 +414,11 @@ def draw_panel(
         _panel_line(surf, font_sm, rect.x + 8, y, t("panel.module", name=name))
         y += 18
         if mod.kind == "habitat":
+            _panel_line(surf, font_sm, rect.x + 8, y, _panel_energy_line(mod))
+            y += 16
             _draw_habitat_resources(surf, font_sm, rect, y, sim)
         else:
-            _panel_line(surf, font_sm, rect.x + 8, y, t("panel.status", status=t(_module_status_key(mod))))
-            if mod.state == ModuleState.BUILDING and mod.build_total > 0:
-                y += 16
-                pct = 100.0 * mod.build_progress / mod.build_total
-                _panel_line(surf, font_sm, rect.x + 8, y, t("panel.build_pct", pct=f"{pct:.0f}"))
+            _draw_module_inspection(surf, font_sm, rect.x + 8, y, mod)
         return
 
     tile = world.tile_at(sel_x, sel_y)
