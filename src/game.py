@@ -1,4 +1,4 @@
-"""Bucle principal — mapa, simulación y UI."""
+"""Bucle principal — mapa, simulación, construcción y UI."""
 
 from __future__ import annotations
 
@@ -16,6 +16,7 @@ from config import (
     SCREEN_H,
     SCREEN_W,
 )
+from construction import BuildMode
 from gamepad import LJOY_DOWN, LJOY_LEFT, LJOY_RIGHT, LJOY_UP
 from i18n import load, t
 from input_state import Input
@@ -28,6 +29,7 @@ from ui import (
     draw_top_bar,
     map_rect,
 )
+from ui_input import input_policy
 from simulation import Simulation
 from world import generate_world
 
@@ -137,42 +139,69 @@ def run() -> int:
             pygame.quit()
             return 0
 
-        sim.update(dt)
+        build = sim.build
+        policy = input_policy(build)
+        sim.paused = policy.pause_time
+
+        if inp.was_pressed(frame, "B"):
+            if build.mode == BuildMode.NONE:
+                build.enter_menu()
+            elif build.mode == BuildMode.MENU:
+                build.exit_menu()
+            elif build.mode == BuildMode.PLACE:
+                build.back_to_menu()
+
+        if build.mode == BuildMode.MENU:
+            if inp.was_pressed(frame, "DPAD_UP"):
+                build.menu_up()
+            if inp.was_pressed(frame, "DPAD_DOWN"):
+                build.menu_down()
+            if inp.was_pressed(frame, "A"):
+                build.enter_place()
+
+        elif build.mode == BuildMode.PLACE:
+            if inp.was_pressed(frame, "A"):
+                if build.try_place(world, sim.stock, cursor_x, cursor_y):
+                    world.reveal_vision()
+
+        else:
+            if inp.was_pressed(frame, "X"):
+                layer = MapLayer((layer.value + 1) % 3)
+            if inp.was_pressed(frame, "A"):
+                select_x, select_y = cursor_x, cursor_y
+
+        sim.update(dt, world)
 
         camera.update_zoom(dt, "L1" in frame.held, "L2" in frame.held)
         cursor_rate, pan_rate = movement_rates(camera.zoom)
 
-        if inp.was_pressed(frame, "X"):
-            layer = MapLayer((layer.value + 1) % 3)
+        if not policy.block_cursor:
+            lx_h, lx_p = _axis_active(frame.held, frame.pressed, LJOY_LEFT, "DPAD_LEFT")
+            rx_h, rx_p = _axis_active(frame.held, frame.pressed, LJOY_RIGHT, "DPAD_RIGHT")
+            uy_h, uy_p = _axis_active(frame.held, frame.pressed, LJOY_UP, "DPAD_UP")
+            dy_h, dy_p = _axis_active(frame.held, frame.pressed, LJOY_DOWN, "DPAD_DOWN")
 
-        lx_h, lx_p = _axis_active(frame.held, frame.pressed, LJOY_LEFT, "DPAD_LEFT")
-        rx_h, rx_p = _axis_active(frame.held, frame.pressed, LJOY_RIGHT, "DPAD_RIGHT")
-        uy_h, uy_p = _axis_active(frame.held, frame.pressed, LJOY_UP, "DPAD_UP")
-        dy_h, dy_p = _axis_active(frame.held, frame.pressed, LJOY_DOWN, "DPAD_DOWN")
+            cursor_x, cursor_acc_x = _step_cursor_axis(
+                cursor_x, cursor_acc_x, lx_h, rx_h, lx_p, rx_p, cursor_rate, dt
+            )
+            cursor_y, cursor_acc_y = _step_cursor_axis(
+                cursor_y, cursor_acc_y, uy_h, dy_h, uy_p, dy_p, cursor_rate, dt
+            )
+            cursor_x, cursor_y = camera.clamp_cursor(
+                cursor_x,
+                cursor_y,
+                mrect.x,
+                mrect.y,
+                mrect.w,
+                mrect.h,
+                cam_bounds,
+                world.size,
+            )
 
-        cursor_x, cursor_acc_x = _step_cursor_axis(
-            cursor_x, cursor_acc_x, lx_h, rx_h, lx_p, rx_p, cursor_rate, dt
-        )
-        cursor_y, cursor_acc_y = _step_cursor_axis(
-            cursor_y, cursor_acc_y, uy_h, dy_h, uy_p, dy_p, cursor_rate, dt
-        )
-        cursor_x, cursor_y = camera.clamp_cursor(
-            cursor_x,
-            cursor_y,
-            mrect.x,
-            mrect.y,
-            mrect.w,
-            mrect.h,
-            cam_bounds,
-            world.size,
-        )
-
-        pdx, pdy = inp.pan_delta(frame)
-        if pdx or pdy:
-            camera.pan(pdx * pan_rate * dt, pdy * pan_rate * dt, cam_bounds)
-
-        if inp.was_pressed(frame, "A"):
-            select_x, select_y = cursor_x, cursor_y
+        if not policy.block_camera_pan:
+            pdx, pdy = inp.pan_delta(frame)
+            if pdx or pdy:
+                camera.pan(pdx * pan_rate * dt, pdy * pan_rate * dt, cam_bounds)
 
         camera.keep_tile_visible(
             cursor_x,
@@ -185,15 +214,23 @@ def run() -> int:
         )
 
         screen.fill((0, 0, 0))
-        tiles_drawn = draw_map(screen, world, camera, layer, cursor_x, cursor_y)
+        tiles_drawn = draw_map(screen, world, sim, camera, layer, cursor_x, cursor_y)
         draw_top_bar(screen, font, font_sm, sim)
         draw_panel(screen, font, font_sm, world, sim, select_x, select_y, layer)
 
+        if build.mode == BuildMode.MENU:
+            help_text = t("help.build_menu")
+        elif build.mode == BuildMode.PLACE:
+            help_text = t("help.build_place")
+        elif select_x is not None:
+            help_text = t("help.selected")
+        else:
+            help_text = t("help.default")
+
         if not dev_mode:
-            help_text = t("help.selected") if select_x is not None else t("help.default")
             draw_bottom_bar(screen, font_sm, help_text)
         else:
-            draw_bottom_bar(screen, font_sm, t("help.default"))
+            draw_bottom_bar(screen, font_sm, help_text)
             draw_dev_debug(
                 screen,
                 font_sm,

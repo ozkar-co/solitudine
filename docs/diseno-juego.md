@@ -75,8 +75,13 @@ el espacio de los modulos es exclusivo, las conexiones si pueden compartir una v
 |------|-------|
 | 0 | Depurador de input; mando R36S sin gptokeyb; nombres semánticos en `gamepad.py` |
 | — | Runtime pygame-ce, deploy PortMaster, modo dev con teclado |
+| 1 | Mapa 1024², cámara, cursor, panel, capas terreno/agua/recursos |
+| 2a | Simulación: día 48 s, reservas hábitat (O₂, E, agua, comida), consumo horario |
+| 2b | Construcción: componentes, cable manual, panel solar, radar; red desde hábitat |
 
 **Input estándar del juego:** `A`, `B`, `X`, `Y`, `L1`–`R2`, `SELECT`, `START`, `FN`, `DPAD_*`, `LJOY_*`, `RJOY_*`.
+
+**Controles construcción:** `B` menú (pausa) → elegir → `A` colocar → trazar cable tile a tile con `A`.
 
 ---
 
@@ -289,5 +294,36 @@ Inicialmente en español, pero de una vez creemos el soporte multilingue haciend
 ## 14. Notas libres
 
 Pienso que la partida guardada se puede llevar en SQLite y asi cada partida es un archivo db independiente.
+
+---
+
+## 15. Fase 2 — decisiones de construcción (cerradas)
+
+### Materiales
+
+- [x] Un solo tipo al inicio: **Componentes** (reserva inicial 30 en el hábitat).
+- [ ] Futuro: subprocesos (metales → componentes, tipos especializados).
+
+### Construcciones MVP
+
+| Pieza | Coste | Tiempo | Notas |
+|-------|-------|--------|-------|
+| Cable | 1 / tile | Instantáneo | Trazado manual, solo suelo despejado |
+| Panel solar | 8 | 1 día | +4 E/día si en línea |
+| Radar | 12 | 1.5 días | −1 E/h; visión clara 16, neblina 24 |
+
+### Red y estados
+
+- [x] Red = hábitat + cables + módulos contiguos (BFS ortogonal).
+- [x] Construcción solo requiere **componentes + suelo despejado** (sin esperar cable).
+- [x] Módulo terminado sin cable: **Desconectado** (inactivo); con cable: **En línea**.
+- [x] Solo suelo despejado (módulos y cables); aplanado/roca → fases futuras.
+
+### Radar y subsuelo
+
+- [x] Radio 16: terreno claro + **depósitos visibles** en capa Recursos.
+- [x] Radio 17–24: neblina (explorado pero difuso).
+- [x] Hábitat y otros módulos no revelan subsuelo en capa Recursos.
+- [x] Depósitos generados: agua y carbono bajo suelo.
 
 

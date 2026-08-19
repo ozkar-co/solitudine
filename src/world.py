@@ -1,15 +1,17 @@
-"""Mapa, terreno y visibilidad."""
+"""Mapa, terreno, visibilidad y módulos."""
 
 from __future__ import annotations
 
 import random
 from dataclasses import dataclass, field
-from enum import IntEnum
+from enum import IntEnum, auto
 
 from config import (
     HABITAT_X,
     HABITAT_Y,
     INITIAL_VISION_RADIUS,
+    RADAR_VISION_CLEAR,
+    RADAR_VISION_FOG,
     WORLD_SEED,
     WORLD_SIZE,
 )
@@ -21,20 +23,38 @@ class Tile(IntEnum):
     ROCK = 2
 
 
+class Deposit(IntEnum):
+    NONE = 0
+    WATER = 1
+    CARBON = 2
+
+
+class ModuleState(IntEnum):
+    WAITING = 0
+    BUILDING = 1
+    OFFLINE = 2
+    ONLINE = 3
+
+
 @dataclass
 class Module:
     kind: str
     x: int
     y: int
+    state: ModuleState = ModuleState.ONLINE
+    build_progress: float = 0.0
+    build_total: float = 0.0
 
 
 @dataclass
 class World:
     tiles: list[int]
+    deposits: list[int]
     explored: bytearray
     visible: bytearray
     modules: list[Module] = field(default_factory=list)
     module_cells: dict[tuple[int, int], Module] = field(default_factory=dict)
+    cables: set[tuple[int, int]] = field(default_factory=set)
     size: int = WORLD_SIZE
     expl_min_x: int = WORLD_SIZE
     expl_min_y: int = WORLD_SIZE
@@ -54,16 +74,45 @@ class World:
             return None
         return Tile(self.tiles[self.idx(x, y)])
 
+    def deposit_at(self, x: int, y: int) -> Deposit | None:
+        if not self.in_bounds(x, y):
+            return None
+        return Deposit(self.deposits[self.idx(x, y)])
+
     def module_at(self, x: int, y: int) -> Module | None:
         return self.module_cells.get((x, y))
+
+    def radar_scan_at(self, x: int, y: int) -> bool:
+        """Subsuelo visible: dentro del radio claro de un radar activo."""
+        for mod in self.modules:
+            if mod.kind != "radar" or mod.state != ModuleState.ONLINE:
+                continue
+            if _dist2(x, y, mod.x, mod.y) <= RADAR_VISION_CLEAR * RADAR_VISION_CLEAR:
+                return True
+        return False
+
+    def radar_fog_at(self, x: int, y: int) -> bool:
+        """Neblina de radar: anillo exterior (16–24) de un radar activo."""
+        for mod in self.modules:
+            if mod.kind != "radar" or mod.state != ModuleState.ONLINE:
+                continue
+            d2 = _dist2(x, y, mod.x, mod.y)
+            clear_r2 = RADAR_VISION_CLEAR * RADAR_VISION_CLEAR
+            fog_r2 = RADAR_VISION_FOG * RADAR_VISION_FOG
+            if clear_r2 < d2 <= fog_r2:
+                return True
+        return False
 
     def reveal_vision(self) -> None:
         self.visible[:] = b"\x00" * (self.size * self.size)
         for mod in self.modules:
-            self._stamp_circle(mod.x, mod.y, INITIAL_VISION_RADIUS, self.visible)
+            if mod.kind == "habitat":
+                self._stamp_circle(mod.x, mod.y, INITIAL_VISION_RADIUS, self.visible)
+            elif mod.kind == "radar" and mod.state == ModuleState.ONLINE:
+                self._stamp_circle(mod.x, mod.y, RADAR_VISION_FOG, self.explored)
+                self._stamp_circle(mod.x, mod.y, RADAR_VISION_FOG, self.visible)
 
     def camera_bounds(self, margin: int) -> tuple[int, int, int, int]:
-        """Límites de cámara — O(1), sin escanear el mapa entero."""
         if self.expl_max_x < self.expl_min_x:
             r = INITIAL_VISION_RADIUS + margin
             return (
@@ -99,6 +148,10 @@ class World:
                         self._touch_explored(x, y)
 
 
+def _dist2(x1: int, y1: int, x2: int, y2: int) -> int:
+    return (x1 - x2) ** 2 + (y1 - y2) ** 2
+
+
 def _seed_int(text: str) -> int:
     h = 0
     for ch in text:
@@ -111,6 +164,7 @@ def generate_world(seed: str = WORLD_SEED) -> World:
     size = WORLD_SIZE
     n = size * size
     tiles = [Tile.GROUND] * n
+    deposits = [Deposit.NONE] * n
     explored = bytearray(n)
     visible = bytearray(n)
 
@@ -118,8 +172,12 @@ def generate_world(seed: str = WORLD_SEED) -> World:
         _paint_blob(tiles, size, rng, Tile.WATER, blob_r=rng.randint(4, 11))
     for _ in range(40):
         _paint_blob(tiles, size, rng, Tile.ROCK, blob_r=rng.randint(3, 8))
+    for _ in range(45):
+        _paint_deposit(deposits, tiles, size, rng, Deposit.WATER, blob_r=rng.randint(3, 9))
+    for _ in range(35):
+        _paint_deposit(deposits, tiles, size, rng, Deposit.CARBON, blob_r=rng.randint(3, 8))
 
-    world = World(tiles=tiles, explored=explored, visible=visible, size=size)
+    world = World(tiles=tiles, deposits=deposits, explored=explored, visible=visible, size=size)
     hab = Module("habitat", HABITAT_X, HABITAT_Y)
     world.modules.append(hab)
     world.module_cells[(HABITAT_X, HABITAT_Y)] = hab
@@ -148,3 +206,24 @@ def _paint_blob(
             i = y * size + x
             if tiles[i] == Tile.GROUND:
                 tiles[i] = kind
+
+
+def _paint_deposit(
+    deposits: list[int],
+    tiles: list[int],
+    size: int,
+    rng: random.Random,
+    kind: Deposit,
+    blob_r: int,
+) -> None:
+    cx = rng.randint(blob_r, size - blob_r - 1)
+    cy = rng.randint(blob_r, size - blob_r - 1)
+    r2 = blob_r * blob_r
+    for dy in range(-blob_r, blob_r + 1):
+        for dx in range(-blob_r, blob_r + 1):
+            if dx * dx + dy * dy > r2:
+                continue
+            x, y = cx + dx, cy + dy
+            i = y * size + x
+            if tiles[i] == Tile.GROUND and deposits[i] == Deposit.NONE:
+                deposits[i] = kind

@@ -51,3 +51,22 @@ HABITAT_FOOD_START = HABITAT_FOOD_DAILY * 6
 # Umbrales de alerta (días de reserva restantes)
 ALERT_WARNING_DAYS = 3.0
 ALERT_CRITICAL_DAYS = 1.0
+
+# Materiales de construcción (fase 2)
+INITIAL_COMPONENTS = 30.0
+COST_CABLE = 1.0
+COST_SOLAR = 8.0
+COST_RADAR = 12.0
+
+BUILD_DAYS_SOLAR = 1.0
+BUILD_DAYS_RADAR = 1.5
+
+# Producción / consumo de módulos
+SOLAR_POWER_DAILY = 4.0
+SOLAR_HOUR_START = 6
+SOLAR_HOUR_END = 18
+RADAR_POWER_DAILY = 24.0  # 1 E/h × 24 h
+
+# Visión — hábitat vs radar
+RADAR_VISION_CLEAR = 16
+RADAR_VISION_FOG = 24
