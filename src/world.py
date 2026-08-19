@@ -4,14 +4,13 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass, field
-from enum import IntEnum, auto
+from enum import IntEnum
 
 from config import (
     HABITAT_X,
     HABITAT_Y,
     INITIAL_VISION_RADIUS,
     RADAR_VISION_CLEAR,
-    RADAR_VISION_FOG,
     WORLD_SEED,
     WORLD_SIZE,
 )
@@ -83,34 +82,17 @@ class World:
         return self.module_cells.get((x, y))
 
     def radar_scan_at(self, x: int, y: int) -> bool:
-        """Subsuelo visible: dentro del radio claro de un radar activo."""
+        r2 = RADAR_VISION_CLEAR * RADAR_VISION_CLEAR
         for mod in self.modules:
-            if mod.kind != "radar" or mod.state != ModuleState.ONLINE:
-                continue
-            if _dist2(x, y, mod.x, mod.y) <= RADAR_VISION_CLEAR * RADAR_VISION_CLEAR:
-                return True
-        return False
-
-    def radar_fog_at(self, x: int, y: int) -> bool:
-        """Neblina de radar: anillo exterior (16–24) de un radar activo."""
-        for mod in self.modules:
-            if mod.kind != "radar" or mod.state != ModuleState.ONLINE:
-                continue
-            d2 = _dist2(x, y, mod.x, mod.y)
-            clear_r2 = RADAR_VISION_CLEAR * RADAR_VISION_CLEAR
-            fog_r2 = RADAR_VISION_FOG * RADAR_VISION_FOG
-            if clear_r2 < d2 <= fog_r2:
-                return True
+            if mod.kind == "radar" and mod.state == ModuleState.ONLINE:
+                if (x - mod.x) ** 2 + (y - mod.y) ** 2 <= r2:
+                    return True
         return False
 
     def reveal_vision(self) -> None:
-        self.visible[:] = b"\x00" * (self.size * self.size)
-        for mod in self.modules:
-            if mod.kind == "habitat":
-                self._stamp_circle(mod.x, mod.y, INITIAL_VISION_RADIUS, self.visible)
-            elif mod.kind == "radar" and mod.state == ModuleState.ONLINE:
-                self._stamp_circle(mod.x, mod.y, RADAR_VISION_FOG, self.explored)
-                self._stamp_circle(mod.x, mod.y, RADAR_VISION_FOG, self.visible)
+        from vision import apply_vision
+
+        apply_vision(self)
 
     def camera_bounds(self, margin: int) -> tuple[int, int, int, int]:
         if self.expl_max_x < self.expl_min_x:
@@ -134,8 +116,10 @@ class World:
         self.expl_max_x = max(self.expl_max_x, x)
         self.expl_max_y = max(self.expl_max_y, y)
 
-    def _stamp_circle(self, cx: int, cy: int, radius: int, mask: bytearray) -> None:
+    def _stamp_disc(self, mask: bytearray, cx: int, cy: int, radius: int) -> None:
         track = mask is self.explored
+        if radius <= 0:
+            return
         r2 = radius * radius
         for dy in range(-radius, radius + 1):
             for dx in range(-radius, radius + 1):
@@ -146,10 +130,6 @@ class World:
                     mask[self.idx(x, y)] = 1
                     if track:
                         self._touch_explored(x, y)
-
-
-def _dist2(x1: int, y1: int, x2: int, y2: int) -> int:
-    return (x1 - x2) ** 2 + (y1 - y2) ** 2
 
 
 def _seed_int(text: str) -> int:
@@ -183,7 +163,6 @@ def generate_world(seed: str = WORLD_SEED) -> World:
     world.module_cells[(HABITAT_X, HABITAT_Y)] = hab
     tiles[world.idx(HABITAT_X, HABITAT_Y)] = Tile.GROUND
 
-    world._stamp_circle(HABITAT_X, HABITAT_Y, INITIAL_VISION_RADIUS, explored)
     world.reveal_vision()
     return world
 

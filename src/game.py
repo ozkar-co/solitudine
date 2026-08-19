@@ -152,9 +152,9 @@ def run() -> int:
                 build.back_to_menu()
 
         if build.mode == BuildMode.MENU:
-            if inp.was_pressed(frame, "DPAD_UP"):
+            if inp.was_pressed(frame, "DPAD_UP") or inp.was_pressed(frame, LJOY_UP):
                 build.menu_up()
-            if inp.was_pressed(frame, "DPAD_DOWN"):
+            if inp.was_pressed(frame, "DPAD_DOWN") or inp.was_pressed(frame, LJOY_DOWN):
                 build.menu_down()
             if inp.was_pressed(frame, "A"):
                 build.enter_place()

@@ -46,10 +46,10 @@
   "build.components": "Componentes: {value}",
   "build.cost": "Coste: {value}",
   "build.time": "Tiempo: {days}d",
-  "build.hint_menu": "DPAD=elige A=colocar B=atras",
+  "build.hint_menu": "LJOY/DPAD=elige A=colocar B=atras",
   "build.hint_place": "A=confirmar B=menu",
   "help.default": "LJOY=cursor B=constr X=capa",
   "help.selected": "A=inspeccionar B=atras",
-  "help.build_menu": "DPAD=elige A=colocar B=salir",
+  "help.build_menu": "LJOY/DPAD=elige A=colocar B=salir",
   "help.build_place": "A=confirmar B=menu"
 }

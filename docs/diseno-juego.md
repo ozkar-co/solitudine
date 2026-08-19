@@ -315,9 +315,9 @@ Pienso que la partida guardada se puede llevar en SQLite y asi cada partida es u
 ### Red y estados
 
 - [x] Red = hábitat + cables + módulos contiguos (BFS ortogonal).
-- [x] Construcción solo requiere **componentes + suelo despejado** (sin esperar cable).
-- [x] Módulo terminado sin cable: **Desconectado** (inactivo); con cable: **En línea**.
-- [x] Solo suelo despejado (módulos y cables); aplanado/roca → fases futuras.
+- [x] Construcción requiere **componentes + suelo despejado**; avanza solo si hay cable a la red.
+- [x] Módulo terminado sin cable: **Desconectado** (inactivo).
+- [x] Visión fusionada por fuente (unión): hábitat 16+2 sombra, cable 1+1, solar 4, radar 16+24.
 
 ### Radar y subsuelo
 

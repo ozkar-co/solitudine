@@ -67,6 +67,10 @@ SOLAR_HOUR_START = 6
 SOLAR_HOUR_END = 18
 RADAR_POWER_DAILY = 24.0  # 1 E/h × 24 h
 
-# Visión — hábitat vs radar
+# Visión por nodo — se fusionan (unión), no se sobreescriben
+HABITAT_SHADOW_BORDER = 2
+CABLE_VISION = 1
+CABLE_SHADOW = 1
+SOLAR_VISION = 4
 RADAR_VISION_CLEAR = 16
 RADAR_VISION_FOG = 24

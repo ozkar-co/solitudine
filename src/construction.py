@@ -13,7 +13,7 @@ from config import (
     COST_SOLAR,
 )
 from materials import Stockpile
-from network import compute_connected
+from network import compute_connected, is_adjacent_to_network
 from world import Module, ModuleState, Tile, World
 
 
@@ -144,12 +144,13 @@ class BuildController:
 
         mod_kind = module_kind_for(self.selected)
         build_days = kind_build_days(self.selected)
+        tile_connected = is_adjacent_to_network(x, y, connected)
 
         mod = Module(
             kind=mod_kind,
             x=x,
             y=y,
-            state=ModuleState.BUILDING,
+            state=ModuleState.BUILDING if tile_connected else ModuleState.WAITING,
             build_progress=0.0,
             build_total=build_days,
         )
@@ -159,12 +160,18 @@ class BuildController:
 
     def _refresh_connection_states(self, world: World, connected: set[tuple[int, int]]) -> None:
         for mod in world.modules:
-            if mod.kind == "habitat" or mod.state == ModuleState.BUILDING:
+            if mod.kind == "habitat":
                 continue
-            mod.state = ModuleState.ONLINE if (mod.x, mod.y) in connected else ModuleState.OFFLINE
+            if mod.state == ModuleState.WAITING and is_adjacent_to_network(mod.x, mod.y, connected):
+                mod.state = ModuleState.BUILDING
+            elif mod.state == ModuleState.BUILDING and not is_adjacent_to_network(mod.x, mod.y, connected):
+                mod.state = ModuleState.WAITING
+            elif mod.state in (ModuleState.ONLINE, ModuleState.OFFLINE):
+                mod.state = ModuleState.ONLINE if (mod.x, mod.y) in connected else ModuleState.OFFLINE
 
     def update_sites(self, world: World, dt_days: float) -> None:
         connected = compute_connected(world)
+        self._refresh_connection_states(world, connected)
         for mod in world.modules:
             if mod.kind == "habitat":
                 continue
@@ -172,4 +179,3 @@ class BuildController:
                 mod.build_progress = min(mod.build_total, mod.build_progress + dt_days)
                 if mod.build_progress >= mod.build_total:
                     mod.state = ModuleState.ONLINE if (mod.x, mod.y) in connected else ModuleState.OFFLINE
-        self._refresh_connection_states(world, connected)

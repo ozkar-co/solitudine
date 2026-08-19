@@ -171,10 +171,45 @@ def _draw_module(surf: pygame.Surface, tile_rect: pygame.Rect, mod) -> None:
         pygame.draw.rect(surf, COL_CRITICAL, inner, 2)
 
 
-def _draw_cable(surf: pygame.Surface, tile_rect: pygame.Rect) -> None:
-    pad = max(3, tile_rect.w // 3)
-    inner = tile_rect.inflate(-pad, -pad)
-    pygame.draw.rect(surf, COL_CABLE, inner)
+def _draw_cables(
+    surf: pygame.Surface,
+    world: World,
+    camera,
+    rect: pygame.Rect,
+    px: float,
+    x0: int,
+    y0: int,
+    x1: int,
+    y1: int,
+) -> None:
+    nodes = set(world.cables)
+    nodes.update((m.x, m.y) for m in world.modules)
+    drawn: set[tuple[tuple[int, int], tuple[int, int]]] = set()
+    width = max(1, int(px / 4))
+
+    for ty in range(y0, y1):
+        for tx in range(x0, x1):
+            if (tx, ty) not in world.cables:
+                continue
+            sx, sy = camera.tile_to_screen(tx, ty, rect.x, rect.y, rect.w, rect.h)
+            cx = sx + px / 2
+            cy = sy + px / 2
+            for dx, dy in ((0, -1), (0, 1), (-1, 0), (1, 0)):
+                nx, ny = tx + dx, ty + dy
+                if (nx, ny) not in nodes:
+                    continue
+                edge = ((tx, ty), (nx, ny)) if (tx, ty) < (nx, ny) else ((nx, ny), (tx, ty))
+                if edge in drawn:
+                    continue
+                drawn.add(edge)
+                nsx, nsy = camera.tile_to_screen(nx, ny, rect.x, rect.y, rect.w, rect.h)
+                pygame.draw.line(
+                    surf,
+                    COL_CABLE,
+                    (cx, cy),
+                    (nsx + px / 2, nsy + px / 2),
+                    width,
+                )
 
 
 def draw_map(
@@ -222,16 +257,21 @@ def draw_map(
 
             if not world.visible[i]:
                 color = COL_FOG
-            elif world.radar_fog_at(tx, ty):
-                color = tuple((c + f) // 2 for c, f in zip(color, COL_FOG))
 
             pygame.draw.rect(surf, color, tile_rect)
 
-            if (tx, ty) in world.cables:
-                _draw_cable(surf, tile_rect)
+    _draw_cables(surf, world, camera, rect, px, x0, y0, x1, y1)
 
+    for ty in range(y0, y1):
+        for tx in range(x0, x1):
+            if not world.explored[world.idx(tx, ty)]:
+                continue
+            sx, sy = camera.tile_to_screen(tx, ty, rect.x, rect.y, rect.w, rect.h)
+            tile_rect = _tile_draw_rect(sx, sy, px)
+            if not rect.colliderect(tile_rect):
+                continue
             mod = world.module_at(tx, ty)
-            if mod and world.visible[i]:
+            if mod:
                 _draw_module(surf, tile_rect, mod)
 
     build = sim.build
