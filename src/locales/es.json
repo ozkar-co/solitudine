@@ -16,9 +16,17 @@
   "panel.type": "Tipo: {type}",
   "panel.module": "Modulo: {name}",
   "panel.status": "Estado: {status}",
+  "panel.resource": "{name}: {value} ({days}d)",
+  "resource.o2": "O2",
+  "resource.power": "Energia",
+  "resource.water": "Agua",
+  "resource.food": "Comida",
   "hud.day": "Dia {day}",
+  "hud.hour": "{hour}h",
   "hud.o2": "O2: {value}",
   "hud.power": "E: {value}",
+  "alert.warning": "Reservas bajas",
+  "alert.critical": "Reservas criticas",
   "help.default": "LJOY=cursor RJOY=cam L1/L2=zoom A=sel X=capa",
   "help.selected": "A=inspeccionar B=atras"
 }

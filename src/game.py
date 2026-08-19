@@ -1,4 +1,4 @@
-"""Bucle principal fase 1."""
+"""Bucle principal — mapa, simulación y UI."""
 
 from __future__ import annotations
 
@@ -28,6 +28,7 @@ from ui import (
     draw_top_bar,
     map_rect,
 )
+from simulation import Simulation
 from world import generate_world
 
 
@@ -114,7 +115,7 @@ def run() -> int:
     select_x: int | None = None
     select_y: int | None = None
     layer = MapLayer.TERRAIN
-    day = 1
+    sim = Simulation()
     cam_bounds = world.camera_bounds(CAMERA_MARGIN)
     mrect = map_rect()
     cursor_acc_x = 0.0
@@ -135,6 +136,8 @@ def run() -> int:
         if Input.quit_held(frame):
             pygame.quit()
             return 0
+
+        sim.update(dt)
 
         camera.update_zoom(dt, "L1" in frame.held, "L2" in frame.held)
         cursor_rate, pan_rate = movement_rates(camera.zoom)
@@ -183,8 +186,8 @@ def run() -> int:
 
         screen.fill((0, 0, 0))
         tiles_drawn = draw_map(screen, world, camera, layer, cursor_x, cursor_y)
-        draw_top_bar(screen, font, font_sm, day)
-        draw_panel(screen, font, font_sm, world, select_x, select_y, layer)
+        draw_top_bar(screen, font, font_sm, sim)
+        draw_panel(screen, font, font_sm, world, sim, select_x, select_y, layer)
 
         if not dev_mode:
             help_text = t("help.selected") if select_x is not None else t("help.default")
