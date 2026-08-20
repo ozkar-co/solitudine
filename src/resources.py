@@ -118,6 +118,12 @@ class ResourcePool:
     def add_food(self, amount: float) -> None:
         self.food += amount
 
+    def clamp_to(self, o2_cap: float, power_cap: float, water_cap: float, food_cap: float) -> None:
+        self.o2 = min(self.o2, o2_cap)
+        self.power = min(self.power, power_cap)
+        self.water = min(self.water, water_cap)
+        self.food = min(self.food, food_cap)
+
     def check_death(self) -> str | None:
         if self.o2 <= 0:
             return "death.o2"

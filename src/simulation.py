@@ -4,24 +4,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from config import (
-    EXTRACTOR_POWER_DAILY,
-    EXTRACTOR_WATER_DAILY,
-    GREENHOUSE_FOOD_DAILY,
-    GREENHOUSE_POWER_DAILY,
-    GREENHOUSE_WATER_DAILY,
-    HOURS_PER_DAY,
-    RADAR_POWER_DAILY,
-    SECONDS_PER_DAY,
-    SOLAR_HOUR_END,
-    SOLAR_HOUR_START,
-    SOLAR_POWER_DAILY,
-)
+from config import HOURS_PER_DAY, SECONDS_PER_DAY
 from construction import BuildController
+from logistics import apply_modules_dt
 from materials import Stockpile
-from module_flow import module_has_water_source
 from resources import ResourcePool
-from world import ModuleState, World
+from world import World
 
 
 @dataclass
@@ -42,32 +30,6 @@ class Simulation:
     def _hour_float(self) -> float:
         return self.day_progress * HOURS_PER_DAY
 
-    def _solar_active(self) -> bool:
-        h = self._hour_float()
-        return SOLAR_HOUR_START <= h < SOLAR_HOUR_END
-
-    def _apply_modules_dt(self, dt: float, world: World) -> None:
-        scale = dt / SECONDS_PER_DAY
-        if self._solar_active():
-            solar_rate = SOLAR_POWER_DAILY * scale
-            for mod in world.modules:
-                if mod.kind == "solar" and mod.state == ModuleState.ONLINE:
-                    self.resources.add_power(solar_rate)
-        for mod in world.modules:
-            if mod.state != ModuleState.ONLINE:
-                continue
-            if mod.kind == "radar":
-                self.resources.power = max(
-                    0.0, self.resources.power - RADAR_POWER_DAILY * scale
-                )
-            elif mod.kind == "extractor" and module_has_water_source(world, mod):
-                self.resources.power = max(0.0, self.resources.power - EXTRACTOR_POWER_DAILY * scale)
-                self.resources.add_water(EXTRACTOR_WATER_DAILY * scale)
-            elif mod.kind == "greenhouse":
-                self.resources.power = max(0.0, self.resources.power - GREENHOUSE_POWER_DAILY * scale)
-                self.resources.add_water(-GREENHOUSE_WATER_DAILY * scale)
-                self.resources.add_food(GREENHOUSE_FOOD_DAILY * scale)
-
     def update(self, dt: float, world: World) -> None:
         if self.paused or self.game_over:
             return
@@ -77,7 +39,7 @@ class Simulation:
             self.day_progress -= 1.0
             self.day += 1
         self.resources.consume_dt(dt)
-        self._apply_modules_dt(dt, world)
+        apply_modules_dt(world, self, dt, SECONDS_PER_DAY, self._hour_float())
         self.build.update_sites(world, dt_days)
         cause = self.resources.check_death()
         if cause:

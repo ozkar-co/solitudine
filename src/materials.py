@@ -1,4 +1,4 @@
-"""Materiales de construcción (stock del hábitat)."""
+"""Materiales de construcción (stock del hábitat / red)."""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ from config import INITIAL_COMPONENTS
 @dataclass
 class Stockpile:
     components: float = INITIAL_COMPONENTS
+    mineral: float = 0.0
 
     def can_afford(self, cost: float) -> bool:
         return self.components >= cost

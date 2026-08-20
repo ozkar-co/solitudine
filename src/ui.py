@@ -7,7 +7,20 @@ from enum import Enum
 
 import pygame
 
-from config import BOTTOM_BAR_H, PANEL_W, SCREEN_H, SCREEN_W, TOP_BAR_H
+from config import (
+    BOTTOM_BAR_H,
+    HABITAT_COMPONENTS_CAP,
+    HABITAT_FOOD_CAP,
+    HABITAT_MINERAL_CAP,
+    HABITAT_O2_CAP,
+    HABITAT_POWER_CAP,
+    HABITAT_WATER_CAP,
+    PANEL_W,
+    SCREEN_H,
+    SCREEN_W,
+    STORAGE_NETWORK_BONUS,
+    TOP_BAR_H,
+)
 from construction import (
     BUILD_KINDS,
     BuildKind,
@@ -16,8 +29,10 @@ from construction import (
     kind_cost,
 )
 from i18n import t
+from logistics import storage_bonus
 from module_flow import module_flow_lines
 from module_power import format_energy_daily, module_energy_daily
+from network import compute_connected
 from resources import AlertLevel, ResourceId
 from simulation import Simulation
 from world import Deposit, ModuleState, Tile, World
@@ -35,6 +50,9 @@ COL_SOLAR = (255, 140, 40)
 COL_RADAR = (80, 220, 220)
 COL_EXTRACTOR = (60, 150, 230)
 COL_GREENHOUSE = (90, 200, 70)
+COL_MINE = (140, 110, 75)
+COL_FABRICATOR = (200, 120, 180)
+COL_STORAGE = (170, 170, 90)
 COL_CABLE = (255, 230, 80)
 COL_FOG = (20, 32, 24)
 COL_PREVIEW_OK = (120, 255, 160)
@@ -48,7 +66,7 @@ TILE_COLORS = {
 
 DEPOSIT_OVERLAY = {
     Deposit.WATER: (40, 90, 160),
-    Deposit.CARBON: (75, 58, 42),
+    Deposit.MINERAL: (120, 95, 55),
 }
 
 MODULE_COLORS = {
@@ -57,6 +75,9 @@ MODULE_COLORS = {
     "radar": COL_RADAR,
     "extractor": COL_EXTRACTOR,
     "greenhouse": COL_GREENHOUSE,
+    "mine": COL_MINE,
+    "fabricator": COL_FABRICATOR,
+    "storage": COL_STORAGE,
 }
 
 
@@ -157,6 +178,10 @@ def _panel_flow_line(key: str, value: float) -> str:
     return t(key, value=f"{value:.1f}")
 
 
+def _network_bonus(world: World) -> float:
+    return storage_bonus(world, compute_connected(world))
+
+
 def _draw_module_inspection(
     surf: pygame.Surface,
     font_sm: pygame.font.Font,
@@ -169,8 +194,26 @@ def _draw_module_inspection(
     y += 16
     _panel_line(surf, font_sm, x, y, _panel_energy_line(mod))
     y += 16
-    for key, value in module_flow_lines(mod, world):
-        _panel_line(surf, font_sm, x, y, _panel_flow_line(key, value))
+    if mod.kind == "storage":
+        _panel_line(surf, font_sm, x, y, t("panel.storage_bonus", value=_format_amount(STORAGE_NETWORK_BONUS)))
+        y += 16
+    else:
+        for key, value in module_flow_lines(mod, world):
+            _panel_line(surf, font_sm, x, y, _panel_flow_line(key, value))
+            y += 16
+    if mod.buffer_cap > 0:
+        _panel_line(
+            surf,
+            font_sm,
+            x,
+            y,
+            t("panel.buffer", value=_format_amount(mod.buffer), cap=_format_amount(mod.buffer_cap)),
+        )
+        y += 16
+    if mod.kind in ("extractor", "mine"):
+        dep = Deposit.WATER if mod.kind == "extractor" else Deposit.MINERAL
+        total = world.patch_deposit_total(mod.x, mod.y, dep)
+        _panel_line(surf, font_sm, x, y, t("panel.patch_reserve", value=_format_amount(total)), COL_DIM)
         y += 16
     if mod.state == ModuleState.BUILDING and mod.build_total > 0:
         pct = 100.0 * mod.build_progress / mod.build_total
@@ -371,7 +414,10 @@ def _build_kind_label(kind: BuildKind) -> str:
         BuildKind.SOLAR: t("build.solar"),
         BuildKind.RADAR: t("build.radar"),
         BuildKind.EXTRACTOR: t("build.extractor"),
+        BuildKind.MINE: t("build.mine"),
+        BuildKind.FABRICATOR: t("build.fabricator"),
         BuildKind.GREENHOUSE: t("build.greenhouse"),
+        BuildKind.STORAGE: t("build.storage"),
     }[kind]
 
 
@@ -453,7 +499,7 @@ def draw_panel(
         if mod.kind == "habitat":
             _panel_line(surf, font_sm, rect.x + 8, y, _panel_energy_line(mod))
             y += 16
-            _draw_habitat_resources(surf, font_sm, rect, y, sim)
+            _draw_habitat_resources(surf, font_sm, rect, y, sim, world)
         else:
             _draw_module_inspection(surf, font_sm, rect.x + 8, y, mod, world)
         return
@@ -466,12 +512,35 @@ def draw_panel(
             Tile.ROCK: t("tile.rock"),
         }
         _panel_line(surf, font_sm, rect.x + 8, y, t("panel.type", type=names[tile]))
+        y += 16
+        if tile == Tile.WATER:
+            amt = world.deposit_amount_at(sel_x, sel_y)
+            if amt > 0:
+                _panel_line(
+                    surf,
+                    font_sm,
+                    rect.x + 8,
+                    y,
+                    t("panel.deposit_amount", value=_format_amount(amt)),
+                    COL_DIM,
+                )
         if layer == MapLayer.RESOURCES and world.radar_scan_at(sel_x, sel_y):
             y += 16
             dep = world.deposit_at(sel_x, sel_y)
             if dep and dep != Deposit.NONE:
-                dep_name = t("deposit.water") if dep == Deposit.WATER else t("deposit.carbon")
+                dep_name = t("deposit.water") if dep == Deposit.WATER else t("deposit.mineral")
                 _panel_line(surf, font_sm, rect.x + 8, y, t("panel.deposit", name=dep_name))
+                y += 16
+                amt = world.deposit_amount_at(sel_x, sel_y)
+                if amt > 0:
+                    _panel_line(
+                        surf,
+                        font_sm,
+                        rect.x + 8,
+                        y,
+                        t("panel.deposit_amount", value=_format_amount(amt)),
+                        COL_DIM,
+                    )
 
 
 def _draw_build_menu(
@@ -495,7 +564,7 @@ def _draw_build_menu(
         line = f"{prefix} {label} ({cost})"
         color = COL_TEXT if i == build.menu_index else COL_DIM
         _panel_line(surf, font_sm, rect.x + 8, y, line, color)
-        y += 18
+        y += 15
 
     y += 6
     _panel_line(surf, font_sm, rect.x + 8, y, t("build.hint_menu"), COL_DIM)
@@ -537,19 +606,45 @@ def _draw_habitat_resources(
     rect: pygame.Rect,
     y: int,
     sim: Simulation,
+    world: World,
 ) -> None:
+    bonus = _network_bonus(world)
     labels = {
         ResourceId.O2: t("resource.o2"),
         ResourceId.POWER: t("resource.power"),
         ResourceId.WATER: t("resource.water"),
         ResourceId.FOOD: t("resource.food"),
     }
+    caps = {
+        ResourceId.O2: HABITAT_O2_CAP + bonus,
+        ResourceId.POWER: HABITAT_POWER_CAP + bonus,
+        ResourceId.WATER: HABITAT_WATER_CAP + bonus,
+        ResourceId.FOOD: HABITAT_FOOD_CAP + bonus,
+    }
     for resource in ResourceId:
         amount = _format_amount(sim.resources.amount(resource))
+        cap = _format_amount(caps[resource])
         days_s = _format_days(sim.resources.days_left(resource))
-        line = t("panel.resource", name=labels[resource], value=amount, days=days_s)
+        line = t("panel.resource_cap", name=labels[resource], value=amount, cap=cap, days=days_s)
         _panel_line(surf, font_sm, rect.x + 8, y, line, _alert_color(sim.resources.alert_level(resource)))
         y += 16
+
+    line = t(
+        "panel.material_cap",
+        name=t("resource.mineral"),
+        value=_format_amount(sim.stock.mineral),
+        cap=_format_amount(HABITAT_MINERAL_CAP + bonus),
+    )
+    _panel_line(surf, font_sm, rect.x + 8, y, line, COL_DIM)
+    y += 16
+    line = t(
+        "panel.material_cap",
+        name=t("resource.components"),
+        value=_format_amount(sim.stock.components),
+        cap=_format_amount(HABITAT_COMPONENTS_CAP + bonus),
+    )
+    _panel_line(surf, font_sm, rect.x + 8, y, line, COL_DIM)
+    y += 16
 
     worst = sim.resources.worst_alert()
     if worst != AlertLevel.OK:

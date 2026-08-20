@@ -79,6 +79,7 @@ el espacio de los modulos es exclusivo, las conexiones si pueden compartir una v
 | 2a | Simulación: día 48 s, reservas hábitat (O₂, E, agua, comida), consumo continuo |
 | 2b | Construcción: componentes, cable manual, panel solar, radar; red desde hábitat |
 | 2c | Game over simple (O₂ / agua / comida a 0); extractor e invernadero; reservas starter cerca del hábitat |
+| 3 | Buffers por módulo, depósitos finitos, mina → fabricador → componentes, almacén amplía caps de red |
 
 **Input estándar del juego:** `A`, `B`, `X`, `Y`, `L1`–`R2`, `SELECT`, `START`, `FN`, `DPAD_*`, `LJOY_*`, `RJOY_*`.
 
@@ -189,7 +190,7 @@ Totalmente oscuro lo no explorado, con sombra lo inactivo, el modulo tiene un ra
 - [x] Drones/sondas/radar consumen energía y revelan tiles + yacimientos.
 en la version inicial solo radares que muestran una zona y ya.
 - [x] ¿Recursos solo en tiles descubiertos?
-si, solo tiles explorados pueden mostrar los recursos que tienen, en la version inicial solo hay agua y carbon, a medida que se añadan recursos pueden requerir sondas especializadas para ver los niveles.
+si, solo tiles explorados pueden mostrar los recursos que tienen, en la version inicial solo hay agua y mineral, a medida que se añadan recursos pueden requerir sondas especializadas para ver los niveles.
 
 ### 8.8 Investigación
 
@@ -302,18 +303,29 @@ Pienso que la partida guardada se puede llevar en SQLite y asi cada partida es u
 
 ### Materiales
 
-- [x] Un solo tipo al inicio: **Componentes** (reserva inicial 30 en el hábitat).
-- [ ] Futuro: subprocesos (metales → componentes, tipos especializados).
+- [x] Un solo tipo al inicio: **Componentes** (reserva inicial 30 en el hábitat — equipaje del astronauta).
+- [x] **Mineral** extraído de depósitos finitos; **fabricador** convierte mineral + energía → componentes.
+- [ ] Futuro: subprocesos (tipos especializados de mineral y componentes).
 
 ### Construcciones MVP
 
 | Pieza | Coste | Tiempo | Notas |
 |-------|-------|--------|-------|
 | Cable | 1 / tile | Instantáneo | Trazado manual, solo suelo despejado |
-| Panel solar | 8 | 1 día | +4 E/día si en línea |
-| Radar | 12 | 1.5 días | −1 E/h; visión clara 16, neblina 24 |
-| Extractor de agua | 10 | 1 día | Sobre agua o depósito subterráneo; +12 agua/d, −2 E/d |
-| Invernadero | 10 | 1.5 días | +10 comida/d, −4 agua/d, −3 E/d |
+| Panel solar | 5 | 1 día | +4 E/día si en línea |
+| Radar | 10 | 1.5 días | −1 E/h; visión clara 16, neblina 24 |
+| Extractor de agua | 6 | 1 día | 3×3; +12 agua/d, −2 E/d; agota agua subterránea |
+| Invernadero | 8 | 1.5 días | +10 comida/d, −4 agua/d, −3 E/d |
+| Mina | 4 | 1.5 días | Extrae mineral en 3×3; agota depósitos; buffer 10 |
+| Fabricador | 6 | 2 días | −6 mineral/d → +4 Cmp/d; buffer 10 |
+| Almacén | 5 | 1 día | +40 cap de red por recurso |
+
+### Depósitos y extracción
+
+- [x] Depósitos **finitos** por tile (agua subterránea, mineral, **lagos superficiales**); al agotarse el lago se seca (suelo).
+- [x] Extractores (agua/mineral) operan sobre **3×3** (módulo en el centro).
+- [x] Cada productor: buffer local **10 u.**; producción se detiene al llenar buffer o red.
+- [x] Red logística única (cable): comparte energía, fluidos y sólidos; caps base en hábitat + bonus almacén.
 
 ### Red y estados
 
@@ -327,7 +339,7 @@ Pienso que la partida guardada se puede llevar en SQLite y asi cada partida es u
 - [x] Radio 16: terreno claro + **depósitos visibles** en capa Recursos.
 - [x] Radio 17–24: neblina (explorado pero difuso).
 - [x] Hábitat y otros módulos no revelan subsuelo en capa Recursos.
-- [x] Depósitos generados: agua y carbono bajo suelo.
+- [x] Depósitos generados: agua y **mineral** bajo suelo (cantidad finita por tile).
 - [x] Parches garantizados cerca del hábitat (agua superficial + depósitos starter).
 
 ### Game over

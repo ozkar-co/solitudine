@@ -7,36 +7,49 @@ from enum import Enum, auto
 
 from config import (
     BUILD_DAYS_EXTRACTOR,
+    BUILD_DAYS_FABRICATOR,
     BUILD_DAYS_GREENHOUSE,
+    BUILD_DAYS_MINE,
     BUILD_DAYS_RADAR,
     BUILD_DAYS_SOLAR,
+    BUILD_DAYS_STORAGE,
     COST_CABLE,
     COST_EXTRACTOR,
+    COST_FABRICATOR,
     COST_GREENHOUSE,
+    COST_MINE,
     COST_RADAR,
     COST_SOLAR,
+    COST_STORAGE,
+    MODULE_BUFFER_CAP,
 )
-from world import Deposit
+from logistics import patch_has_deposit
 from materials import Stockpile
 from network import compute_connected, is_adjacent_to_network
 from vision import on_cable_added, on_module_built, on_module_online_changed
-from world import Module, ModuleState, Tile, World
+from world import Deposit, Module, ModuleState, Tile, World
 
 
 class BuildKind(Enum):
     CABLE = auto()
     SOLAR = auto()
-    RADAR = auto()
     EXTRACTOR = auto()
+    MINE = auto()
+    FABRICATOR = auto()
     GREENHOUSE = auto()
+    STORAGE = auto()
+    RADAR = auto()
 
 
 BUILD_KINDS = (
     BuildKind.CABLE,
     BuildKind.SOLAR,
-    BuildKind.RADAR,
     BuildKind.EXTRACTOR,
+    BuildKind.MINE,
+    BuildKind.FABRICATOR,
     BuildKind.GREENHOUSE,
+    BuildKind.STORAGE,
+    BuildKind.RADAR,
 )
 
 
@@ -53,6 +66,9 @@ def kind_cost(kind: BuildKind) -> float:
         BuildKind.RADAR: COST_RADAR,
         BuildKind.EXTRACTOR: COST_EXTRACTOR,
         BuildKind.GREENHOUSE: COST_GREENHOUSE,
+        BuildKind.MINE: COST_MINE,
+        BuildKind.FABRICATOR: COST_FABRICATOR,
+        BuildKind.STORAGE: COST_STORAGE,
     }[kind]
 
 
@@ -63,6 +79,9 @@ def kind_build_days(kind: BuildKind) -> float:
         BuildKind.RADAR: BUILD_DAYS_RADAR,
         BuildKind.EXTRACTOR: BUILD_DAYS_EXTRACTOR,
         BuildKind.GREENHOUSE: BUILD_DAYS_GREENHOUSE,
+        BuildKind.MINE: BUILD_DAYS_MINE,
+        BuildKind.FABRICATOR: BUILD_DAYS_FABRICATOR,
+        BuildKind.STORAGE: BUILD_DAYS_STORAGE,
     }[kind]
 
 
@@ -72,14 +91,16 @@ def module_kind_for(build: BuildKind) -> str:
         BuildKind.RADAR: "radar",
         BuildKind.EXTRACTOR: "extractor",
         BuildKind.GREENHOUSE: "greenhouse",
+        BuildKind.MINE: "mine",
+        BuildKind.FABRICATOR: "fabricator",
+        BuildKind.STORAGE: "storage",
     }[build]
 
 
-def tile_has_water_source(world: World, x: int, y: int) -> bool:
-    i = world.idx(x, y)
-    if world.tiles[i] == Tile.WATER:
-        return True
-    return world.tiles[i] == Tile.GROUND and Deposit(world.deposits[i]) == Deposit.WATER
+def module_buffer_cap(kind: str) -> float:
+    if kind == "storage":
+        return 0.0
+    return MODULE_BUFFER_CAP
 
 
 @dataclass
@@ -131,7 +152,11 @@ class BuildController:
             return False
         tile = Tile(world.tiles[world.idx(x, y)])
         if kind == BuildKind.EXTRACTOR:
-            return tile_has_water_source(world, x, y)
+            return patch_has_deposit(world, x, y, Deposit.WATER)
+        if kind == BuildKind.MINE:
+            return tile == Tile.GROUND and patch_has_deposit(world, x, y, Deposit.MINERAL)
+        if kind == BuildKind.CABLE:
+            return tile == Tile.GROUND
         return tile == Tile.GROUND
 
     def _can_extend_cable(self, world: World, x: int, y: int, connected: set[tuple[int, int]]) -> bool:
@@ -187,6 +212,7 @@ class BuildController:
             state=ModuleState.BUILDING if tile_connected else ModuleState.WAITING,
             build_progress=0.0,
             build_total=build_days,
+            buffer_cap=module_buffer_cap(mod_kind),
         )
         world.modules.append(mod)
         world.module_cells[(x, y)] = mod

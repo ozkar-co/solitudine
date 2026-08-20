@@ -10,8 +10,9 @@ Documentación: [docs/diseno-juego.md](docs/diseno-juego.md) (diseño actual) ·
 |------|--------|-------------|
 | **0** | **Hecho** | Input mando (`LJOY_*`, `DPAD_*`, …) |
 | **1** | **Hecho** | Mapa + cámara + cursor + panel + capas |
-| **2** | **Actual** | Simulación (día 48 s, recursos), construcción, game over |
-| 3+ | Pendiente | Eventos, investigación, finales |
+| **2** | **Hecho** | Simulación, construcción, supervivencia, game over |
+| **3** | **Actual** | Buffers, depósitos finitos, mina, fabricador, almacén |
+| 4+ | Pendiente | Eventos, investigación, finales |
 
 ## Requisitos (desarrollo en PC)
 

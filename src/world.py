@@ -12,15 +12,21 @@ from config import (
     HABITAT_Y,
     INITIAL_VISION_RADIUS,
     RADAR_VISION_CLEAR,
-    STARTER_DEP_CARBON_R,
-    STARTER_DEP_CARBON_X,
-    STARTER_DEP_CARBON_Y,
+    STARTER_DEP_MINERAL_R,
+    STARTER_DEP_MINERAL_X,
+    STARTER_DEP_MINERAL_Y,
+    STARTER_DEPOSIT_MULTIPLIER,
+    DEPOSIT_MINERAL_PER_TILE,
+    DEPOSIT_WATER_PER_TILE,
+    EXTRACTOR_PATCH_RADIUS,
+    MODULE_BUFFER_CAP,
     STARTER_DEP_WATER_R,
     STARTER_DEP_WATER_X,
     STARTER_DEP_WATER_Y,
     STARTER_WATER_R,
     STARTER_WATER_X,
     STARTER_WATER_Y,
+    SURFACE_WATER_PER_TILE,
     WORLD_SEED,
     WORLD_SIZE,
 )
@@ -35,7 +41,7 @@ class Tile(IntEnum):
 class Deposit(IntEnum):
     NONE = 0
     WATER = 1
-    CARBON = 2
+    MINERAL = 2
 
 
 class ModuleState(IntEnum):
@@ -53,6 +59,8 @@ class Module:
     state: ModuleState = ModuleState.ONLINE
     build_progress: float = 0.0
     build_total: float = 0.0
+    buffer: float = 0.0
+    buffer_cap: float = MODULE_BUFFER_CAP
     shadow_stamped: bool = False
     clear_active: bool = False
 
@@ -61,6 +69,7 @@ class Module:
 class World:
     tiles: list[int]
     deposits: list[int]
+    deposit_amounts: list[float]
     explored: bytearray
     visible: bytearray
     visible_count: array
@@ -90,6 +99,69 @@ class World:
         if not self.in_bounds(x, y):
             return None
         return Deposit(self.deposits[self.idx(x, y)])
+
+    def deposit_amount_at(self, x: int, y: int) -> float:
+        if not self.in_bounds(x, y):
+            return 0.0
+        return self.deposit_amounts[self.idx(x, y)]
+
+    def extract_from_patch(self, cx: int, cy: int, kind: Deposit, amount: float) -> float:
+        """Extrae hasta amount desde 3×3; agota depósitos y lagos."""
+        if amount <= 0:
+            return 0.0
+        extracted = 0.0
+        r = EXTRACTOR_PATCH_RADIUS
+        for dy in range(-r, r + 1):
+            for dx in range(-r, r + 1):
+                if extracted >= amount:
+                    break
+                x, y = cx + dx, cy + dy
+                if not self.in_bounds(x, y):
+                    continue
+                i = self.idx(x, y)
+                need = amount - extracted
+                if kind == Deposit.WATER:
+                    if Tile(self.tiles[i]) == Tile.WATER:
+                        available = self.deposit_amounts[i]
+                        if available <= 0:
+                            continue
+                        take = min(available, need)
+                        self.deposit_amounts[i] -= take
+                        extracted += take
+                        if self.deposit_amounts[i] <= 0:
+                            self.tiles[i] = Tile.GROUND
+                        continue
+                    if Deposit(self.deposits[i]) != Deposit.WATER:
+                        continue
+                elif Deposit(self.deposits[i]) != kind:
+                    continue
+                available = self.deposit_amounts[i]
+                if available <= 0:
+                    continue
+                take = min(available, need)
+                self.deposit_amounts[i] -= take
+                extracted += take
+                if self.deposit_amounts[i] <= 0:
+                    self.deposits[i] = Deposit.NONE
+        return extracted
+
+    def patch_deposit_total(self, cx: int, cy: int, kind: Deposit) -> float:
+        total = 0.0
+        r = EXTRACTOR_PATCH_RADIUS
+        for dy in range(-r, r + 1):
+            for dx in range(-r, r + 1):
+                x, y = cx + dx, cy + dy
+                if not self.in_bounds(x, y):
+                    continue
+                i = self.idx(x, y)
+                if kind == Deposit.WATER:
+                    if Tile(self.tiles[i]) == Tile.WATER:
+                        total += self.deposit_amounts[i]
+                    elif Deposit(self.deposits[i]) == Deposit.WATER:
+                        total += self.deposit_amounts[i]
+                elif Deposit(self.deposits[i]) == kind:
+                    total += self.deposit_amounts[i]
+        return total
 
     def module_at(self, x: int, y: int) -> Module | None:
         return self.module_cells.get((x, y))
@@ -153,25 +225,35 @@ def generate_world(seed: str = WORLD_SEED) -> World:
     n = size * size
     tiles = [Tile.GROUND] * n
     deposits = [Deposit.NONE] * n
+    deposit_amounts = [0.0] * n
     explored = bytearray(n)
     visible = bytearray(n)
 
     for _ in range(55):
-        _paint_blob(tiles, size, rng, Tile.WATER, blob_r=rng.randint(4, 11))
+        _paint_blob(
+            tiles,
+            deposit_amounts,
+            size,
+            rng,
+            Tile.WATER,
+            blob_r=rng.randint(4, 11),
+            amount_per_tile=SURFACE_WATER_PER_TILE,
+        )
     for _ in range(40):
-        _paint_blob(tiles, size, rng, Tile.ROCK, blob_r=rng.randint(3, 8))
+        _paint_blob(tiles, deposit_amounts, size, rng, Tile.ROCK, blob_r=rng.randint(3, 8))
     for _ in range(45):
-        _paint_deposit(deposits, tiles, size, rng, Deposit.WATER, blob_r=rng.randint(3, 9))
+        _paint_deposit(deposits, deposit_amounts, tiles, size, rng, Deposit.WATER, blob_r=rng.randint(3, 9))
     for _ in range(35):
-        _paint_deposit(deposits, tiles, size, rng, Deposit.CARBON, blob_r=rng.randint(3, 8))
+        _paint_deposit(deposits, deposit_amounts, tiles, size, rng, Deposit.MINERAL, blob_r=rng.randint(3, 8))
 
-    _guarantee_starter_patches(tiles, deposits, size)
+    _guarantee_starter_patches(tiles, deposits, deposit_amounts, size)
 
     from vision import init_habitat, make_visible_count
 
     world = World(
         tiles=tiles,
         deposits=deposits,
+        deposit_amounts=deposit_amounts,
         explored=explored,
         visible=visible,
         visible_count=make_visible_count(n),
@@ -188,10 +270,13 @@ def generate_world(seed: str = WORLD_SEED) -> World:
 
 def _paint_blob(
     tiles: list[int],
+    deposit_amounts: list[float],
     size: int,
     rng: random.Random,
     kind: Tile,
     blob_r: int,
+    *,
+    amount_per_tile: float = 0.0,
 ) -> None:
     cx = rng.randint(blob_r, size - blob_r - 1)
     cy = rng.randint(blob_r, size - blob_r - 1)
@@ -204,15 +289,20 @@ def _paint_blob(
             i = y * size + x
             if tiles[i] == Tile.GROUND:
                 tiles[i] = kind
+                if kind == Tile.WATER and amount_per_tile > 0:
+                    deposit_amounts[i] = amount_per_tile * rng.uniform(0.7, 1.3)
 
 
 def _paint_disc_tile(
     tiles: list[int],
+    deposit_amounts: list[float],
     size: int,
     cx: int,
     cy: int,
     radius: int,
     kind: Tile,
+    *,
+    amount_per_tile: float = 0.0,
 ) -> None:
     r2 = radius * radius
     for dy in range(-radius, radius + 1):
@@ -225,16 +315,21 @@ def _paint_disc_tile(
             i = y * size + x
             if tiles[i] != Tile.ROCK:
                 tiles[i] = kind
+                if kind == Tile.WATER and amount_per_tile > 0:
+                    deposit_amounts[i] = amount_per_tile
 
 
 def _paint_disc_deposit(
     deposits: list[int],
+    deposit_amounts: list[float],
     tiles: list[int],
     size: int,
     cx: int,
     cy: int,
     radius: int,
     kind: Deposit,
+    *,
+    amount_per_tile: float,
 ) -> None:
     r2 = radius * radius
     for dy in range(-radius, radius + 1):
@@ -247,37 +342,61 @@ def _paint_disc_deposit(
             i = y * size + x
             if tiles[i] == Tile.GROUND:
                 deposits[i] = kind
+                deposit_amounts[i] = amount_per_tile
 
 
-def _guarantee_starter_patches(tiles: list[int], deposits: list[int], size: int) -> None:
+def _guarantee_starter_patches(
+    tiles: list[int],
+    deposits: list[int],
+    deposit_amounts: list[float],
+    size: int,
+) -> None:
     """Reservas pequeñas cerca del hábitat para arrancar la partida."""
     wx = HABITAT_X + STARTER_WATER_X
     wy = HABITAT_Y + STARTER_WATER_Y
-    _paint_disc_tile(tiles, size, wx, wy, STARTER_WATER_R, Tile.WATER)
+    _paint_disc_tile(
+        tiles,
+        deposit_amounts,
+        size,
+        wx,
+        wy,
+        STARTER_WATER_R,
+        Tile.WATER,
+        amount_per_tile=SURFACE_WATER_PER_TILE * STARTER_DEPOSIT_MULTIPLIER,
+    )
+    starter_amt = DEPOSIT_WATER_PER_TILE * STARTER_DEPOSIT_MULTIPLIER
+    mineral_amt = DEPOSIT_MINERAL_PER_TILE * STARTER_DEPOSIT_MULTIPLIER
     _paint_disc_deposit(
         deposits,
+        deposit_amounts,
         tiles,
         size,
         HABITAT_X + STARTER_DEP_WATER_X,
         HABITAT_Y + STARTER_DEP_WATER_Y,
         STARTER_DEP_WATER_R,
         Deposit.WATER,
+        amount_per_tile=starter_amt,
     )
     _paint_disc_deposit(
         deposits,
+        deposit_amounts,
         tiles,
         size,
-        HABITAT_X + STARTER_DEP_CARBON_X,
-        HABITAT_Y + STARTER_DEP_CARBON_Y,
-        STARTER_DEP_CARBON_R,
-        Deposit.CARBON,
+        HABITAT_X + STARTER_DEP_MINERAL_X,
+        HABITAT_Y + STARTER_DEP_MINERAL_Y,
+        STARTER_DEP_MINERAL_R,
+        Deposit.MINERAL,
+        amount_per_tile=mineral_amt,
     )
     tiles[HABITAT_Y * size + HABITAT_X] = Tile.GROUND
-    deposits[HABITAT_Y * size + HABITAT_X] = Deposit.NONE
+    hi = HABITAT_Y * size + HABITAT_X
+    deposits[hi] = Deposit.NONE
+    deposit_amounts[hi] = 0.0
 
 
 def _paint_deposit(
     deposits: list[int],
+    deposit_amounts: list[float],
     tiles: list[int],
     size: int,
     rng: random.Random,
@@ -286,6 +405,7 @@ def _paint_deposit(
 ) -> None:
     cx = rng.randint(blob_r, size - blob_r - 1)
     cy = rng.randint(blob_r, size - blob_r - 1)
+    per_tile = DEPOSIT_WATER_PER_TILE if kind == Deposit.WATER else DEPOSIT_MINERAL_PER_TILE
     r2 = blob_r * blob_r
     for dy in range(-blob_r, blob_r + 1):
         for dx in range(-blob_r, blob_r + 1):
@@ -295,3 +415,4 @@ def _paint_deposit(
             i = y * size + x
             if tiles[i] == Tile.GROUND and deposits[i] == Deposit.NONE:
                 deposits[i] = kind
+                deposit_amounts[i] = per_tile * rng.uniform(0.7, 1.3)

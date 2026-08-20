@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from config import (
     EXTRACTOR_POWER_DAILY,
+    FABRICATOR_POWER_DAILY,
     GREENHOUSE_POWER_DAILY,
     HABITAT_POWER_DAILY,
+    MINE_POWER_DAILY,
     RADAR_POWER_DAILY,
     SOLAR_POWER_DAILY,
 )
@@ -13,17 +15,22 @@ from world import Module, ModuleState
 
 
 def module_energy_daily(mod: Module) -> float:
-    """Negativo = consume, positivo = produce, 0 = inactivo."""
     if mod.kind == "habitat":
         return -HABITAT_POWER_DAILY
+    if mod.state != ModuleState.ONLINE:
+        return 0.0
     if mod.kind == "radar":
-        return -RADAR_POWER_DAILY if mod.state == ModuleState.ONLINE else 0.0
+        return -RADAR_POWER_DAILY
     if mod.kind == "solar":
-        return SOLAR_POWER_DAILY if mod.state == ModuleState.ONLINE else 0.0
+        return SOLAR_POWER_DAILY
     if mod.kind == "extractor":
-        return -EXTRACTOR_POWER_DAILY if mod.state == ModuleState.ONLINE else 0.0
+        return -EXTRACTOR_POWER_DAILY
     if mod.kind == "greenhouse":
-        return -GREENHOUSE_POWER_DAILY if mod.state == ModuleState.ONLINE else 0.0
+        return -GREENHOUSE_POWER_DAILY
+    if mod.kind == "mine":
+        return -MINE_POWER_DAILY
+    if mod.kind == "fabricator":
+        return -FABRICATOR_POWER_DAILY
     return 0.0
 
 
