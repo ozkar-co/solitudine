@@ -16,17 +16,19 @@ from config import (
     SCREEN_H,
     SCREEN_W,
 )
-from construction import BuildMode
+from construction import BuildKind, BuildMode
 from gamepad import LJOY_DOWN, LJOY_LEFT, LJOY_RIGHT, LJOY_UP
 from i18n import load, t
 from input_state import Input
 from ui import (
     MapLayer,
     draw_bottom_bar,
+    draw_build_modal,
     draw_dev_debug,
     draw_game_over,
     draw_map,
     draw_panel,
+    draw_pause_modal,
     draw_top_bar,
     map_rect,
 )
@@ -153,19 +155,22 @@ def run() -> int:
             return 0
 
         build = sim.build
-        policy = input_policy(build, game_over=sim.game_over)
+        policy = input_policy(build, game_over=sim.game_over, user_paused=sim.user_paused)
         sim.paused = policy.pause_time
+
+        pause_modal = not sim.game_over and sim.user_paused
 
         if sim.game_over:
             if inp.was_pressed(frame, "A"):
                 reset_session()
-        elif inp.was_pressed(frame, "B"):
-            if build.mode == BuildMode.NONE:
+        elif not sim.game_over and inp.was_pressed(frame, "START"):
+            sim.user_paused = not sim.user_paused
+        elif not sim.game_over and inp.was_pressed(frame, "Y"):
+            if build.mode == BuildMode.NONE and not sim.user_paused:
                 build.enter_menu()
-            elif build.mode == BuildMode.MENU:
-                build.exit_menu()
-            elif build.mode == BuildMode.PLACE:
-                build.back_to_menu()
+        elif not sim.game_over and inp.was_pressed(frame, "B"):
+            if build.mode in (BuildMode.MENU, BuildMode.PLACE):
+                build.cancel_build()
 
         if not sim.game_over:
             if build.mode == BuildMode.MENU:
@@ -178,9 +183,11 @@ def run() -> int:
 
             elif build.mode == BuildMode.PLACE:
                 if inp.was_pressed(frame, "A"):
-                    build.try_place(world, sim.stock, cursor_x, cursor_y)
+                    if build.try_place(world, sim.stock, cursor_x, cursor_y):
+                        if build.selected != BuildKind.CABLE:
+                            build.cancel_build()
 
-            else:
+            elif not sim.user_paused:
                 if inp.was_pressed(frame, "X"):
                     layer = (
                         MapLayer.RESOURCES
@@ -192,7 +199,8 @@ def run() -> int:
 
         sim.update(dt, world)
 
-        camera.update_zoom(dt, "L1" in frame.held, "L2" in frame.held)
+        if not policy.block_camera_pan:
+            camera.update_zoom(dt, "L1" in frame.held, "L2" in frame.held)
         cursor_rate, pan_rate = movement_rates(camera.zoom)
 
         if not policy.block_cursor:
@@ -240,6 +248,8 @@ def run() -> int:
 
         if sim.game_over:
             help_text = t("help.game_over")
+        elif sim.user_paused:
+            help_text = t("help.paused")
         elif build.mode == BuildMode.MENU:
             help_text = t("help.build_menu")
         elif build.mode == BuildMode.PLACE:
@@ -267,6 +277,10 @@ def run() -> int:
 
         if sim.game_over:
             draw_game_over(screen, font, font_sm, sim)
+        elif build.mode in (BuildMode.MENU, BuildMode.PLACE):
+            draw_build_modal(screen, font, font_sm, sim)
+        elif pause_modal:
+            draw_pause_modal(screen, font, font_sm, show_hint=True)
 
         pygame.display.flip()
         clock.tick(FPS)

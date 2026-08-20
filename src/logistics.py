@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+from typing import Callable
+
 from config import (
     EXTRACTOR_POWER_DAILY,
     EXTRACTOR_WATER_DAILY,
@@ -20,7 +23,6 @@ from config import (
     HABITAT_WATER_CAP,
     MINE_MINERAL_DAILY,
     MINE_POWER_DAILY,
-    MODULE_BUFFER_CAP,
     RADAR_POWER_DAILY,
     SOLAR_HOUR_END,
     SOLAR_HOUR_START,
@@ -63,8 +65,28 @@ def storage_bonus(world: World, connected: set[tuple[int, int]]) -> float:
     )
 
 
+class SimulationProxy:
+    resources: ResourcePool
+    stock: Stockpile
+
+
+@dataclass
+class _NetworkCaps:
+    o2: float
+    power: float
+    water: float
+    food: float
+    mineral: float
+    components: float
+
+
+@dataclass
+class _PowerJob:
+    power: float
+    run: Callable[[float], None]
+
+
 def _try_add_buffer(mod: Module, amount: float) -> float:
-    """Añade a buffer local; devuelve lo que cupo."""
     if mod.buffer_cap <= 0:
         return amount
     space = mod.buffer_cap - mod.buffer
@@ -75,95 +97,43 @@ def _try_add_buffer(mod: Module, amount: float) -> float:
     return added
 
 
-def _push_water(sim: SimulationProxy, amount: float, cap: float) -> float:
-    space = cap - sim.resources.water
+def _push(pool: float, cap: float, amount: float) -> tuple[float, float]:
+    if amount <= 0:
+        return pool, 0.0
+    space = cap - pool
     if space <= 0:
-        return 0.0
+        return pool, 0.0
     moved = min(space, amount)
-    sim.resources.water += moved
-    return moved
+    return pool + moved, moved
 
 
-def _push_food(sim: SimulationProxy, amount: float, cap: float) -> float:
-    space = cap - sim.resources.food
-    if space <= 0:
-        return 0.0
-    moved = min(space, amount)
-    sim.resources.food += moved
-    return moved
-
-
-def _push_power(sim: SimulationProxy, amount: float, cap: float) -> float:
-    space = cap - sim.resources.power
-    if space <= 0:
-        return 0.0
-    moved = min(space, amount)
-    sim.resources.power += moved
-    return moved
-
-
-def _push_o2(sim: SimulationProxy, amount: float, cap: float) -> float:
-    space = cap - sim.resources.o2
-    if space <= 0:
-        return 0.0
-    moved = min(space, amount)
-    sim.resources.o2 += moved
-    return moved
-
-
-def _push_mineral(stock: Stockpile, amount: float, cap: float) -> float:
-    space = cap - stock.mineral
-    if space <= 0:
-        return 0.0
-    moved = min(space, amount)
-    stock.mineral += moved
-    return moved
-
-
-def _push_components(stock: Stockpile, amount: float, cap: float) -> float:
-    space = cap - stock.components
-    if space <= 0:
-        return 0.0
-    moved = min(space, amount)
-    stock.components += moved
-    return moved
-
-
-class SimulationProxy:
-    """Evita import circular; simulation pasa self."""
-
-    resources: ResourcePool
-    stock: Stockpile
+def _output_space(mod: Module, pool: float, cap: float) -> float:
+    local = max(0.0, mod.buffer_cap - mod.buffer) if mod.buffer_cap > 0 else 0.0
+    return local + max(0.0, cap - pool)
 
 
 def flush_module_buffers(
     world: World,
     sim: SimulationProxy,
     connected: set[tuple[int, int]],
+    caps: _NetworkCaps,
 ) -> None:
-    bonus = storage_bonus(world, connected)
-    water_cap = HABITAT_WATER_CAP + bonus
-    food_cap = HABITAT_FOOD_CAP + bonus
-    power_cap = HABITAT_POWER_CAP + bonus
-    mineral_cap = HABITAT_MINERAL_CAP + bonus
-    components_cap = HABITAT_COMPONENTS_CAP + bonus
-
     for mod in world.modules:
         if mod.state != ModuleState.ONLINE or (mod.x, mod.y) not in connected:
             continue
         if mod.buffer <= 0:
             continue
         if mod.kind == "extractor":
-            moved = _push_water(sim, mod.buffer, water_cap)
+            sim.resources.water, moved = _push(sim.resources.water, caps.water, mod.buffer)
             mod.buffer -= moved
         elif mod.kind == "greenhouse":
-            moved = _push_food(sim, mod.buffer, food_cap)
+            sim.resources.food, moved = _push(sim.resources.food, caps.food, mod.buffer)
             mod.buffer -= moved
         elif mod.kind == "mine":
-            moved = _push_mineral(sim.stock, mod.buffer, mineral_cap)
+            sim.stock.mineral, moved = _push(sim.stock.mineral, caps.mineral, mod.buffer)
             mod.buffer -= moved
         elif mod.kind == "fabricator":
-            moved = _push_components(sim.stock, mod.buffer, components_cap)
+            sim.stock.components, moved = _push(sim.stock.components, caps.components, mod.buffer)
             mod.buffer -= moved
 
 
@@ -177,83 +147,147 @@ def apply_modules_dt(
     scale = dt / seconds_per_day
     connected = compute_connected(world)
     bonus = storage_bonus(world, connected)
-    water_cap = HABITAT_WATER_CAP + bonus
-    food_cap = HABITAT_FOOD_CAP + bonus
-    power_cap = HABITAT_POWER_CAP + bonus
-    o2_cap = HABITAT_O2_CAP + bonus
-    mineral_cap = HABITAT_MINERAL_CAP + bonus
-    components_cap = HABITAT_COMPONENTS_CAP + bonus
+    caps = _NetworkCaps(
+        o2=HABITAT_O2_CAP + bonus,
+        power=HABITAT_POWER_CAP + bonus,
+        water=HABITAT_WATER_CAP + bonus,
+        food=HABITAT_FOOD_CAP + bonus,
+        mineral=HABITAT_MINERAL_CAP + bonus,
+        components=HABITAT_COMPONENTS_CAP + bonus,
+    )
 
     solar_active = SOLAR_HOUR_START <= hour_float < SOLAR_HOUR_END
+    jobs: list[_PowerJob] = []
+
+    if solar_active:
+        for mod in world.modules:
+            if (
+                mod.kind == "solar"
+                and mod.state == ModuleState.ONLINE
+                and (mod.x, mod.y) in connected
+                and sim.resources.power < caps.power
+            ):
+                sim.resources.power, _ = _push(
+                    sim.resources.power,
+                    caps.power,
+                    SOLAR_POWER_DAILY * scale,
+                )
 
     for mod in world.modules:
         if mod.state != ModuleState.ONLINE or (mod.x, mod.y) not in connected:
             continue
 
         if mod.kind == "radar":
-            sim.resources.power = max(0.0, sim.resources.power - RADAR_POWER_DAILY * scale)
+            jobs.append(_PowerJob(RADAR_POWER_DAILY * scale, lambda _f: None))
+            continue
 
-        elif mod.kind == "solar" and solar_active:
-            if sim.resources.power < power_cap:
-                _push_power(sim, SOLAR_POWER_DAILY * scale, power_cap)
+        if mod.kind == "extractor":
+            space = _output_space(mod, sim.resources.water, caps.water)
+            if space <= 0:
+                continue
 
-        elif mod.kind == "extractor":
-            if mod.buffer >= mod.buffer_cap and sim.resources.water >= water_cap:
-                continue
-            want = EXTRACTOR_WATER_DAILY * scale
-            extracted = world.extract_from_patch(mod.x, mod.y, Deposit.WATER, want)
-            if extracted <= 0:
-                continue
-            sim.resources.power = max(0.0, sim.resources.power - EXTRACTOR_POWER_DAILY * scale)
-            produced = _try_add_buffer(mod, extracted)
-            if produced < extracted:
-                _push_water(sim, extracted - produced, water_cap)
+            def _run_extractor(f: float, m=mod, sp=space) -> None:
+                if f <= 0:
+                    return
+                want = min(EXTRACTOR_WATER_DAILY * scale * f, sp)
+                extracted = world.extract_from_patch(m.x, m.y, Deposit.WATER, want)
+                if extracted <= 0:
+                    return
+                in_buf = _try_add_buffer(m, extracted)
+                overflow = extracted - in_buf
+                if overflow > 0:
+                    sim.resources.water, _ = _push(sim.resources.water, caps.water, overflow)
 
-        elif mod.kind == "mine":
-            if mod.buffer >= mod.buffer_cap and sim.stock.mineral >= mineral_cap:
-                continue
-            want = MINE_MINERAL_DAILY * scale
-            extracted = world.extract_from_patch(mod.x, mod.y, Deposit.MINERAL, want)
-            if extracted <= 0:
-                continue
-            sim.resources.power = max(0.0, sim.resources.power - MINE_POWER_DAILY * scale)
-            produced = _try_add_buffer(mod, extracted)
-            if produced < extracted:
-                _push_mineral(sim.stock, extracted - produced, mineral_cap)
+            jobs.append(_PowerJob(EXTRACTOR_POWER_DAILY * scale, _run_extractor))
+            continue
 
-        elif mod.kind == "greenhouse":
-            if mod.buffer >= mod.buffer_cap and sim.resources.food >= food_cap:
+        if mod.kind == "mine":
+            space = _output_space(mod, sim.stock.mineral, caps.mineral)
+            if space <= 0:
                 continue
-            want = GREENHOUSE_FOOD_DAILY * scale
-            water_need = GREENHOUSE_WATER_DAILY * scale
-            if sim.resources.water < water_need:
-                continue
-            sim.resources.water -= water_need
-            sim.resources.power = max(0.0, sim.resources.power - GREENHOUSE_POWER_DAILY * scale)
-            produced = _try_add_buffer(mod, want)
-            if produced < want:
-                _push_food(sim, want - produced, food_cap)
-            _push_o2(sim, GREENHOUSE_O2_DAILY * scale, o2_cap)
 
-        elif mod.kind == "fabricator":
-            if mod.buffer >= mod.buffer_cap and sim.stock.components >= components_cap:
-                continue
-            want = FABRICATOR_COMPONENTS_DAILY * scale
-            mineral_need = FABRICATOR_MINERAL_DAILY * scale
-            if sim.stock.mineral < mineral_need:
-                continue
-            sim.stock.mineral -= mineral_need
-            sim.resources.power = max(0.0, sim.resources.power - FABRICATOR_POWER_DAILY * scale)
-            produced = _try_add_buffer(mod, want)
-            if produced < want:
-                _push_components(sim.stock, want - produced, components_cap)
+            def _run_mine(f: float, m=mod, sp=space) -> None:
+                if f <= 0:
+                    return
+                want = min(MINE_MINERAL_DAILY * scale * f, sp)
+                extracted = world.extract_from_patch(m.x, m.y, Deposit.MINERAL, want)
+                if extracted <= 0:
+                    return
+                in_buf = _try_add_buffer(m, extracted)
+                overflow = extracted - in_buf
+                if overflow > 0:
+                    sim.stock.mineral, _ = _push(sim.stock.mineral, caps.mineral, overflow)
 
-    flush_module_buffers(world, sim, connected)
+            jobs.append(_PowerJob(MINE_POWER_DAILY * scale, _run_mine))
+            continue
 
-    # Clamp pools to caps
-    sim.resources.o2 = min(sim.resources.o2, HABITAT_O2_CAP + bonus)
-    sim.resources.power = min(sim.resources.power, power_cap)
-    sim.resources.water = min(sim.resources.water, water_cap)
-    sim.resources.food = min(sim.resources.food, food_cap)
-    sim.stock.mineral = min(sim.stock.mineral, mineral_cap)
-    sim.stock.components = min(sim.stock.components, components_cap)
+        if mod.kind == "greenhouse":
+            food_space = _output_space(mod, sim.resources.food, caps.food)
+            o2_space = max(0.0, caps.o2 - sim.resources.o2)
+            can_food = food_space > 0 and sim.resources.water > 0
+            can_o2 = o2_space > 0
+            if not can_food and not can_o2:
+                continue
+            power = GREENHOUSE_POWER_DAILY * scale if can_food else GREENHOUSE_POWER_DAILY * scale * 0.25
+
+            def _run_greenhouse(f: float, m=mod, fs=food_space, os_=o2_space, cf=can_food) -> None:
+                if f <= 0:
+                    return
+                if os_ > 0:
+                    o2_amt = min(GREENHOUSE_O2_DAILY * scale * f, os_)
+                    sim.resources.o2, _ = _push(sim.resources.o2, caps.o2, o2_amt)
+                if not cf:
+                    return
+                water_need = GREENHOUSE_WATER_DAILY * scale * f
+                if sim.resources.water < water_need:
+                    f *= sim.resources.water / water_need if water_need > 0 else 0.0
+                    water_need = GREENHOUSE_WATER_DAILY * scale * f
+                if f <= 0 or water_need <= 0:
+                    return
+                sim.resources.water -= water_need
+                food_amt = min(GREENHOUSE_FOOD_DAILY * scale * f, fs)
+                in_buf = _try_add_buffer(m, food_amt)
+                overflow = food_amt - in_buf
+                if overflow > 0:
+                    sim.resources.food, _ = _push(sim.resources.food, caps.food, overflow)
+
+            jobs.append(_PowerJob(power, _run_greenhouse))
+            continue
+
+        if mod.kind == "fabricator":
+            space = _output_space(mod, sim.stock.components, caps.components)
+            if space <= 0 or sim.stock.mineral <= 0:
+                continue
+
+            def _run_fabricator(f: float, m=mod, sp=space) -> None:
+                if f <= 0:
+                    return
+                mineral_need = FABRICATOR_MINERAL_DAILY * scale * f
+                mineral_use = min(mineral_need, sim.stock.mineral)
+                if mineral_use <= 0:
+                    return
+                ratio = mineral_use / (FABRICATOR_MINERAL_DAILY * scale) if scale > 0 else 0.0
+                sim.stock.mineral -= mineral_use
+                cmp_amt = min(FABRICATOR_COMPONENTS_DAILY * scale * ratio, sp)
+                in_buf = _try_add_buffer(m, cmp_amt)
+                overflow = cmp_amt - in_buf
+                if overflow > 0:
+                    sim.stock.components, _ = _push(sim.stock.components, caps.components, overflow)
+
+            jobs.append(_PowerJob(FABRICATOR_POWER_DAILY * scale, _run_fabricator))
+
+    total_power = sum(j.power for j in jobs)
+    if total_power > 0:
+        factor = min(1.0, sim.resources.power / total_power)
+        sim.resources.power = max(0.0, sim.resources.power - total_power * factor)
+        for job in jobs:
+            job.run(factor)
+
+    flush_module_buffers(world, sim, connected, caps)
+
+    sim.resources.o2 = min(sim.resources.o2, caps.o2)
+    sim.resources.power = min(sim.resources.power, caps.power)
+    sim.resources.water = min(sim.resources.water, caps.water)
+    sim.resources.food = min(sim.resources.food, caps.food)
+    sim.stock.mineral = min(sim.stock.mineral, caps.mineral)
+    sim.stock.components = min(sim.stock.components, caps.components)

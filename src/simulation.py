@@ -20,6 +20,7 @@ class Simulation:
     stock: Stockpile = field(default_factory=Stockpile)
     build: BuildController = field(default_factory=BuildController)
     paused: bool = False
+    user_paused: bool = False
     game_over: bool = False
     death_cause: str = ""
 
@@ -38,8 +39,8 @@ class Simulation:
         while self.day_progress >= 1.0:
             self.day_progress -= 1.0
             self.day += 1
-        self.resources.consume_dt(dt)
         apply_modules_dt(world, self, dt, SECONDS_PER_DAY, self._hour_float())
+        self.resources.consume_astronaut_dt(dt)
         self.build.update_sites(world, dt_days)
         cause = self.resources.check_death()
         if cause:

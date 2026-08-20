@@ -139,10 +139,12 @@ class BuildController:
         self.mode = BuildMode.PLACE
         self.cable_chain.clear()
 
+    def cancel_build(self) -> None:
+        self.mode = BuildMode.NONE
+        self.cable_chain.clear()
+
     def back_to_menu(self) -> None:
-        if self.mode == BuildMode.PLACE:
-            self.mode = BuildMode.MENU
-            self.cable_chain.clear()
+        self.cancel_build()
 
     def can_place_tile(self, world: World, x: int, y: int, kind: BuildKind | None = None) -> bool:
         if not world.in_bounds(x, y):

@@ -14,11 +14,14 @@ class InputPolicy:
     pause_time: bool = False
 
 
-def input_policy(build: BuildController, *, game_over: bool = False) -> InputPolicy:
-    if game_over:
+def input_policy(
+    build: BuildController,
+    *,
+    game_over: bool = False,
+    user_paused: bool = False,
+) -> InputPolicy:
+    if game_over or user_paused:
         return InputPolicy(block_cursor=True, block_camera_pan=True, pause_time=True)
     if build.mode == BuildMode.MENU:
-        return InputPolicy(block_cursor=True, block_camera_pan=True, pause_time=True)
-    if build.mode == BuildMode.PLACE:
-        return InputPolicy(pause_time=True)
+        return InputPolicy(block_cursor=True, block_camera_pan=True, pause_time=False)
     return InputPolicy()

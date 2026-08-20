@@ -6,7 +6,6 @@ from config import (
     EXTRACTOR_POWER_DAILY,
     FABRICATOR_POWER_DAILY,
     GREENHOUSE_POWER_DAILY,
-    HABITAT_POWER_DAILY,
     MINE_POWER_DAILY,
     RADAR_POWER_DAILY,
     SOLAR_POWER_DAILY,
@@ -16,7 +15,7 @@ from world import Module, ModuleState
 
 def module_energy_daily(mod: Module) -> float:
     if mod.kind == "habitat":
-        return -HABITAT_POWER_DAILY
+        return 0.0
     if mod.state != ModuleState.ONLINE:
         return 0.0
     if mod.kind == "radar":

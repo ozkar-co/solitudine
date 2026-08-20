@@ -80,10 +80,22 @@ el espacio de los modulos es exclusivo, las conexiones si pueden compartir una v
 | 2b | Construcción: componentes, cable manual, panel solar, radar; red desde hábitat |
 | 2c | Game over simple (O₂ / agua / comida a 0); extractor e invernadero; reservas starter cerca del hábitat |
 | 3 | Buffers por módulo, depósitos finitos, mina → fabricador → componentes, almacén amplía caps de red |
+| 3b | Logística proporcional (E), O₂ independiente del invernadero, construcción sin pausa, panel sin gastos ocultos |
 
 **Input estándar del juego:** `A`, `B`, `X`, `Y`, `L1`–`R2`, `SELECT`, `START`, `FN`, `DPAD_*`, `LJOY_*`, `RJOY_*`.
 
-**Controles construcción:** `B` menú (pausa) → elegir → `A` colocar → trazar cable tile a tile con `A`.
+| Botón | Acción |
+|-------|--------|
+| `LJOY` / `DPAD` | Cursor en mapa |
+| `RJOY` | Pan de cámara |
+| `L1` / `L2` | Zoom out / in |
+| `A` | Inspeccionar tile / confirmar colocación |
+| `B` | Cancelar construcción (solo en menú o colocar) |
+| `X` | Capa **Terreno** ↔ **Recursos** |
+| `Y` | Menú de construcción (modal sobre el mapa) |
+| `START` | Pausa / continuar |
+
+**Controles construcción:** `Y` abre menú modal sobre el mapa (el tiempo sigue) → elegir → `A` colocar → `B` cancela. Tras colocar un módulo vuelves al modo normal; el cable sigue en modo colocar tile a tile con `A`. El panel lateral sigue mostrando inspección durante la construcción.
 
 ---
 
@@ -94,25 +106,27 @@ el espacio de los modulos es exclusivo, las conexiones si pueden compartir una v
 │ [barra estado: O2, energía, alertas]        │
 ├──────────────────┬──────────────────────────┤
 │                  │  Panel lateral           │
-│   MAPA           │  · módulo seleccionado   │
-│   (scroll)       │  · producción / desgaste │
-│   módulos        │  · acciones (A=confirm)  │
-│   líneas         │  · log reciente          │
-│   terreno        │                          │
+│   MAPA           │  · inspección (siempre)  │
+│   (scroll)       │  · flujos por módulo     │
+│   módulos        │  · reservas hábitat      │
+│   líneas         │                          │
+│   terreno        │  (menú construcción =    │
+│                  │   modal centrado en mapa)│
 ├──────────────────┴──────────────────────────┤
 │ [ayuda contextual / modo actual]            │
 └─────────────────────────────────────────────┘
 ```
 
-**Controles candidatos** *(marca lo que prefieras)*:
+**Controles (implementados):**
 
-- [x] `LJOY` y cruceta: mover cursor o cámara ( si llega al borde mueve la camara)
+- [x] `LJOY` y cruceta: mover cursor (al borde mueve la cámara)
 - [x] `RJOY`: mover cámara
-- [x] `A`: seleccionar / confirmar
-- [x] `B`: cancelar / menú atrás
+- [x] `A`: seleccionar tile / confirmar colocación
+- [x] `B`: cancelar construcción (menú o colocar)
 - [x] `X`: alternar capa **Terreno** ↔ **Recursos** (overlay semitransparente de depósitos en tiles explorados)
-- [x] `Y`: quick repair/quick action
-- [x] `L1`/`L2`: mapa zoom in y zoom out
+- [x] `Y`: menú de construcción (modal sobre el mapa)
+- [x] `START`: pausa / continuar
+- [x] `L1`/`L2`: mapa zoom out / in
 
 ---
 
@@ -124,7 +138,7 @@ el espacio de los modulos es exclusivo, las conexiones si pueden compartir una v
 4. **Expandir** cuando la red estable lo permita.
 5. **Automatizar** vía investigación para no repetir pasos 1–3 en esa categoría.
 
-*Tiempo:* ¿real pausable, ticks por turno, o días con botón “avanzar”? → el tiempo se puede pausar, se pausa automaticamente mientras se dan las ordenes, se diseña lo que se va a construir y eso, el tiempo no se va a poder adelantar (excepto en modo dev para debug) transcurre al ritmo que debe transcurrir balancearemos los tiempos de espera y de construccion para que no sean aburridos.
+*Tiempo:* ¿real pausable, ticks por turno, o días con botón “avanzar”? → `START` pausa el juego; la construcción **no** pausa el tiempo (menú modal sobre el mapa). El tiempo no se adelanta (salvo modo dev).
 
 ---
 
@@ -244,7 +258,7 @@ el transporte es automatico, mientras esten conectados en la misma red logistica
 ### Ritmo
 
 6. ¿Tiempo real pausable, turnos, o días discretos?
-el tiempo se pausa mientras se planifica una construccion y puede pausarse el juego general, pero de resto va andando solo y se contabilizan los dias de 48 segundos (dos segundos por hora)
+el tiempo se pausa solo con `START`; planificar construcción no detiene la simulación. Días de 48 s (2 s por hora).
 7. ¿Eventos scripted (tormenta día 5) o solo sistemas emergentes?
 inicialmente los eventos estan definidos (scripted) pero luego se añadiran eventos aleatorios asociados al RNG del juego.
 
@@ -332,7 +346,11 @@ Pienso que la partida guardada se puede llevar en SQLite y asi cada partida es u
 - [x] Extractores (agua/mineral) operan sobre **3×3** (módulo en el centro).
 - [x] Cada productor con buffer: buffer local **10 u.** (extractor, mina, invernadero, fabricador).
 - [x] **Sin buffer** (red directa): panel solar, radar, almacén, hábitat.
-- [x] Producción se detiene al llenar buffer o cap de red.
+- [x] Producción se detiene al llenar buffer o cap de red (tampoco gasta energía).
+- [x] Energía repartida proporcionalmente si hay déficit (factor = reserva / demanda total).
+- [x] Por tick: módulos producen → astronauta consume O₂/agua/comida → game over.
+- [x] Invernadero sigue produciendo O₂ aunque comida/buffer estén llenos (menor E si solo O₂).
+- [x] Hábitat no gasta energía oculta; solo O₂/agua/comida del astronauta en panel.
 - [x] Red logística única (cable): comparte energía, fluidos y sólidos; caps base en hábitat + bonus almacén.
 
 ### Red y estados

@@ -12,7 +12,6 @@ from config import (
     HABITAT_FOOD_START,
     HABITAT_O2_DAILY,
     HABITAT_O2_START,
-    HABITAT_POWER_DAILY,
     HABITAT_POWER_START,
     HABITAT_WATER_DAILY,
     HABITAT_WATER_START,
@@ -40,7 +39,7 @@ class ResourcePool:
     water: float
     food: float
     o2_daily: float = HABITAT_O2_DAILY
-    power_daily: float = HABITAT_POWER_DAILY
+    power_daily: float = 0.0
     water_daily: float = HABITAT_WATER_DAILY
     food_daily: float = HABITAT_FOOD_DAILY
 
@@ -101,13 +100,15 @@ class ResourcePool:
         elif resource == ResourceId.FOOD:
             self.food = max(0.0, self.food - amount)
 
-    def consume_dt(self, dt: float) -> None:
-        """Consumo continuo proporcional al tiempo transcurrido."""
+    def consume_astronaut_dt(self, dt: float) -> None:
+        """Solo necesidades vitales del astronauta (sin energía oculta)."""
         scale = dt / SECONDS_PER_DAY
         self._drain(ResourceId.O2, self.o2_daily * scale)
-        self._drain(ResourceId.POWER, self.power_daily * scale)
         self._drain(ResourceId.WATER, self.water_daily * scale)
         self._drain(ResourceId.FOOD, self.food_daily * scale)
+
+    def consume_dt(self, dt: float) -> None:
+        self.consume_astronaut_dt(dt)
 
     def add_power(self, amount: float) -> None:
         self.power += amount

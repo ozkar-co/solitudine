@@ -11,7 +11,8 @@ Documentación: [docs/diseno-juego.md](docs/diseno-juego.md) (diseño actual) ·
 | **0** | **Hecho** | Input mando (`LJOY_*`, `DPAD_*`, …) |
 | **1** | **Hecho** | Mapa + cámara + cursor + capas Terreno/Recursos (`X`) |
 | **2** | **Hecho** | Simulación, construcción, supervivencia, game over |
-| **3** | **Actual** | Buffers, depósitos finitos, mina, fabricador, almacén |
+| **3** | **Hecho** | Buffers, depósitos finitos, mina, fabricador, almacén |
+| **3b** | **Hecho** | Logística proporcional, O₂ del invernadero, UX construcción (Y/B), panel transparente |
 | 4+ | Pendiente | Laboratorio, investigación, O₂ sostenible, eventos, finales |
 
 ## Requisitos (desarrollo en PC)
@@ -36,6 +37,19 @@ Activa `SOLITUDINE_DEV=1`: el teclado emula el mando (solo en PC; no va en la SD
 | Flechas | RJOY_UP / DOWN / LEFT / RIGHT |
 
 Nombres estándar definidos en [src/gamepad.py](src/gamepad.py): `A`, `DPAD_*`, `LJOY_*`, `RJOY_*`, etc.
+
+### Controles en juego
+
+| Botón | Acción |
+|-------|--------|
+| `LJOY` / `DPAD` | Cursor |
+| `RJOY` | Pan cámara |
+| `L1` / `L2` | Zoom |
+| `A` | Inspeccionar / colocar |
+| `B` | Cancelar construcción |
+| `X` | Capa Terreno ↔ Recursos |
+| `Y` | Menú construcción |
+| `START` | Pausa |
 
 ## Instalar en R36S (PortMaster)
 
@@ -84,7 +98,11 @@ solitudine/
 │   ├── main.py         # entrada
 │   ├── game.py         # bucle principal
 │   ├── simulation.py   # tiempo, recursos, game over
-│   ├── construction.py # menú B, cables, módulos
+│   ├── logistics.py    # producción, buffers, energía proporcional
+│   ├── construction.py # menú Y, cables, módulos
+│   ├── resources.py    # reservas hábitat y consumo astronauta
+│   ├── module_flow.py  # flujos diarios por módulo (panel)
+│   ├── module_power.py # balance E/día por módulo (panel)
 │   ├── world.py        # mapa 1024×1024
 │   ├── ui.py           # HUD + panel
 │   ├── gamepad.py

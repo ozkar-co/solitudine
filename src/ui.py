@@ -441,6 +441,95 @@ def _build_kind_label(kind: BuildKind) -> str:
     }[kind]
 
 
+def draw_build_modal(
+    surf: pygame.Surface,
+    font: pygame.font.Font,
+    font_sm: pygame.font.Font,
+    sim: Simulation,
+) -> None:
+    build = sim.build
+    if build.mode not in (BuildMode.MENU, BuildMode.PLACE):
+        return
+
+    mrect = map_rect()
+    overlay = pygame.Surface((mrect.w, mrect.h), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 100))
+    surf.blit(overlay, (mrect.x, mrect.y))
+
+    pad_x, pad_y = 16, 12
+    lines: list[tuple[str, tuple[int, int, int], pygame.font.Font]] = []
+    lines.append((t("build.title"), COL_TEXT, font))
+
+    if build.mode == BuildMode.MENU:
+        lines.append(
+            (t("build.components", value=_format_amount(sim.stock.components)), COL_DIM, font_sm)
+        )
+        for i, kind in enumerate(BUILD_KINDS):
+            prefix = ">" if i == build.menu_index else " "
+            label = _build_kind_label(kind)
+            cost = _format_amount(kind_cost(kind))
+            color = COL_TEXT if i == build.menu_index else COL_DIM
+            lines.append((f"{prefix} {label} ({cost})", color, font_sm))
+        lines.append((t("build.hint_menu"), COL_DIM, font_sm))
+    else:
+        lines.append((_build_kind_label(build.selected), COL_TEXT, font_sm))
+        lines.append((t("build.cost", value=_format_amount(kind_cost(build.selected))), COL_DIM, font_sm))
+        days = kind_build_days(build.selected)
+        if days > 0:
+            lines.append((t("build.time", days=f"{days:.1f}"), COL_DIM, font_sm))
+        lines.append((t("build.hint_place"), COL_DIM, font_sm))
+
+    w = pad_x * 2
+    h = pad_y * 2
+    rendered: list[tuple[pygame.Surface, tuple[int, int, int]]] = []
+    for text, color, fnt in lines:
+        s = fnt.render(text, True, color)
+        rendered.append((s, color))
+        w = max(w, s.get_width() + pad_x * 2)
+        h += s.get_height() + (4 if fnt == font else 2)
+
+    box = pygame.Rect(0, 0, w, h)
+    box.center = (mrect.centerx, mrect.centery)
+    pygame.draw.rect(surf, COL_PANEL, box)
+    pygame.draw.rect(surf, COL_BORDER, box, 2)
+
+    y = box.y + pad_y
+    for s, _color in rendered:
+        surf.blit(s, (box.centerx - s.get_width() // 2, y))
+        y += s.get_height() + (4 if s.get_height() > 20 else 2)
+
+
+def draw_pause_modal(
+    surf: pygame.Surface,
+    font: pygame.font.Font,
+    font_sm: pygame.font.Font,
+    *,
+    show_hint: bool,
+) -> None:
+    mrect = map_rect()
+    pad_x, pad_y = 18, 12
+    title_s = font.render(t("pause.title"), True, COL_TEXT)
+    hint_s = font_sm.render(t("pause.hint"), True, COL_DIM) if show_hint else None
+
+    w = title_s.get_width() + pad_x * 2
+    h = title_s.get_height() + pad_y * 2
+    if hint_s is not None:
+        w = max(w, hint_s.get_width() + pad_x * 2)
+        h += hint_s.get_height() + 6
+
+    box = pygame.Rect(0, 0, w, h)
+    box.center = (mrect.centerx, mrect.centery)
+
+    pygame.draw.rect(surf, COL_PANEL, box)
+    pygame.draw.rect(surf, COL_BORDER, box, 2)
+
+    y = box.y + pad_y
+    surf.blit(title_s, (box.centerx - title_s.get_width() // 2, y))
+    y += title_s.get_height() + 4
+    if hint_s is not None:
+        surf.blit(hint_s, (box.centerx - hint_s.get_width() // 2, y))
+
+
 def draw_game_over(
     surf: pygame.Surface,
     font: pygame.font.Font,
@@ -475,14 +564,6 @@ def draw_panel(
     pygame.draw.rect(surf, COL_PANEL, rect)
     pygame.draw.line(surf, COL_BORDER, (rect.x, rect.y), (rect.x, rect.bottom))
 
-    build = sim.build
-    if build.mode == BuildMode.MENU:
-        _draw_build_menu(surf, font, font_sm, rect, sim)
-        return
-    if build.mode == BuildMode.PLACE:
-        _draw_build_place(surf, font, font_sm, rect, sim, world, cursor_hint=True)
-        return
-
     y = rect.y + 10
     surf.blit(font.render(t("panel.title"), True, COL_TEXT), (rect.x + 8, y))
     y += 24
@@ -516,8 +597,9 @@ def draw_panel(
         _panel_line(surf, font_sm, rect.x + 8, y, t("panel.module", name=name))
         y += 18
         if mod.kind == "habitat":
-            _panel_line(surf, font_sm, rect.x + 8, y, _panel_energy_line(mod))
-            y += 16
+            for key, value in module_flow_lines(mod, world):
+                _panel_line(surf, font_sm, rect.x + 8, y, _panel_flow_line(key, value))
+                y += 16
             _draw_habitat_resources(surf, font_sm, rect, y, sim, world)
         else:
             _draw_module_inspection(surf, font_sm, rect.x + 8, y, mod, world)
@@ -549,67 +631,7 @@ def draw_panel(
             dep_name = t("deposit.water") if dep == Deposit.WATER else t("deposit.mineral")
             _panel_line(surf, font_sm, rect.x + 8, y, t("panel.deposit", name=dep_name))
             y += 16
-            _panel_line(
-                surf,
-                font_sm,
-                rect.x + 8,
-                y,
-                t("panel.deposit_amount", value=_format_amount(world.deposit_amount_at(sel_x, sel_y))),
-                COL_DIM,
-            )
-
-
-def _draw_build_menu(
-    surf: pygame.Surface,
-    font: pygame.font.Font,
-    font_sm: pygame.font.Font,
-    rect: pygame.Rect,
-    sim: Simulation,
-) -> None:
-    y = rect.y + 10
-    surf.blit(font.render(t("build.title"), True, COL_TEXT), (rect.x + 8, y))
-    y += 26
-    _panel_line(surf, font_sm, rect.x + 8, y, t("build.components", value=_format_amount(sim.stock.components)))
-    y += 22
-
-    build = sim.build
-    for i, kind in enumerate(BUILD_KINDS):
-        prefix = ">" if i == build.menu_index else " "
-        label = _build_kind_label(kind)
-        cost = _format_amount(kind_cost(kind))
-        line = f"{prefix} {label} ({cost})"
-        color = COL_TEXT if i == build.menu_index else COL_DIM
-        _panel_line(surf, font_sm, rect.x + 8, y, line, color)
-        y += 15
-
-    y += 6
-    _panel_line(surf, font_sm, rect.x + 8, y, t("build.hint_menu"), COL_DIM)
-
-
-def _draw_build_place(
-    surf: pygame.Surface,
-    font: pygame.font.Font,
-    font_sm: pygame.font.Font,
-    rect: pygame.Rect,
-    sim: Simulation,
-    world: World,
-    *,
-    cursor_hint: bool,
-) -> None:
-    y = rect.y + 10
-    build = sim.build
-    surf.blit(font.render(t("build.title"), True, COL_TEXT), (rect.x + 8, y))
-    y += 26
-    _panel_line(surf, font_sm, rect.x + 8, y, _build_kind_label(build.selected))
-    y += 18
-    cost = kind_cost(build.selected)
-    _panel_line(surf, font_sm, rect.x + 8, y, t("build.cost", value=_format_amount(cost)))
-    y += 16
-    days = kind_build_days(build.selected)
-    if days > 0:
-        _panel_line(surf, font_sm, rect.x + 8, y, t("build.time", days=f"{days:.1f}"))
-        y += 16
-    _panel_line(surf, font_sm, rect.x + 8, y, t("build.hint_place"), COL_DIM)
+            _panel_line(surf, font_sm, rect.x + 8, y, t("panel.deposit_amount", value=_format_amount(world.deposit_amount_at(sel_x, sel_y))), COL_DIM)
 
 
 def _panel_line(surf, font, x, y, text, color: tuple[int, int, int] = COL_TEXT) -> None:
