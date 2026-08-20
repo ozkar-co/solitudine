@@ -41,6 +41,9 @@ HABITAT_POWER_DAILY = 8.0
 HABITAT_WATER_DAILY = 10.0
 HABITAT_FOOD_DAILY = 8.0
 
+# Invernadero: O₂ residual (soporte vital = fase investigación / laboratorio)
+GREENHOUSE_O2_DAILY = 2.0
+
 HABITAT_O2_START = HABITAT_O2_DAILY * 6
 HABITAT_POWER_START = HABITAT_POWER_DAILY * 6
 HABITAT_WATER_START = HABITAT_WATER_DAILY * 6
@@ -57,11 +60,14 @@ HABITAT_COMPONENTS_CAP = 50.0
 MODULE_BUFFER_CAP = 10.0
 STORAGE_NETWORK_BONUS = 40.0
 
+# Módulos que envían producción directo a la red (sin buffer local)
+MODULES_NO_BUFFER = frozenset({"habitat", "solar", "radar", "storage"})
+
 ALERT_WARNING_DAYS = 3.0
 ALERT_CRITICAL_DAYS = 1.0
 
-# Equipaje del astronauta — primeros módulos + ~2 días de margen
-INITIAL_COMPONENTS = 30.0
+# Equipaje del astronauta — primeros módulos + margen para cablear y probar
+INITIAL_COMPONENTS = 42.0
 
 # Costes de construcción (balanceados para progresión con 30 Cmp iniciales)
 COST_CABLE = 1.0

@@ -84,7 +84,31 @@ MODULE_COLORS = {
 class MapLayer(Enum):
     TERRAIN = 0
     RESOURCES = 1
-    WATER = 2
+
+
+DEPOSIT_OVERLAY_ALPHA = 0.55
+
+
+def _blend_color(
+    base: tuple[int, int, int],
+    overlay: tuple[int, int, int],
+    alpha: float,
+) -> tuple[int, int, int]:
+    a = max(0.0, min(1.0, alpha))
+    return tuple(int(base[c] * (1.0 - a) + overlay[c] * a) for c in range(3))
+
+
+def _resource_overlay(world: World, i: int, tile: Tile) -> tuple[int, int, int] | None:
+    """Color de depósito para capa Recursos (subterráneos y reserva en lagos)."""
+    amt = world.deposit_amounts[i]
+    if amt <= 0:
+        return None
+    dep = Deposit(world.deposits[i])
+    if dep in DEPOSIT_OVERLAY:
+        return DEPOSIT_OVERLAY[dep]
+    if tile == Tile.WATER:
+        return DEPOSIT_OVERLAY[Deposit.WATER]
+    return None
 
 
 def map_rect() -> pygame.Rect:
@@ -328,14 +352,10 @@ def draw_map(
             tile = Tile(world.tiles[i])
             color = TILE_COLORS[tile]
 
-            if layer == MapLayer.WATER and tile == Tile.WATER:
-                color = (50, 110, 180)
-            elif layer == MapLayer.RESOURCES and world.radar_scan_at(tx, ty):
-                dep = Deposit(world.deposits[i])
-                if dep in DEPOSIT_OVERLAY:
-                    base = TILE_COLORS[tile]
-                    ov = DEPOSIT_OVERLAY[dep]
-                    color = tuple((a + b) // 2 for a, b in zip(base, ov))
+            if layer == MapLayer.RESOURCES:
+                overlay = _resource_overlay(world, i, tile)
+                if overlay is not None:
+                    color = _blend_color(color, overlay, DEPOSIT_OVERLAY_ALPHA)
 
             if not world.visible[i]:
                 color = COL_FOG
@@ -469,7 +489,6 @@ def draw_panel(
     layer_name = {
         MapLayer.TERRAIN: t("layer.terrain"),
         MapLayer.RESOURCES: t("layer.resources"),
-        MapLayer.WATER: t("layer.water"),
     }[layer]
     surf.blit(font_sm.render(layer_name, True, COL_DIM), (rect.x + 8, y))
     y += 22
@@ -524,23 +543,20 @@ def draw_panel(
                     t("panel.deposit_amount", value=_format_amount(amt)),
                     COL_DIM,
                 )
-        if layer == MapLayer.RESOURCES and world.radar_scan_at(sel_x, sel_y):
-            y += 16
-            dep = world.deposit_at(sel_x, sel_y)
-            if dep and dep != Deposit.NONE:
-                dep_name = t("deposit.water") if dep == Deposit.WATER else t("deposit.mineral")
-                _panel_line(surf, font_sm, rect.x + 8, y, t("panel.deposit", name=dep_name))
                 y += 16
-                amt = world.deposit_amount_at(sel_x, sel_y)
-                if amt > 0:
-                    _panel_line(
-                        surf,
-                        font_sm,
-                        rect.x + 8,
-                        y,
-                        t("panel.deposit_amount", value=_format_amount(amt)),
-                        COL_DIM,
-                    )
+        dep = world.deposit_at(sel_x, sel_y)
+        if dep and dep != Deposit.NONE and world.deposit_amount_at(sel_x, sel_y) > 0:
+            dep_name = t("deposit.water") if dep == Deposit.WATER else t("deposit.mineral")
+            _panel_line(surf, font_sm, rect.x + 8, y, t("panel.deposit", name=dep_name))
+            y += 16
+            _panel_line(
+                surf,
+                font_sm,
+                rect.x + 8,
+                y,
+                t("panel.deposit_amount", value=_format_amount(world.deposit_amount_at(sel_x, sel_y))),
+                COL_DIM,
+            )
 
 
 def _draw_build_menu(

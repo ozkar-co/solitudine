@@ -9,10 +9,10 @@ Documentación: [docs/diseno-juego.md](docs/diseno-juego.md) (diseño actual) ·
 | Fase | Estado | Descripción |
 |------|--------|-------------|
 | **0** | **Hecho** | Input mando (`LJOY_*`, `DPAD_*`, …) |
-| **1** | **Hecho** | Mapa + cámara + cursor + panel + capas |
+| **1** | **Hecho** | Mapa + cámara + cursor + capas Terreno/Recursos (`X`) |
 | **2** | **Hecho** | Simulación, construcción, supervivencia, game over |
 | **3** | **Actual** | Buffers, depósitos finitos, mina, fabricador, almacén |
-| 4+ | Pendiente | Eventos, investigación, finales |
+| 4+ | Pendiente | Laboratorio, investigación, O₂ sostenible, eventos, finales |
 
 ## Requisitos (desarrollo en PC)
 

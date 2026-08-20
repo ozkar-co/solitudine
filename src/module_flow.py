@@ -7,6 +7,7 @@ from config import (
     FABRICATOR_COMPONENTS_DAILY,
     FABRICATOR_MINERAL_DAILY,
     GREENHOUSE_FOOD_DAILY,
+    GREENHOUSE_O2_DAILY,
     GREENHOUSE_WATER_DAILY,
     MINE_MINERAL_DAILY,
 )
@@ -31,5 +32,9 @@ def module_flow_lines(mod: Module, world: World | None = None) -> list[tuple[str
             ("flow.mineral_use", -FABRICATOR_MINERAL_DAILY),
         ]
     if mod.kind == "greenhouse":
-        return [("flow.food", GREENHOUSE_FOOD_DAILY), ("flow.water_use", -GREENHOUSE_WATER_DAILY)]
+        return [
+            ("flow.food", GREENHOUSE_FOOD_DAILY),
+            ("flow.water_use", -GREENHOUSE_WATER_DAILY),
+            ("flow.o2", GREENHOUSE_O2_DAILY),
+        ]
     return []

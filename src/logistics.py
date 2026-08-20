@@ -9,6 +9,7 @@ from config import (
     FABRICATOR_MINERAL_DAILY,
     FABRICATOR_POWER_DAILY,
     GREENHOUSE_FOOD_DAILY,
+    GREENHOUSE_O2_DAILY,
     GREENHOUSE_POWER_DAILY,
     GREENHOUSE_WATER_DAILY,
     HABITAT_COMPONENTS_CAP,
@@ -101,6 +102,15 @@ def _push_power(sim: SimulationProxy, amount: float, cap: float) -> float:
     return moved
 
 
+def _push_o2(sim: SimulationProxy, amount: float, cap: float) -> float:
+    space = cap - sim.resources.o2
+    if space <= 0:
+        return 0.0
+    moved = min(space, amount)
+    sim.resources.o2 += moved
+    return moved
+
+
 def _push_mineral(stock: Stockpile, amount: float, cap: float) -> float:
     space = cap - stock.mineral
     if space <= 0:
@@ -149,9 +159,6 @@ def flush_module_buffers(
         elif mod.kind == "greenhouse":
             moved = _push_food(sim, mod.buffer, food_cap)
             mod.buffer -= moved
-        elif mod.kind == "solar":
-            moved = _push_power(sim, mod.buffer, power_cap)
-            mod.buffer -= moved
         elif mod.kind == "mine":
             moved = _push_mineral(sim.stock, mod.buffer, mineral_cap)
             mod.buffer -= moved
@@ -173,6 +180,7 @@ def apply_modules_dt(
     water_cap = HABITAT_WATER_CAP + bonus
     food_cap = HABITAT_FOOD_CAP + bonus
     power_cap = HABITAT_POWER_CAP + bonus
+    o2_cap = HABITAT_O2_CAP + bonus
     mineral_cap = HABITAT_MINERAL_CAP + bonus
     components_cap = HABITAT_COMPONENTS_CAP + bonus
 
@@ -186,12 +194,8 @@ def apply_modules_dt(
             sim.resources.power = max(0.0, sim.resources.power - RADAR_POWER_DAILY * scale)
 
         elif mod.kind == "solar" and solar_active:
-            if mod.buffer >= mod.buffer_cap and sim.resources.power >= power_cap:
-                continue
-            want = SOLAR_POWER_DAILY * scale
-            produced = _try_add_buffer(mod, want)
-            if produced < want:
-                _push_power(sim, want - produced, power_cap)
+            if sim.resources.power < power_cap:
+                _push_power(sim, SOLAR_POWER_DAILY * scale, power_cap)
 
         elif mod.kind == "extractor":
             if mod.buffer >= mod.buffer_cap and sim.resources.water >= water_cap:
@@ -229,6 +233,7 @@ def apply_modules_dt(
             produced = _try_add_buffer(mod, want)
             if produced < want:
                 _push_food(sim, want - produced, food_cap)
+            _push_o2(sim, GREENHOUSE_O2_DAILY * scale, o2_cap)
 
         elif mod.kind == "fabricator":
             if mod.buffer >= mod.buffer_cap and sim.stock.components >= components_cap:

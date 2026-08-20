@@ -75,7 +75,7 @@ el espacio de los modulos es exclusivo, las conexiones si pueden compartir una v
 |------|-------|
 | 0 | Depurador de input; mando R36S sin gptokeyb; nombres semánticos en `gamepad.py` |
 | — | Runtime pygame-ce, deploy PortMaster, modo dev con teclado |
-| 1 | Mapa 1024², cámara, cursor, panel, capas terreno/agua/recursos |
+| 1 | Mapa 1024², cámara, cursor, panel; capas **Terreno** / **Recursos** (`X`) |
 | 2a | Simulación: día 48 s, reservas hábitat (O₂, E, agua, comida), consumo continuo |
 | 2b | Construcción: componentes, cable manual, panel solar, radar; red desde hábitat |
 | 2c | Game over simple (O₂ / agua / comida a 0); extractor e invernadero; reservas starter cerca del hábitat |
@@ -110,7 +110,7 @@ el espacio de los modulos es exclusivo, las conexiones si pueden compartir una v
 - [x] `RJOY`: mover cámara
 - [x] `A`: seleccionar / confirmar
 - [x] `B`: cancelar / menú atrás
-- [x] `X`: cambio de capa de mapa (recursos/agua/mapa) 
+- [x] `X`: alternar capa **Terreno** ↔ **Recursos** (overlay semitransparente de depósitos en tiles explorados)
 - [x] `Y`: quick repair/quick action
 - [x] `L1`/`L2`: mapa zoom in y zoom out
 
@@ -303,9 +303,15 @@ Pienso que la partida guardada se puede llevar en SQLite y asi cada partida es u
 
 ### Materiales
 
-- [x] Un solo tipo al inicio: **Componentes** (reserva inicial 30 en el hábitat — equipaje del astronauta).
+- [x] Un solo tipo al inicio: **Componentes** (reserva inicial **42** en el hábitat — equipaje del astronauta).
 - [x] **Mineral** extraído de depósitos finitos; **fabricador** convierte mineral + energía → componentes.
 - [ ] Futuro: subprocesos (tipos especializados de mineral y componentes).
+
+### Oxígeno (fase actual vs investigación)
+
+- [x] Reserva inicial de O₂ en el hábitat (~6 días); **no se regenera** por el hábitat solo.
+- [x] **Invernadero** en línea: +2 O₂/d residual (plantas).
+- [ ] **Laboratorio + investigación** (siguiente fase): reciclaje / producción de O₂ sostenible.
 
 ### Construcciones MVP
 
@@ -315,7 +321,7 @@ Pienso que la partida guardada se puede llevar en SQLite y asi cada partida es u
 | Panel solar | 5 | 1 día | +4 E/día si en línea |
 | Radar | 10 | 1.5 días | −1 E/h; visión clara 16, neblina 24 |
 | Extractor de agua | 6 | 1 día | 3×3; +12 agua/d, −2 E/d; agota agua subterránea |
-| Invernadero | 8 | 1.5 días | +10 comida/d, −4 agua/d, −3 E/d |
+| Invernadero | 8 | 1.5 días | +10 comida/d, +2 O₂/d, −4 agua/d, −3 E/d |
 | Mina | 4 | 1.5 días | Extrae mineral en 3×3; agota depósitos; buffer 10 |
 | Fabricador | 6 | 2 días | −6 mineral/d → +4 Cmp/d; buffer 10 |
 | Almacén | 5 | 1 día | +40 cap de red por recurso |
@@ -324,7 +330,9 @@ Pienso que la partida guardada se puede llevar en SQLite y asi cada partida es u
 
 - [x] Depósitos **finitos** por tile (agua subterránea, mineral, **lagos superficiales**); al agotarse el lago se seca (suelo).
 - [x] Extractores (agua/mineral) operan sobre **3×3** (módulo en el centro).
-- [x] Cada productor: buffer local **10 u.**; producción se detiene al llenar buffer o red.
+- [x] Cada productor con buffer: buffer local **10 u.** (extractor, mina, invernadero, fabricador).
+- [x] **Sin buffer** (red directa): panel solar, radar, almacén, hábitat.
+- [x] Producción se detiene al llenar buffer o cap de red.
 - [x] Red logística única (cable): comparte energía, fluidos y sólidos; caps base en hábitat + bonus almacén.
 
 ### Red y estados
@@ -334,9 +342,15 @@ Pienso que la partida guardada se puede llevar en SQLite y asi cada partida es u
 - [x] Módulo terminado sin cable: **Desconectado** (inactivo).
 - [x] Visión fusionada por fuente (unión): hábitat 16+2 sombra, cable 1+1, solar 4, radar 16+24.
 
+### Capa Recursos (mapa)
+
+- [x] Dos modos: **Terreno** (normal) y **Recursos** (`X`).
+- [x] Recursos: overlay semitransparente en tiles **explorados** (agua/mineral subterráneo y reserva en lagos).
+- [x] No requiere radar para ver depósitos en capa Recursos (radar sigue ampliando visión clara del mapa).
+
 ### Radar y subsuelo
 
-- [x] Radio 16: terreno claro + **depósitos visibles** en capa Recursos.
+- [x] Radio 16: visión clara del terreno (depósitos visibles en capa Recursos sin depender del radar).
 - [x] Radio 17–24: neblina (explorado pero difuso).
 - [x] Hábitat y otros módulos no revelan subsuelo en capa Recursos.
 - [x] Depósitos generados: agua y **mineral** bajo suelo (cantidad finita por tile).

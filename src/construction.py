@@ -22,6 +22,7 @@ from config import (
     COST_SOLAR,
     COST_STORAGE,
     MODULE_BUFFER_CAP,
+    MODULES_NO_BUFFER,
 )
 from logistics import patch_has_deposit
 from materials import Stockpile
@@ -98,7 +99,7 @@ def module_kind_for(build: BuildKind) -> str:
 
 
 def module_buffer_cap(kind: str) -> float:
-    if kind == "storage":
+    if kind in MODULES_NO_BUFFER:
         return 0.0
     return MODULE_BUFFER_CAP
 

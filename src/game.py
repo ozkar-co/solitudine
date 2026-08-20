@@ -182,7 +182,11 @@ def run() -> int:
 
             else:
                 if inp.was_pressed(frame, "X"):
-                    layer = MapLayer((layer.value + 1) % 3)
+                    layer = (
+                        MapLayer.RESOURCES
+                        if layer == MapLayer.TERRAIN
+                        else MapLayer.TERRAIN
+                    )
                 if inp.was_pressed(frame, "A"):
                     select_x, select_y = cursor_x, cursor_y
 
