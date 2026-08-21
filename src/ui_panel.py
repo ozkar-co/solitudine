@@ -8,8 +8,10 @@ from config import HOURS_PER_DAY, STORAGE_NETWORK_BONUS
 from construction import (
     BuildKind,
     BuildMode,
+    BuildPreview,
     kind_build_days,
     kind_cost,
+    preview_locale_key,
 )
 from i18n import t
 from logistics import network_caps
@@ -109,7 +111,8 @@ def _draw_build_place(
         _panel_line(surf, font_sm, rect.x + 8, y, t("build.time", days=f"{days:.1f}"))
         y += 16
     if world.in_bounds(cursor_x, cursor_y):
-        ok = build.preview_valid(world, sim.stock, cursor_x, cursor_y)
+        preview = build.preview(world, sim.stock, cursor_x, cursor_y)
+        ok = preview == BuildPreview.OK
         color = COL_PREVIEW_OK if ok else COL_PREVIEW_BAD
         _panel_line(surf, font_sm, rect.x + 8, y, t("panel.coords", x=cursor_x, y=cursor_y), color)
         y += 16
@@ -118,7 +121,7 @@ def _draw_build_place(
             font_sm,
             rect.x + 8,
             y,
-            t("build.preview_ok" if ok else "build.preview_bad"),
+            t(preview_locale_key(preview)),
             color,
         )
         y += 16

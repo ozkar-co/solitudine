@@ -105,10 +105,12 @@ def tick_solar_production(ctx: TickContext) -> None:
 
 def tick_habitat_life_support(ctx: TickContext, mod: Module) -> None:
     flow = module_def(ModuleKind.HABITAT).nominal
-    r = ctx.resources
-    r.o2 = max(0.0, r.o2 + flow.o2 * ctx.scale)
-    r.water = max(0.0, r.water + flow.water * ctx.scale)
-    r.food = max(0.0, r.food + flow.food * ctx.scale)
+    ctx.resources.apply_vital_flow(
+        o2=flow.o2,
+        water=flow.water,
+        food=flow.food,
+        scale=ctx.scale,
+    )
 
 
 def collect_power_jobs(ctx: TickContext) -> list[PowerJob]:

@@ -66,6 +66,9 @@ MODULES_NO_BUFFER = frozenset({"habitat", "solar", "radar", "storage"})
 ALERT_WARNING_DAYS = 3.0
 ALERT_CRITICAL_DAYS = 1.0
 
+# Por debajo de esto el recurso vital se considera agotado (coherente con HUD a 1 decimal)
+VITAL_EMPTY_THRESHOLD = 0.05
+
 # Equipaje del astronauta — primeros módulos + margen para cablear y probar
 INITIAL_COMPONENTS = 42.0
 

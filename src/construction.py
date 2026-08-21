@@ -41,6 +41,25 @@ class BuildMode(Enum):
     PLACE = auto()
 
 
+class BuildPreview(Enum):
+    OK = "ok"
+    OUT_OF_BOUNDS = "out_of_bounds"
+    UNEXPLORED = "unexplored"
+    OCCUPIED = "occupied"
+    BAD_TERRAIN = "bad_terrain"
+    NO_WATER_DEPOSIT = "no_water_deposit"
+    NO_MINERAL_DEPOSIT = "no_mineral_deposit"
+    NO_COMPONENTS = "no_components"
+    NO_NETWORK = "no_network"
+    CABLE_NOT_CHAIN = "cable_not_chain"
+
+
+def preview_locale_key(preview: BuildPreview) -> str:
+    if preview == BuildPreview.OK:
+        return "build.preview_ok"
+    return f"build.err.{preview.value}"
+
+
 BUILD_TO_MODULE: dict[BuildKind, ModuleKind] = {
     BuildKind.SOLAR: ModuleKind.SOLAR,
     BuildKind.RADAR: ModuleKind.RADAR,
@@ -110,48 +129,65 @@ class BuildController:
     def back_to_menu(self) -> None:
         self.cancel_build()
 
-    def can_place_tile(self, world: World, x: int, y: int, kind: BuildKind | None = None) -> bool:
+    def _tile_preview(self, world: World, x: int, y: int, kind: BuildKind) -> BuildPreview:
         if not world.in_bounds(x, y):
-            return False
+            return BuildPreview.OUT_OF_BOUNDS
         if not world.explored[world.idx(x, y)]:
-            return False
+            return BuildPreview.UNEXPLORED
         if (x, y) in world.module_cells or (x, y) in world.cables:
-            return False
+            return BuildPreview.OCCUPIED
         tile = Tile(world.tiles[world.idx(x, y)])
         if kind == BuildKind.CABLE:
-            return tile == Tile.GROUND
-        if kind is None:
-            return tile == Tile.GROUND
+            return BuildPreview.OK if tile == Tile.GROUND else BuildPreview.BAD_TERRAIN
         mod_kind = BUILD_TO_MODULE[kind]
         defn = module_def(mod_kind)
         if defn.placement_deposit == Deposit.WATER:
-            return world.patch_has_deposit(x, y, Deposit.WATER)
+            return BuildPreview.OK if world.patch_has_deposit(x, y, Deposit.WATER) else BuildPreview.NO_WATER_DEPOSIT
         if defn.placement_deposit == Deposit.MINERAL:
-            return tile == Tile.GROUND and world.patch_has_deposit(x, y, Deposit.MINERAL)
-        return tile == Tile.GROUND
+            if tile != Tile.GROUND:
+                return BuildPreview.BAD_TERRAIN
+            return BuildPreview.OK if world.patch_has_deposit(x, y, Deposit.MINERAL) else BuildPreview.NO_MINERAL_DEPOSIT
+        return BuildPreview.OK if tile == Tile.GROUND else BuildPreview.BAD_TERRAIN
 
-    def _can_extend_cable(self, world: World, x: int, y: int, connected: set[tuple[int, int]]) -> bool:
-        if not self.can_place_tile(world, x, y, BuildKind.CABLE):
-            return False
+    def can_place_tile(self, world: World, x: int, y: int, kind: BuildKind | None = None) -> bool:
+        if kind is None:
+            kind = self.selected
+        return self._tile_preview(world, x, y, kind) == BuildPreview.OK
+
+    def _cable_preview(self, world: World, x: int, y: int, connected: set[tuple[int, int]]) -> BuildPreview:
+        tile_status = self._tile_preview(world, x, y, BuildKind.CABLE)
+        if tile_status != BuildPreview.OK:
+            return tile_status
         if (x, y) in self.cable_chain:
-            return False
+            return BuildPreview.OCCUPIED
         if self.cable_chain:
             px, py = self.cable_chain[-1]
             if abs(px - x) + abs(py - y) != 1:
-                return False
-            return True
+                return BuildPreview.CABLE_NOT_CHAIN
+            return BuildPreview.OK
         for dx, dy in ((0, -1), (0, 1), (-1, 0), (1, 0)):
-            if (x + dx, y + dy) in connected or (x + dx, y + dy) in self.cable_chain:
-                return True
-        return False
+            nx, ny = x + dx, y + dy
+            if (nx, ny) in connected or (nx, ny) in self.cable_chain:
+                return BuildPreview.OK
+        return BuildPreview.NO_NETWORK
 
-    def preview_valid(self, world: World, stock: Stockpile, x: int, y: int) -> bool:
+    def _can_extend_cable(self, world: World, x: int, y: int, connected: set[tuple[int, int]]) -> bool:
+        return self._cable_preview(world, x, y, connected) == BuildPreview.OK
+
+    def preview(self, world: World, stock: Stockpile, x: int, y: int) -> BuildPreview:
         connected = get_connected(world)
         if self.selected == BuildKind.CABLE:
-            return self._can_extend_cable(world, x, y, connected)
-        return self.can_place_tile(world, x, y, self.selected) and stock.can_afford(
-            kind_cost(self.selected)
-        )
+            preview = self._cable_preview(world, x, y, connected)
+            if preview != BuildPreview.OK:
+                return preview
+            return BuildPreview.OK if stock.can_afford(CABLE_COST) else BuildPreview.NO_COMPONENTS
+        preview = self._tile_preview(world, x, y, self.selected)
+        if preview != BuildPreview.OK:
+            return preview
+        return BuildPreview.OK if stock.can_afford(kind_cost(self.selected)) else BuildPreview.NO_COMPONENTS
+
+    def preview_valid(self, world: World, stock: Stockpile, x: int, y: int) -> bool:
+        return self.preview(world, stock, x, y) == BuildPreview.OK
 
     def try_place(self, world: World, stock: Stockpile, x: int, y: int) -> bool:
         connected = get_connected(world)

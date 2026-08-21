@@ -7,7 +7,7 @@ from enum import Enum
 
 import pygame
 
-from construction import BuildMode
+from construction import BuildMode, BuildPreview
 from simulation import Simulation
 from ui_theme import (
     COL_BORDER,
@@ -189,7 +189,8 @@ def draw_map(
         )
         cr = _tile_draw_rect(csx, csy, px)
         if rect.colliderect(cr):
-            ok = build.preview_valid(world, sim.stock, cursor_x, cursor_y)
+            preview = build.preview(world, sim.stock, cursor_x, cursor_y)
+            ok = preview == BuildPreview.OK
             pygame.draw.rect(surf, COL_PREVIEW_OK if ok else COL_PREVIEW_BAD, cr, 2)
 
     if world.in_bounds(cursor_x, cursor_y):

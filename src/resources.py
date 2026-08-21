@@ -12,6 +12,7 @@ from config import (
     HABITAT_O2_START,
     HABITAT_POWER_START,
     HABITAT_WATER_START,
+    VITAL_EMPTY_THRESHOLD,
 )
 from module_defs import habitat_daily_consumption
 
@@ -27,6 +28,13 @@ class AlertLevel(Enum):
     OK = 0
     WARNING = 1
     CRITICAL = 2
+
+
+_VITAL_DEATH_ORDER: tuple[tuple[ResourceId, str], ...] = (
+    (ResourceId.O2, "death.o2"),
+    (ResourceId.WATER, "death.water"),
+    (ResourceId.FOOD, "death.food"),
+)
 
 
 @dataclass
@@ -92,21 +100,11 @@ class ResourcePool:
                 worst = level
         return worst
 
-    def _drain(self, resource: ResourceId, amount: float) -> None:
-        if resource == ResourceId.O2:
-            self.o2 = max(0.0, self.o2 - amount)
-        elif resource == ResourceId.POWER:
-            self.power = max(0.0, self.power - amount)
-        elif resource == ResourceId.WATER:
-            self.water = max(0.0, self.water - amount)
-        elif resource == ResourceId.FOOD:
-            self.food = max(0.0, self.food - amount)
-
-    def consume_astronaut_dt(self, dt: float) -> None:
-        """Reservado — consumo vital del hábitat vía module_tick (unificado)."""
-
-    def consume_dt(self, dt: float) -> None:
-        pass
+    def apply_vital_flow(self, *, o2: float, water: float, food: float, scale: float) -> None:
+        """Consumo vital del hábitat — único punto que muta O₂/agua/comida del astronauta."""
+        self.o2 = max(0.0, self.o2 + o2 * scale)
+        self.water = max(0.0, self.water + water * scale)
+        self.food = max(0.0, self.food + food * scale)
 
     def add_power(self, amount: float) -> None:
         self.power += amount
@@ -123,11 +121,24 @@ class ResourcePool:
         self.water = min(self.water, water_cap)
         self.food = min(self.food, food_cap)
 
-    def check_death(self) -> str | None:
-        if self.o2 <= 0:
-            return "death.o2"
-        if self.water <= 0:
-            return "death.water"
-        if self.food <= 0:
-            return "death.food"
+    def _snap_vitals(self) -> None:
+        """Alinea reservas residuales con el umbral de muerte (evita 0.04 mostrado como 0.0)."""
+        for resource in (ResourceId.O2, ResourceId.WATER, ResourceId.FOOD):
+            amount = self.amount(resource)
+            if amount <= VITAL_EMPTY_THRESHOLD:
+                if resource == ResourceId.O2:
+                    self.o2 = 0.0
+                elif resource == ResourceId.WATER:
+                    self.water = 0.0
+                else:
+                    self.food = 0.0
+
+    def death_cause(self) -> str | None:
+        self._snap_vitals()
+        for resource, key in _VITAL_DEATH_ORDER:
+            if self.amount(resource) <= 0.0:
+                return key
         return None
+
+    def check_death(self) -> str | None:
+        return self.death_cause()

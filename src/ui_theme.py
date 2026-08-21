@@ -61,6 +61,10 @@ def alert_color(level: AlertLevel) -> tuple[int, int, int]:
 
 
 def format_amount(value: float) -> str:
+    if value <= 0.0:
+        return "0.0"
+    if value < 0.1:
+        return f"{value:.2f}"
     return f"{value:.1f}"
 
 

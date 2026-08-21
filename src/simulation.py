@@ -32,17 +32,26 @@ class Simulation:
         return self.day_progress * HOURS_PER_DAY
 
     def update(self, dt: float, world: World) -> None:
-        if self.paused or self.game_over:
+        if self.game_over:
             return
-        dt_days = dt / SECONDS_PER_DAY
-        self.day_progress += dt_days
-        while self.day_progress >= 1.0:
-            self.day_progress -= 1.0
-            self.day += 1
-        apply_modules_dt(world, self, dt, SECONDS_PER_DAY, self._hour_float())
-        self.build.update_sites(world, dt_days)
-        cause = self.resources.check_death()
-        if cause:
-            self.game_over = True
-            self.death_cause = cause
-            self.paused = True
+
+        if not self.paused:
+            dt_days = dt / SECONDS_PER_DAY
+            self.day_progress += dt_days
+            while self.day_progress >= 1.0:
+                self.day_progress -= 1.0
+                self.day += 1
+            apply_modules_dt(world, self, dt, SECONDS_PER_DAY, self._hour_float())
+            self.build.update_sites(world, dt_days)
+
+        self._apply_death_if_needed()
+
+    def _apply_death_if_needed(self) -> None:
+        cause = self.resources.death_cause()
+        if not cause:
+            return
+        self.game_over = True
+        self.death_cause = cause
+        self.paused = True
+        self.user_paused = False
+        self.build.cancel_build()
