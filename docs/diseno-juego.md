@@ -95,7 +95,7 @@ el espacio de los modulos es exclusivo, las conexiones si pueden compartir una v
 | `Y` | Menú de construcción (modal sobre el mapa) |
 | `START` | Pausa / continuar |
 
-**Controles construcción:** `Y` abre menú modal sobre el mapa (el tiempo sigue) → elegir → `A` colocar → `B` cancela. Tras colocar un módulo vuelves al modo normal; el cable sigue en modo colocar tile a tile con `A`. El panel lateral sigue mostrando inspección durante la construcción.
+**Controles construcción:** `Y` abre menú modal para elegir pieza → `A` colocar → datos de coste/tiempo en el **panel lateral** mientras ubicas; `B` cancela. Tras colocar un módulo vuelves al modo normal; el cable sigue tile a tile con `A`.
 
 ---
 
@@ -106,12 +106,11 @@ el espacio de los modulos es exclusivo, las conexiones si pueden compartir una v
 │ [barra estado: O2, energía, alertas]        │
 ├──────────────────┬──────────────────────────┤
 │                  │  Panel lateral           │
-│   MAPA           │  · inspección (siempre)  │
-│   (scroll)       │  · flujos por módulo     │
-│   módulos        │  · reservas hábitat      │
-│   líneas         │                          │
-│   terreno        │  (menú construcción =    │
-│                  │   modal centrado en mapa)│
+│   MAPA           │  · inspección            │
+│   (scroll)       │  · colocar: coste/tiempo │
+│   módulos        │                          │
+│   líneas         │  (elegir pieza = modal   │
+│   terreno        │   centrado en mapa)      │
 ├──────────────────┴──────────────────────────┤
 │ [ayuda contextual / modo actual]            │
 └─────────────────────────────────────────────┘
@@ -138,7 +137,7 @@ el espacio de los modulos es exclusivo, las conexiones si pueden compartir una v
 4. **Expandir** cuando la red estable lo permita.
 5. **Automatizar** vía investigación para no repetir pasos 1–3 en esa categoría.
 
-*Tiempo:* ¿real pausable, ticks por turno, o días con botón “avanzar”? → `START` pausa el juego; la construcción **no** pausa el tiempo (menú modal sobre el mapa). El tiempo no se adelanta (salvo modo dev).
+*Tiempo:* ¿real pausable, ticks por turno, o días con botón “avanzar”? → `START` pausa el juego; elegir pieza (modal) y colocar **no** pausan el tiempo. El tiempo no se adelanta (salvo modo dev).
 
 ---
 
@@ -377,7 +376,9 @@ Pienso que la partida guardada se puede llevar en SQLite y asi cada partida es u
 ### Game over
 
 - [x] Sin sistema de malestar: muerte directa si O₂, agua o comida llegan a 0.
-- [x] Pantalla simple + `A` reinicia la partida.
+- [x] Pantalla simple (modal como pausa/construcción) + `A` reinicia la partida.
+
+Ver [arquitectura.md](arquitectura.md) para organización del código y guía de extensión.
 
 ### Visión incremental (R36S)
 

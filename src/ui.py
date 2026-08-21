@@ -15,7 +15,6 @@ from config import (
     HABITAT_O2_CAP,
     HABITAT_POWER_CAP,
     HABITAT_WATER_CAP,
-    PANEL_W,
     SCREEN_H,
     SCREEN_W,
     STORAGE_NETWORK_BONUS,
@@ -35,58 +34,50 @@ from module_power import format_energy_daily, module_energy_daily
 from network import compute_connected
 from resources import AlertLevel, ResourceId
 from simulation import Simulation
+from ui_modals import ModalLine, draw_map_modal
+from ui_theme import (
+    COL_BORDER,
+    COL_CABLE,
+    COL_CRITICAL,
+    COL_CURSOR,
+    COL_DIM,
+    COL_FOG,
+    COL_HABITAT,
+    COL_PANEL,
+    COL_PREVIEW_BAD,
+    COL_PREVIEW_OK,
+    COL_TEXT,
+    COL_WARN,
+    DEPOSIT_OVERLAY,
+    DEPOSIT_OVERLAY_ALPHA,
+    MODULE_COLORS,
+    TILE_COLORS,
+    alert_color,
+    format_amount,
+    format_days,
+    map_rect,
+    panel_rect,
+)
 from world import Deposit, ModuleState, Tile, World
 
-# Colores retro CRT
-COL_PANEL = (18, 28, 20)
-COL_BORDER = (50, 130, 70)
-COL_TEXT = (80, 255, 120)
-COL_DIM = (45, 110, 60)
-COL_WARN = (255, 200, 60)
-COL_CRITICAL = (255, 80, 70)
-COL_CURSOR = (255, 255, 180)
-COL_HABITAT = (220, 200, 80)
-COL_SOLAR = (255, 140, 40)
-COL_RADAR = (80, 220, 220)
-COL_EXTRACTOR = (60, 150, 230)
-COL_GREENHOUSE = (90, 200, 70)
-COL_MINE = (140, 110, 75)
-COL_FABRICATOR = (200, 120, 180)
-COL_STORAGE = (170, 170, 90)
-COL_CABLE = (255, 230, 80)
-COL_FOG = (20, 32, 24)
-COL_PREVIEW_OK = (120, 255, 160)
-COL_PREVIEW_BAD = (255, 100, 90)
-
-TILE_COLORS = {
-    Tile.GROUND: (55, 85, 45),
-    Tile.WATER: (35, 75, 130),
-    Tile.ROCK: (85, 88, 92),
-}
-
-DEPOSIT_OVERLAY = {
-    Deposit.WATER: (40, 90, 160),
-    Deposit.MINERAL: (120, 95, 55),
-}
-
-MODULE_COLORS = {
-    "habitat": COL_HABITAT,
-    "solar": COL_SOLAR,
-    "radar": COL_RADAR,
-    "extractor": COL_EXTRACTOR,
-    "greenhouse": COL_GREENHOUSE,
-    "mine": COL_MINE,
-    "fabricator": COL_FABRICATOR,
-    "storage": COL_STORAGE,
-}
+# Re-export for callers that import layout from ui.
+__all__ = [
+    "MapLayer",
+    "draw_bottom_bar",
+    "draw_build_menu_modal",
+    "draw_dev_debug",
+    "draw_game_over",
+    "draw_map",
+    "draw_panel",
+    "draw_pause_modal",
+    "draw_top_bar",
+    "map_rect",
+]
 
 
 class MapLayer(Enum):
     TERRAIN = 0
     RESOURCES = 1
-
-
-DEPOSIT_OVERLAY_ALPHA = 0.55
 
 
 def _blend_color(
@@ -111,31 +102,12 @@ def _resource_overlay(world: World, i: int, tile: Tile) -> tuple[int, int, int] 
     return None
 
 
-def map_rect() -> pygame.Rect:
-    return pygame.Rect(0, TOP_BAR_H, SCREEN_W - PANEL_W, SCREEN_H - TOP_BAR_H - BOTTOM_BAR_H)
-
-
-def panel_rect() -> pygame.Rect:
-    h = SCREEN_H - TOP_BAR_H - BOTTOM_BAR_H
-    return pygame.Rect(SCREEN_W - PANEL_W, TOP_BAR_H, PANEL_W, h)
-
-
-def _alert_color(level: AlertLevel) -> tuple[int, int, int]:
-    if level == AlertLevel.CRITICAL:
-        return COL_CRITICAL
-    if level == AlertLevel.WARNING:
-        return COL_WARN
-    return COL_DIM
-
-
-def _format_amount(value: float) -> str:
-    return f"{value:.1f}"
-
-
-def _format_days(days: float) -> str:
-    if days >= 100:
-        return "99+"
-    return f"{days:.1f}"
+def _tile_draw_rect(sx: float, sy: float, px: float) -> pygame.Rect:
+    x0 = math.floor(sx)
+    y0 = math.floor(sy)
+    x1 = math.ceil(sx + px)
+    y1 = math.ceil(sy + px)
+    return pygame.Rect(x0, y0, max(1, x1 - x0), max(1, y1 - y0))
 
 
 def draw_top_bar(
@@ -160,18 +132,18 @@ def draw_top_bar(
     surf.blit(font.render(title, True, COL_TEXT), (8, 6))
 
     stats_x = SCREEN_W - 8
-    mat = _format_amount(sim.stock.components)
+    mat = format_amount(sim.stock.components)
     mat_s = font_sm.render(t("hud.components", value=mat), True, COL_DIM)
     stats_x -= mat_s.get_width() + 10
     surf.blit(mat_s, (stats_x, 9))
 
-    o2 = _format_amount(sim.resources.o2)
-    power = _format_amount(sim.resources.power)
+    o2 = format_amount(sim.resources.o2)
+    power = format_amount(sim.resources.power)
     for text, level in (
         (t("hud.power", value=power), sim.resources.alert_level(ResourceId.POWER)),
         (t("hud.o2", value=o2), sim.resources.alert_level(ResourceId.O2)),
     ):
-        stats_s = font_sm.render(text, True, _alert_color(level))
+        stats_s = font_sm.render(text, True, alert_color(level))
         stats_x -= stats_s.get_width() + 10
         surf.blit(stats_s, (stats_x, 9))
 
@@ -219,7 +191,7 @@ def _draw_module_inspection(
     _panel_line(surf, font_sm, x, y, _panel_energy_line(mod))
     y += 16
     if mod.kind == "storage":
-        _panel_line(surf, font_sm, x, y, t("panel.storage_bonus", value=_format_amount(STORAGE_NETWORK_BONUS)))
+        _panel_line(surf, font_sm, x, y, t("panel.storage_bonus", value=format_amount(STORAGE_NETWORK_BONUS)))
         y += 16
     else:
         for key, value in module_flow_lines(mod, world):
@@ -231,13 +203,13 @@ def _draw_module_inspection(
             font_sm,
             x,
             y,
-            t("panel.buffer", value=_format_amount(mod.buffer), cap=_format_amount(mod.buffer_cap)),
+            t("panel.buffer", value=format_amount(mod.buffer), cap=format_amount(mod.buffer_cap)),
         )
         y += 16
     if mod.kind in ("extractor", "mine"):
         dep = Deposit.WATER if mod.kind == "extractor" else Deposit.MINERAL
         total = world.patch_deposit_total(mod.x, mod.y, dep)
-        _panel_line(surf, font_sm, x, y, t("panel.patch_reserve", value=_format_amount(total)), COL_DIM)
+        _panel_line(surf, font_sm, x, y, t("panel.patch_reserve", value=format_amount(total)), COL_DIM)
         y += 16
     if mod.state == ModuleState.BUILDING and mod.build_total > 0:
         pct = 100.0 * mod.build_progress / mod.build_total
@@ -441,93 +413,84 @@ def _build_kind_label(kind: BuildKind) -> str:
     }[kind]
 
 
-def draw_build_modal(
+def draw_build_menu_modal(
     surf: pygame.Surface,
     font: pygame.font.Font,
     font_sm: pygame.font.Font,
     sim: Simulation,
 ) -> None:
     build = sim.build
-    if build.mode not in (BuildMode.MENU, BuildMode.PLACE):
+    if build.mode != BuildMode.MENU:
         return
 
-    mrect = map_rect()
-    overlay = pygame.Surface((mrect.w, mrect.h), pygame.SRCALPHA)
-    overlay.fill((0, 0, 0, 100))
-    surf.blit(overlay, (mrect.x, mrect.y))
+    lines: list[ModalLine] = [
+        ModalLine(t("build.title"), COL_TEXT, large=True),
+        ModalLine(t("build.components", value=format_amount(sim.stock.components)), COL_DIM),
+    ]
+    for i, kind in enumerate(BUILD_KINDS):
+        prefix = ">" if i == build.menu_index else " "
+        label = _build_kind_label(kind)
+        cost = format_amount(kind_cost(kind))
+        color = COL_TEXT if i == build.menu_index else COL_DIM
+        lines.append(ModalLine(f"{prefix} {label} ({cost})", color))
+    lines.append(ModalLine(t("build.hint_menu"), COL_DIM))
+    draw_map_modal(surf, font, font_sm, lines, dim_map=True)
 
-    pad_x, pad_y = 16, 12
-    lines: list[tuple[str, tuple[int, int, int], pygame.font.Font]] = []
-    lines.append((t("build.title"), COL_TEXT, font))
 
-    if build.mode == BuildMode.MENU:
-        lines.append(
-            (t("build.components", value=_format_amount(sim.stock.components)), COL_DIM, font_sm)
+def _draw_build_place(
+    surf: pygame.Surface,
+    font: pygame.font.Font,
+    font_sm: pygame.font.Font,
+    rect: pygame.Rect,
+    sim: Simulation,
+    world: World,
+    cursor_x: int,
+    cursor_y: int,
+) -> None:
+    y = rect.y + 10
+    build = sim.build
+    surf.blit(font.render(t("build.title"), True, COL_TEXT), (rect.x + 8, y))
+    y += 26
+    _panel_line(surf, font_sm, rect.x + 8, y, _build_kind_label(build.selected))
+    y += 18
+    _panel_line(surf, font_sm, rect.x + 8, y, t("build.cost", value=format_amount(kind_cost(build.selected))))
+    y += 16
+    days = kind_build_days(build.selected)
+    if days > 0:
+        _panel_line(surf, font_sm, rect.x + 8, y, t("build.time", days=f"{days:.1f}"))
+        y += 16
+    if world.in_bounds(cursor_x, cursor_y):
+        ok = build.preview_valid(world, sim.stock, cursor_x, cursor_y)
+        color = COL_PREVIEW_OK if ok else COL_PREVIEW_BAD
+        _panel_line(surf, font_sm, rect.x + 8, y, t("panel.coords", x=cursor_x, y=cursor_y), color)
+        y += 16
+        _panel_line(
+            surf,
+            font_sm,
+            rect.x + 8,
+            y,
+            t("build.preview_ok" if ok else "build.preview_bad"),
+            color,
         )
-        for i, kind in enumerate(BUILD_KINDS):
-            prefix = ">" if i == build.menu_index else " "
-            label = _build_kind_label(kind)
-            cost = _format_amount(kind_cost(kind))
-            color = COL_TEXT if i == build.menu_index else COL_DIM
-            lines.append((f"{prefix} {label} ({cost})", color, font_sm))
-        lines.append((t("build.hint_menu"), COL_DIM, font_sm))
-    else:
-        lines.append((_build_kind_label(build.selected), COL_TEXT, font_sm))
-        lines.append((t("build.cost", value=_format_amount(kind_cost(build.selected))), COL_DIM, font_sm))
-        days = kind_build_days(build.selected)
-        if days > 0:
-            lines.append((t("build.time", days=f"{days:.1f}"), COL_DIM, font_sm))
-        lines.append((t("build.hint_place"), COL_DIM, font_sm))
-
-    w = pad_x * 2
-    h = pad_y * 2
-    rendered: list[tuple[pygame.Surface, tuple[int, int, int]]] = []
-    for text, color, fnt in lines:
-        s = fnt.render(text, True, color)
-        rendered.append((s, color))
-        w = max(w, s.get_width() + pad_x * 2)
-        h += s.get_height() + (4 if fnt == font else 2)
-
-    box = pygame.Rect(0, 0, w, h)
-    box.center = (mrect.centerx, mrect.centery)
-    pygame.draw.rect(surf, COL_PANEL, box)
-    pygame.draw.rect(surf, COL_BORDER, box, 2)
-
-    y = box.y + pad_y
-    for s, _color in rendered:
-        surf.blit(s, (box.centerx - s.get_width() // 2, y))
-        y += s.get_height() + (4 if s.get_height() > 20 else 2)
+        y += 16
+    y += 4
+    _panel_line(surf, font_sm, rect.x + 8, y, t("build.hint_place"), COL_DIM)
 
 
 def draw_pause_modal(
     surf: pygame.Surface,
     font: pygame.font.Font,
     font_sm: pygame.font.Font,
-    *,
-    show_hint: bool,
 ) -> None:
-    mrect = map_rect()
-    pad_x, pad_y = 18, 12
-    title_s = font.render(t("pause.title"), True, COL_TEXT)
-    hint_s = font_sm.render(t("pause.hint"), True, COL_DIM) if show_hint else None
-
-    w = title_s.get_width() + pad_x * 2
-    h = title_s.get_height() + pad_y * 2
-    if hint_s is not None:
-        w = max(w, hint_s.get_width() + pad_x * 2)
-        h += hint_s.get_height() + 6
-
-    box = pygame.Rect(0, 0, w, h)
-    box.center = (mrect.centerx, mrect.centery)
-
-    pygame.draw.rect(surf, COL_PANEL, box)
-    pygame.draw.rect(surf, COL_BORDER, box, 2)
-
-    y = box.y + pad_y
-    surf.blit(title_s, (box.centerx - title_s.get_width() // 2, y))
-    y += title_s.get_height() + 4
-    if hint_s is not None:
-        surf.blit(hint_s, (box.centerx - hint_s.get_width() // 2, y))
+    draw_map_modal(
+        surf,
+        font,
+        font_sm,
+        [
+            ModalLine(t("pause.title"), COL_TEXT, large=True),
+            ModalLine(t("pause.hint"), COL_DIM),
+        ],
+    )
 
 
 def draw_game_over(
@@ -536,18 +499,17 @@ def draw_game_over(
     font_sm: pygame.font.Font,
     sim: Simulation,
 ) -> None:
-    overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
-    overlay.fill((0, 0, 0, 180))
-    surf.blit(overlay, (0, 0))
-
-    title = font.render(t("game_over.title"), True, COL_CRITICAL)
-    surf.blit(title, ((SCREEN_W - title.get_width()) // 2, SCREEN_H // 2 - 36))
-
-    cause = font_sm.render(t(sim.death_cause), True, COL_TEXT)
-    surf.blit(cause, ((SCREEN_W - cause.get_width()) // 2, SCREEN_H // 2 - 6))
-
-    hint = font_sm.render(t("game_over.restart"), True, COL_DIM)
-    surf.blit(hint, ((SCREEN_W - hint.get_width()) // 2, SCREEN_H // 2 + 24))
+    draw_map_modal(
+        surf,
+        font,
+        font_sm,
+        [
+            ModalLine(t("game_over.title"), COL_CRITICAL, large=True),
+            ModalLine(t(sim.death_cause), COL_TEXT),
+            ModalLine(t("game_over.restart"), COL_DIM),
+        ],
+        dim_map=True,
+    )
 
 
 def draw_panel(
@@ -559,10 +521,18 @@ def draw_panel(
     sel_x: int | None,
     sel_y: int | None,
     layer: MapLayer,
+    *,
+    cursor_x: int = 0,
+    cursor_y: int = 0,
 ) -> None:
     rect = panel_rect()
     pygame.draw.rect(surf, COL_PANEL, rect)
     pygame.draw.line(surf, COL_BORDER, (rect.x, rect.y), (rect.x, rect.bottom))
+
+    build = sim.build
+    if build.mode == BuildMode.PLACE:
+        _draw_build_place(surf, font, font_sm, rect, sim, world, cursor_x, cursor_y)
+        return
 
     y = rect.y + 10
     surf.blit(font.render(t("panel.title"), True, COL_TEXT), (rect.x + 8, y))
@@ -622,7 +592,7 @@ def draw_panel(
                     font_sm,
                     rect.x + 8,
                     y,
-                    t("panel.deposit_amount", value=_format_amount(amt)),
+                    t("panel.deposit_amount", value=format_amount(amt)),
                     COL_DIM,
                 )
                 y += 16
@@ -631,7 +601,7 @@ def draw_panel(
             dep_name = t("deposit.water") if dep == Deposit.WATER else t("deposit.mineral")
             _panel_line(surf, font_sm, rect.x + 8, y, t("panel.deposit", name=dep_name))
             y += 16
-            _panel_line(surf, font_sm, rect.x + 8, y, t("panel.deposit_amount", value=_format_amount(world.deposit_amount_at(sel_x, sel_y))), COL_DIM)
+            _panel_line(surf, font_sm, rect.x + 8, y, t("panel.deposit_amount", value=format_amount(world.deposit_amount_at(sel_x, sel_y))), COL_DIM)
 
 
 def _panel_line(surf, font, x, y, text, color: tuple[int, int, int] = COL_TEXT) -> None:
@@ -660,26 +630,26 @@ def _draw_habitat_resources(
         ResourceId.FOOD: HABITAT_FOOD_CAP + bonus,
     }
     for resource in ResourceId:
-        amount = _format_amount(sim.resources.amount(resource))
-        cap = _format_amount(caps[resource])
-        days_s = _format_days(sim.resources.days_left(resource))
+        amount = format_amount(sim.resources.amount(resource))
+        cap = format_amount(caps[resource])
+        days_s = format_days(sim.resources.days_left(resource))
         line = t("panel.resource_cap", name=labels[resource], value=amount, cap=cap, days=days_s)
-        _panel_line(surf, font_sm, rect.x + 8, y, line, _alert_color(sim.resources.alert_level(resource)))
+        _panel_line(surf, font_sm, rect.x + 8, y, line, alert_color(sim.resources.alert_level(resource)))
         y += 16
 
     line = t(
         "panel.material_cap",
         name=t("resource.mineral"),
-        value=_format_amount(sim.stock.mineral),
-        cap=_format_amount(HABITAT_MINERAL_CAP + bonus),
+        value=format_amount(sim.stock.mineral),
+        cap=format_amount(HABITAT_MINERAL_CAP + bonus),
     )
     _panel_line(surf, font_sm, rect.x + 8, y, line, COL_DIM)
     y += 16
     line = t(
         "panel.material_cap",
         name=t("resource.components"),
-        value=_format_amount(sim.stock.components),
-        cap=_format_amount(HABITAT_COMPONENTS_CAP + bonus),
+        value=format_amount(sim.stock.components),
+        cap=format_amount(HABITAT_COMPONENTS_CAP + bonus),
     )
     _panel_line(surf, font_sm, rect.x + 8, y, line, COL_DIM)
     y += 16
@@ -688,4 +658,4 @@ def _draw_habitat_resources(
     if worst != AlertLevel.OK:
         y += 4
         alert_key = "alert.critical" if worst == AlertLevel.CRITICAL else "alert.warning"
-        _panel_line(surf, font_sm, rect.x + 8, y, t(alert_key), _alert_color(worst))
+        _panel_line(surf, font_sm, rect.x + 8, y, t(alert_key), alert_color(worst))

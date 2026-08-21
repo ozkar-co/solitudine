@@ -65,6 +65,8 @@
   "build.time": "Tiempo: {days}d",
   "build.hint_menu": "LJOY/DPAD=elige A=colocar B=cancelar",
   "build.hint_place": "A=confirmar B=cancelar",
+  "build.preview_ok": "Ubicacion valida",
+  "build.preview_bad": "Ubicacion invalida",
   "flow.water": "Agua: {value}/d",
   "flow.water_use": "Agua: {value}/d",
   "flow.food": "Comida: {value}/d",

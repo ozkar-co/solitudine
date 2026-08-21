@@ -2,7 +2,7 @@
 
 Juego de gestión / supervivencia en un planeta hostil. Controlas la red de módulos, recursos y automatización desde la consola del hábitat — sin salir al exterior. Inspiración: *Factorio*, *The Martian*, *Ur-Quan Masters* (radio final).
 
-Documentación: [docs/diseno-juego.md](docs/diseno-juego.md) (diseño actual) · [docs/ideas.md](docs/ideas.md) (brainstorm original).
+Documentación: [docs/diseno-juego.md](docs/diseno-juego.md) (diseño) · [docs/arquitectura.md](docs/arquitectura.md) (código) · [docs/ideas.md](docs/ideas.md) (brainstorm).
 
 ## Fases de desarrollo
 
@@ -48,7 +48,7 @@ Nombres estándar definidos en [src/gamepad.py](src/gamepad.py): `A`, `DPAD_*`, 
 | `A` | Inspeccionar / colocar |
 | `B` | Cancelar construcción |
 | `X` | Capa Terreno ↔ Recursos |
-| `Y` | Menú construcción |
+| `Y` | Menú construcción (modal) |
 | `START` | Pausa |
 
 ## Instalar en R36S (PortMaster)
@@ -92,19 +92,24 @@ Pantalla fija **640×480** (R36S).
 ```
 solitudine/
 ├── docs/
-│   ├── diseno-juego.md   # diseño actual — editar
+│   ├── diseno-juego.md   # diseño — qué hace el juego
+│   ├── arquitectura.md   # código — dónde añadir cosas
 │   └── ideas.md          # brainstorm original
 ├── src/
 │   ├── main.py         # entrada
-│   ├── game.py         # bucle principal
-│   ├── simulation.py   # tiempo, recursos, game over
-│   ├── logistics.py    # producción, buffers, energía proporcional
-│   ├── construction.py # menú Y, cables, módulos
-│   ├── resources.py    # reservas hábitat y consumo astronauta
-│   ├── module_flow.py  # flujos diarios por módulo (panel)
-│   ├── module_power.py # balance E/día por módulo (panel)
+│   ├── game.py         # bucle (orquestación)
+│   ├── game_help.py    # ayuda contextual
+│   ├── simulation.py   # tiempo, game over
+│   ├── logistics.py    # tick de módulos
+│   ├── construction.py # construcción
+│   ├── resources.py    # reservas hábitat
+│   ├── module_flow.py  # panel: flujos
+│   ├── module_power.py # panel: energía
 │   ├── world.py        # mapa 1024×1024
-│   ├── ui.py           # HUD + panel
+│   ├── ui.py           # dibujado
+│   ├── ui_theme.py     # colores y layout
+│   ├── ui_modals.py    # modales en mapa
+│   ├── ui_input.py     # política de input
 │   ├── gamepad.py
 │   └── locales/es.json
 ├── port/Solitudine.sh

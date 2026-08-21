@@ -17,13 +17,15 @@ from config import (
     SCREEN_W,
 )
 from construction import BuildKind, BuildMode
+from game_help import context_help
 from gamepad import LJOY_DOWN, LJOY_LEFT, LJOY_RIGHT, LJOY_UP
 from i18n import load, t
 from input_state import Input
+from simulation import Simulation
 from ui import (
     MapLayer,
     draw_bottom_bar,
-    draw_build_modal,
+    draw_build_menu_modal,
     draw_dev_debug,
     draw_game_over,
     draw_map,
@@ -33,7 +35,6 @@ from ui import (
     map_rect,
 )
 from ui_input import input_policy
-from simulation import Simulation
 from world import generate_world
 
 
@@ -244,20 +245,12 @@ def run() -> int:
         screen.fill((0, 0, 0))
         tiles_drawn = draw_map(screen, world, sim, camera, layer, cursor_x, cursor_y)
         draw_top_bar(screen, font, font_sm, sim)
-        draw_panel(screen, font, font_sm, world, sim, select_x, select_y, layer)
+        draw_panel(
+            screen, font, font_sm, world, sim, select_x, select_y, layer,
+            cursor_x=cursor_x, cursor_y=cursor_y,
+        )
 
-        if sim.game_over:
-            help_text = t("help.game_over")
-        elif sim.user_paused:
-            help_text = t("help.paused")
-        elif build.mode == BuildMode.MENU:
-            help_text = t("help.build_menu")
-        elif build.mode == BuildMode.PLACE:
-            help_text = t("help.build_place")
-        elif select_x is not None:
-            help_text = t("help.selected")
-        else:
-            help_text = t("help.default")
+        help_text = context_help(sim, build, select_x=select_x)
 
         if not dev_mode:
             draw_bottom_bar(screen, font_sm, help_text)
@@ -277,10 +270,10 @@ def run() -> int:
 
         if sim.game_over:
             draw_game_over(screen, font, font_sm, sim)
-        elif build.mode in (BuildMode.MENU, BuildMode.PLACE):
-            draw_build_modal(screen, font, font_sm, sim)
+        elif build.mode == BuildMode.MENU:
+            draw_build_menu_modal(screen, font, font_sm, sim)
         elif pause_modal:
-            draw_pause_modal(screen, font, font_sm, show_hint=True)
+            draw_pause_modal(screen, font, font_sm)
 
         pygame.display.flip()
         clock.tick(FPS)
