@@ -87,6 +87,10 @@ class World:
     expl_min_y: int = WORLD_SIZE
     expl_max_x: int = 0
     expl_max_y: int = 0
+    _network_cache: set[tuple[int, int]] | None = field(default=None, repr=False, compare=False)
+
+    def invalidate_network_cache(self) -> None:
+        self._network_cache = None
 
     def idx(self, x: int, y: int) -> int:
         return y * self.size + x

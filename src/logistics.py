@@ -21,7 +21,7 @@ from module_tick import (
     flush_module_buffers,
     tick_solar_production,
 )
-from network import compute_connected
+from network import get_connected
 from resources import ResourcePool
 from world import ModuleState, World
 
@@ -42,8 +42,9 @@ def storage_bonus(world: World, connected: set[tuple[int, int]]) -> float:
     )
 
 
-def network_caps(world: World) -> NetworkCaps:
-    connected = compute_connected(world)
+def network_caps(world: World, connected: set[tuple[int, int]] | None = None) -> NetworkCaps:
+    if connected is None:
+        connected = get_connected(world)
     bonus = storage_bonus(world, connected)
     return NetworkCaps(
         o2=HABITAT_O2_CAP + bonus,
@@ -63,8 +64,8 @@ def apply_modules_dt(
     hour_float: float,
 ) -> None:
     scale = dt / seconds_per_day
-    connected = compute_connected(world)
-    caps = network_caps(world)
+    connected = get_connected(world)
+    caps = network_caps(world, connected)
     ctx = TickContext(
         world=world,
         resources=sim.resources,

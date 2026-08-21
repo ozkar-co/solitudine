@@ -54,6 +54,8 @@ flowchart TB
 
     subgraph presentacion["Presentación"]
         ui["ui.py"]
+        ui_map["ui_map.py"]
+        ui_panel["ui_panel.py"]
         ui_theme["ui_theme.py"]
         ui_modals["ui_modals.py"]
         module_flow["module_flow.py"]
@@ -78,8 +80,11 @@ flowchart TB
     construction --> world
     construction --> network
     construction --> vision
+    ui --> ui_map
+    ui --> ui_panel
     ui --> ui_theme
     ui --> ui_modals
+    ui_panel --> ui_map
     ui --> module_flow
     ui --> module_power
     gamepad --> game
@@ -140,7 +145,7 @@ Por tick (cuando no hay pausa ni game over):
 | Archivo | Responsabilidad |
 |---------|-----------------|
 | `world.py` | Grid 1024², tiles, depósitos, módulos, generación procedural. |
-| `network.py` | Red logística (BFS desde hábitat por cables). |
+| `network.py` | Red logística (BFS desde hábitat). **`get_connected()`** cachea el resultado en `World`; invalidar al añadir cables o módulos. |
 | `vision.py` | Niebla/explorado/visión clara (contadores incrementales). |
 | `camera.py` | Pan, zoom, conversión tile ↔ pantalla. |
 
@@ -169,7 +174,9 @@ Por tick (cuando no hay pausa ni game over):
 |---------|-----------------|
 | `ui_theme.py` | Colores, rects de layout (`map_rect`, `panel_rect`), `format_amount`, `alert_color`. |
 | `ui_modals.py` | **`draw_map_modal()`** — recuadro centrado en el mapa (pausa, menú construcción, game over). |
-| `ui.py` | Dibujado: mapa, barras, panel de inspección, colocación. Compone theme + modals. |
+| `ui_map.py` | Mapa: tiles, capas, cables, módulos, preview y cursor. |
+| `ui_panel.py` | Panel lateral: inspección, hábitat, modo colocar. |
+| `ui.py` | Fachada: HUD, modales, re-export de mapa/panel. |
 | `module_flow.py` | Flujos diarios mostrados en panel (+O₂, −agua, …). Debe coincidir con `logistics.py`. |
 | `module_power.py` | Balance E/día por módulo en panel. Debe coincidir con demanda en `logistics.py`. |
 | `game_help.py` | Texto de la barra inferior según contexto. |
@@ -209,7 +216,7 @@ No duplicar flujos en `module_flow.py` ni `module_power.py` — solo delegan a `
 1. **`config.py`** — cap base, tasa, inicio.
 2. **`resources.py`** o **`materials.py`** — pool y consumo.
 3. **`logistics.py`** — caps en `_NetworkCaps`, producción y flush de buffers.
-4. Panel hábitat en **`ui.py`** (`_draw_habitat_resources`) y strings en locales.
+4. Panel hábitat en **`ui_panel.py`** (`_draw_habitat_resources`) y strings en locales.
 
 ### Nueva pantalla o modal
 
@@ -233,7 +240,7 @@ Decisiones ya tomadas en código — conviene respetarlas al extender:
 
 | Tema | Decisión |
 |------|----------|
-| Red logística | Un solo cable; BFS ortogonal desde hábitat. |
+| Red logística | Un solo cable; BFS ortogonal desde hábitat; conectividad cacheada con `get_connected()`. |
 | Energía | Demanda total de módulos activos; factor proporcional si falta E; inactivos no demandan. |
 | Buffers | Productores paran (y no gastan E) si buffer + cap red llenos. |
 | O₂ | Hábitat no produce; invernadero +2 O₂/d aunque comida llena (menor E si solo O₂). |
@@ -274,7 +281,9 @@ src/
 ├── vision.py            # niebla
 ├── camera.py
 ├── config.py            # balance numérico
-├── ui.py                # dibujado principal
+├── ui.py                # fachada HUD + modales
+├── ui_map.py            # dibujado del mapa
+├── ui_panel.py          # panel lateral
 ├── ui_theme.py          # colores y layout
 ├── ui_modals.py         # modales sobre mapa
 ├── ui_input.py          # política de input

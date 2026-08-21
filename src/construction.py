@@ -7,7 +7,7 @@ from enum import Enum, auto
 
 from materials import Stockpile
 from module_defs import CABLE_COST, ModuleKind, module_def
-from network import compute_connected, is_adjacent_to_network
+from network import get_connected, invalidate_network_cache, is_adjacent_to_network
 from vision import on_cable_added, on_module_built, on_module_online_changed
 from world import Deposit, Module, ModuleState, Tile, World
 
@@ -146,7 +146,7 @@ class BuildController:
         return False
 
     def preview_valid(self, world: World, stock: Stockpile, x: int, y: int) -> bool:
-        connected = compute_connected(world)
+        connected = get_connected(world)
         if self.selected == BuildKind.CABLE:
             return self._can_extend_cable(world, x, y, connected)
         return self.can_place_tile(world, x, y, self.selected) and stock.can_afford(
@@ -154,7 +154,7 @@ class BuildController:
         )
 
     def try_place(self, world: World, stock: Stockpile, x: int, y: int) -> bool:
-        connected = compute_connected(world)
+        connected = get_connected(world)
         if self.selected == BuildKind.CABLE:
             if not self._can_extend_cable(world, x, y, connected):
                 return False
@@ -163,7 +163,8 @@ class BuildController:
             world.cables.add((x, y))
             self.cable_chain.append((x, y))
             on_cable_added(world, x, y)
-            self._refresh_connection_states(world, compute_connected(world))
+            invalidate_network_cache(world)
+            self._refresh_connection_states(world, get_connected(world))
             return True
 
         if not self.can_place_tile(world, x, y, self.selected):
@@ -186,6 +187,7 @@ class BuildController:
         )
         world.modules.append(mod)
         world.module_cells[(x, y)] = mod
+        invalidate_network_cache(world)
         return True
 
     def _refresh_connection_states(self, world: World, connected: set[tuple[int, int]]) -> None:
@@ -212,7 +214,7 @@ class BuildController:
                 on_module_online_changed(world, mod, was_online, is_online)
 
     def update_sites(self, world: World, dt_days: float) -> None:
-        connected = compute_connected(world)
+        connected = get_connected(world)
         for mod in world.modules:
             if mod.kind == ModuleKind.HABITAT:
                 continue

@@ -110,7 +110,9 @@ solitudine/
 │   ├── module_power.py # panel → module_defs
 │   ├── game_input.py   # input por frame
 │   ├── world.py        # mapa 1024×1024
-│   ├── ui.py           # dibujado
+│   ├── ui.py           # fachada HUD + modales
+│   ├── ui_map.py       # mapa, tiles, preview
+│   ├── ui_panel.py     # panel lateral
 │   ├── ui_theme.py     # colores y layout
 │   ├── ui_modals.py    # modales en mapa
 │   ├── ui_input.py     # política de input

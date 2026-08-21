@@ -34,9 +34,22 @@ def compute_connected(world: World) -> set[tuple[int, int]]:
     return seen
 
 
+def get_connected(world: World) -> set[tuple[int, int]]:
+    """Conectividad cacheada — invalidar con `invalidate_network_cache` al cambiar cables/módulos."""
+    if world._network_cache is not None:
+        return world._network_cache
+    connected = compute_connected(world)
+    world._network_cache = connected
+    return connected
+
+
+def invalidate_network_cache(world: World) -> None:
+    world.invalidate_network_cache()
+
+
 def is_connected(world: World, x: int, y: int, connected: set[tuple[int, int]] | None = None) -> bool:
     if connected is None:
-        connected = compute_connected(world)
+        connected = get_connected(world)
     return (x, y) in connected
 
 
