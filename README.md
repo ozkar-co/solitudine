@@ -100,11 +100,15 @@ solitudine/
 │   ├── game.py         # bucle (orquestación)
 │   ├── game_help.py    # ayuda contextual
 │   ├── simulation.py   # tiempo, game over
-│   ├── logistics.py    # tick de módulos
+│   ├── logistics.py    # caps de red + orquestación
+│   ├── module_kind.py  # enum ModuleKind
+│   ├── module_defs.py  # registro de módulos (flujos, costes)
+│   ├── module_tick.py  # produce/consume por tick
 │   ├── construction.py # construcción
 │   ├── resources.py    # reservas hábitat
-│   ├── module_flow.py  # panel: flujos
-│   ├── module_power.py # panel: energía
+│   ├── module_flow.py  # panel → module_defs
+│   ├── module_power.py # panel → module_defs
+│   ├── game_input.py   # input por frame
 │   ├── world.py        # mapa 1024×1024
 │   ├── ui.py           # dibujado
 │   ├── ui_theme.py     # colores y layout
