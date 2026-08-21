@@ -155,14 +155,6 @@ def draw_bottom_bar(surf: pygame.Surface, font_sm: pygame.font.Font, text: str) 
     surf.blit(font_sm.render(text, True, COL_DIM), (8, y + 5))
 
 
-def _tile_draw_rect(sx: float, sy: float, px: float) -> pygame.Rect:
-    x0 = math.floor(sx)
-    y0 = math.floor(sy)
-    x1 = math.ceil(sx + px)
-    y1 = math.ceil(sy + px)
-    return pygame.Rect(x0, y0, max(1, x1 - x0), max(1, y1 - y0))
-
-
 def _panel_energy_line(mod) -> str:
     value = format_energy_daily(module_energy_daily(mod))
     return t("panel.energy", value=value)
