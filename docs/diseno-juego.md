@@ -81,6 +81,7 @@ el espacio de los modulos es exclusivo, las conexiones si pueden compartir una v
 | 2c | Game over simple (O₂ / agua / comida a 0); extractor e invernadero; reservas starter cerca del hábitat |
 | 3 | Buffers por módulo, depósitos finitos, mina → fabricador → componentes, almacén amplía caps de red |
 | 3b | Logística proporcional (E), O₂ independiente del invernadero, construcción sin pausa, panel sin gastos ocultos |
+| 3c | UI `ui_map`/`ui_panel`, caché `get_connected()`, balance solar (12 E/d) |
 
 **Input estándar del juego:** `A`, `B`, `X`, `Y`, `L1`–`R2`, `SELECT`, `START`, `FN`, `DPAD_*`, `LJOY_*`, `RJOY_*`.
 
@@ -300,9 +301,12 @@ Inicialmente en español, pero de una vez creemos el soporte multilingue haciend
 
 ## 13. Referencias en el repo
 
-- Brainstorm original y análisis: [ideas.md](ideas.md)
-- Input: `src/gamepad.py`
-- Código fase 0: `src/main.py`
+- Brainstorm histórico: [ideas.md](ideas.md)
+- Organización del código: [arquitectura.md](arquitectura.md)
+- Estado y próximos pasos: [estado.md](estado.md)
+- Balance numérico: `src/config.py` · registro de módulos: `src/module_defs.py`
+- Entrada / bucle: `src/main.py`, `src/game.py`
+- Input: `src/gamepad.py`, `src/ui_input.py`
 
 ---
 
@@ -331,7 +335,7 @@ Pienso que la partida guardada se puede llevar en SQLite y asi cada partida es u
 | Pieza | Coste | Tiempo | Notas |
 |-------|-------|--------|-------|
 | Cable | 1 / tile | Instantáneo | Trazado manual, solo suelo despejado |
-| Panel solar | 5 | 1 día | +4 E/día si en línea |
+| Panel solar | 5 | 1 día | +12 E/día (solo horas de sol, 6–18 h) |
 | Radar | 10 | 1.5 días | −1 E/h; visión clara 16, neblina 24 |
 | Extractor de agua | 6 | 1 día | 3×3; +12 agua/d, −2 E/d; agota agua subterránea |
 | Invernadero | 8 | 1.5 días | +10 comida/d, +2 O₂/d, −4 agua/d, −3 E/d |
@@ -347,7 +351,7 @@ Pienso que la partida guardada se puede llevar en SQLite y asi cada partida es u
 - [x] **Sin buffer** (red directa): panel solar, radar, almacén, hábitat.
 - [x] Producción se detiene al llenar buffer o cap de red (tampoco gasta energía).
 - [x] Energía repartida proporcionalmente si hay déficit (factor = reserva / demanda total).
-- [x] Por tick: módulos producen → astronauta consume O₂/agua/comida → game over.
+- [x] Por tick: módulos producen/consumen (incl. hábitat vía `module_tick`) → game over si O₂/agua/comida = 0.
 - [x] Invernadero sigue produciendo O₂ aunque comida/buffer estén llenos (menor E si solo O₂).
 - [x] Hábitat consume O₂/agua/comida/energía mínima del astronauta; todo unificado en `module_defs` + `module_tick`.
 - [x] Red logística única (cable): comparte energía, fluidos y sólidos; caps base en hábitat + bonus almacén.

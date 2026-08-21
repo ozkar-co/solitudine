@@ -2,7 +2,7 @@
 
 Juego de gestión / supervivencia en un planeta hostil. Controlas la red de módulos, recursos y automatización desde la consola del hábitat — sin salir al exterior. Inspiración: *Factorio*, *The Martian*, *Ur-Quan Masters* (radio final).
 
-Documentación: [docs/diseno-juego.md](docs/diseno-juego.md) (diseño) · [docs/arquitectura.md](docs/arquitectura.md) (código) · [docs/ideas.md](docs/ideas.md) (brainstorm).
+Documentación: [docs/diseno-juego.md](docs/diseno-juego.md) (diseño) · [docs/arquitectura.md](docs/arquitectura.md) (código) · [docs/estado.md](docs/estado.md) (continuidad) · [docs/ideas.md](docs/ideas.md) (brainstorm).
 
 ## Fases de desarrollo
 
@@ -94,6 +94,7 @@ solitudine/
 ├── docs/
 │   ├── diseno-juego.md   # diseño — qué hace el juego
 │   ├── arquitectura.md   # código — dónde añadir cosas
+│   ├── estado.md         # continuidad — retomar sin contexto
 │   └── ideas.md          # brainstorm original
 ├── src/
 │   ├── main.py         # entrada

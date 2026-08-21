@@ -69,7 +69,7 @@ ALERT_CRITICAL_DAYS = 1.0
 # Equipaje del astronauta — primeros módulos + margen para cablear y probar
 INITIAL_COMPONENTS = 42.0
 
-# Costes de construcción (balanceados para progresión con 30 Cmp iniciales)
+# Costes de construcción (balanceados para progresión con 42 Cmp iniciales)
 COST_CABLE = 1.0
 COST_SOLAR = 5.0
 COST_RADAR = 10.0
@@ -88,7 +88,7 @@ BUILD_DAYS_FABRICATOR = 2.0
 BUILD_DAYS_STORAGE = 1.0
 
 # Producción / consumo de módulos (por día)
-SOLAR_POWER_DAILY = 4.0
+SOLAR_POWER_DAILY = 12.0
 SOLAR_HOUR_START = 6
 SOLAR_HOUR_END = 18
 RADAR_POWER_DAILY = 24.0

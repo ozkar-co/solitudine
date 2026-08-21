@@ -19,7 +19,7 @@
   "status.waiting": "Sin conexion",
   "status.building": "Construyendo",
   "layer.terrain": "Terreno",
-  "layer.resources": "Recursos (subsuelo)",
+  "layer.resources": "Recursos",
   "panel.title": "INSPECCION",
   "panel.empty": "Selecciona un tile (A)",
   "panel.coords": "Tile ({x}, {y})",

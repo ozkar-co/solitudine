@@ -12,6 +12,7 @@ from config import (
     GREENHOUSE_O2_DAILY,
     GREENHOUSE_POWER_DAILY,
     GREENHOUSE_WATER_DAILY,
+    HOURS_PER_DAY,
     SOLAR_HOUR_END,
     SOLAR_HOUR_START,
 )
@@ -84,6 +85,11 @@ def _mod_online(mod: Module, ctx: TickContext) -> bool:
 def tick_solar_production(ctx: TickContext) -> None:
     if not (SOLAR_HOUR_START <= ctx.hour_float < SOLAR_HOUR_END):
         return
+    daylight_hours = SOLAR_HOUR_END - SOLAR_HOUR_START
+    if daylight_hours <= 0:
+        return
+    # SOLAR_POWER_DAILY es el total diario; repartir solo en horas de sol.
+    solar_scale = ctx.scale * (HOURS_PER_DAY / daylight_hours)
     rate = module_def(ModuleKind.SOLAR).nominal.power
     for mod in ctx.world.modules:
         if mod.kind != ModuleKind.SOLAR or not _mod_online(mod, ctx):
@@ -93,7 +99,7 @@ def tick_solar_production(ctx: TickContext) -> None:
         ctx.resources.power, _ = _push(
             ctx.resources.power,
             ctx.caps.power,
-            rate * ctx.scale,
+            rate * solar_scale,
         )
 
 

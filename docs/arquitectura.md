@@ -244,6 +244,7 @@ Decisiones ya tomadas en código — conviene respetarlas al extender:
 | Energía | Demanda total de módulos activos; factor proporcional si falta E; inactivos no demandan. |
 | Buffers | Productores paran (y no gastan E) si buffer + cap red llenos. |
 | O₂ | Hábitat no produce; invernadero +2 O₂/d aunque comida llena (menor E si solo O₂). |
+| Solar | `SOLAR_POWER_DAILY` = total diario; producción solo 6–18 h, repartida en esas horas. |
 | Consumo hábitat | O₂/agua/comida/energía mínima vía módulo hábitat en `module_tick`; visible en panel. |
 | Construcción | `Y` menú modal; colocar en panel + preview en mapa; `B` cancela; no pausa tiempo. |
 | Visión | `explored` permanente; `visible` por contadores (no recomputo global). |

@@ -35,6 +35,7 @@ from ui import (
     draw_top_bar,
     map_rect,
 )
+from ui_input import input_policy
 from world import generate_world
 
 
