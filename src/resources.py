@@ -8,15 +8,12 @@ from enum import Enum
 from config import (
     ALERT_CRITICAL_DAYS,
     ALERT_WARNING_DAYS,
-    HABITAT_FOOD_DAILY,
     HABITAT_FOOD_START,
-    HABITAT_O2_DAILY,
     HABITAT_O2_START,
     HABITAT_POWER_START,
-    HABITAT_WATER_DAILY,
     HABITAT_WATER_START,
-    SECONDS_PER_DAY,
 )
+from module_defs import habitat_daily_consumption
 
 
 class ResourceId(Enum):
@@ -38,18 +35,23 @@ class ResourcePool:
     power: float
     water: float
     food: float
-    o2_daily: float = HABITAT_O2_DAILY
+    o2_daily: float = 0.0
     power_daily: float = 0.0
-    water_daily: float = HABITAT_WATER_DAILY
-    food_daily: float = HABITAT_FOOD_DAILY
+    water_daily: float = 0.0
+    food_daily: float = 0.0
 
     @classmethod
     def initial(cls) -> ResourcePool:
+        vital = habitat_daily_consumption()
         return cls(
             o2=HABITAT_O2_START,
             power=HABITAT_POWER_START,
             water=HABITAT_WATER_START,
             food=HABITAT_FOOD_START,
+            o2_daily=vital.o2,
+            power_daily=vital.power,
+            water_daily=vital.water,
+            food_daily=vital.food,
         )
 
     def amount(self, resource: ResourceId) -> float:
@@ -101,14 +103,10 @@ class ResourcePool:
             self.food = max(0.0, self.food - amount)
 
     def consume_astronaut_dt(self, dt: float) -> None:
-        """Solo necesidades vitales del astronauta (sin energía oculta)."""
-        scale = dt / SECONDS_PER_DAY
-        self._drain(ResourceId.O2, self.o2_daily * scale)
-        self._drain(ResourceId.WATER, self.water_daily * scale)
-        self._drain(ResourceId.FOOD, self.food_daily * scale)
+        """Reservado — consumo vital del hábitat vía module_tick (unificado)."""
 
     def consume_dt(self, dt: float) -> None:
-        self.consume_astronaut_dt(dt)
+        pass
 
     def add_power(self, amount: float) -> None:
         self.power += amount

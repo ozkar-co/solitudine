@@ -15,12 +15,15 @@ from config import (
 )
 
 
-def module_radii(kind: str) -> tuple[int, int] | None:
-    if kind == "habitat":
+from module_defs import ModuleKind
+
+
+def module_radii(kind: ModuleKind) -> tuple[int, int] | None:
+    if kind == ModuleKind.HABITAT:
         return INITIAL_VISION_RADIUS, INITIAL_VISION_RADIUS + HABITAT_SHADOW_BORDER
-    if kind == "solar":
+    if kind == ModuleKind.SOLAR:
         return SOLAR_VISION, SOLAR_VISION
-    if kind == "radar":
+    if kind == ModuleKind.RADAR:
         return RADAR_VISION_CLEAR, RADAR_VISION_FOG
     return None
 

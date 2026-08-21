@@ -20,6 +20,7 @@ from config import (
     DEPOSIT_WATER_PER_TILE,
     EXTRACTOR_PATCH_RADIUS,
     MODULE_BUFFER_CAP,
+    MODULES_NO_BUFFER,
     STARTER_DEP_WATER_R,
     STARTER_DEP_WATER_X,
     STARTER_DEP_WATER_Y,
@@ -30,6 +31,7 @@ from config import (
     WORLD_SEED,
     WORLD_SIZE,
 )
+from module_kind import ModuleKind
 
 
 class Tile(IntEnum):
@@ -53,16 +55,20 @@ class ModuleState(IntEnum):
 
 @dataclass
 class Module:
-    kind: str
+    kind: ModuleKind
     x: int
     y: int
     state: ModuleState = ModuleState.ONLINE
     build_progress: float = 0.0
     build_total: float = 0.0
     buffer: float = 0.0
-    buffer_cap: float = MODULE_BUFFER_CAP
+    buffer_cap: float = 0.0
     shadow_stamped: bool = False
     clear_active: bool = False
+
+    def __post_init__(self) -> None:
+        if self.buffer_cap == 0.0 and self.kind.value not in MODULES_NO_BUFFER:
+            self.buffer_cap = MODULE_BUFFER_CAP
 
 
 @dataclass
@@ -163,13 +169,30 @@ class World:
                     total += self.deposit_amounts[i]
         return total
 
+    def patch_has_deposit(self, cx: int, cy: int, kind: Deposit) -> bool:
+        r = EXTRACTOR_PATCH_RADIUS
+        for dy in range(-r, r + 1):
+            for dx in range(-r, r + 1):
+                x, y = cx + dx, cy + dy
+                if not self.in_bounds(x, y):
+                    continue
+                i = self.idx(x, y)
+                if kind == Deposit.WATER:
+                    if Tile(self.tiles[i]) == Tile.WATER and self.deposit_amounts[i] > 0:
+                        return True
+                    if Deposit(self.deposits[i]) == Deposit.WATER and self.deposit_amounts[i] > 0:
+                        return True
+                elif Deposit(self.deposits[i]) == kind and self.deposit_amounts[i] > 0:
+                    return True
+        return False
+
     def module_at(self, x: int, y: int) -> Module | None:
         return self.module_cells.get((x, y))
 
     def radar_scan_at(self, x: int, y: int) -> bool:
         r2 = RADAR_VISION_CLEAR * RADAR_VISION_CLEAR
         for mod in self.modules:
-            if mod.kind == "radar" and mod.state == ModuleState.ONLINE:
+            if mod.kind == ModuleKind.RADAR and mod.state == ModuleState.ONLINE:
                 if (x - mod.x) ** 2 + (y - mod.y) ** 2 <= r2:
                     return True
         return False
@@ -259,7 +282,7 @@ def generate_world(seed: str = WORLD_SEED) -> World:
         visible_count=make_visible_count(n),
         size=size,
     )
-    hab = Module("habitat", HABITAT_X, HABITAT_Y)
+    hab = Module(ModuleKind.HABITAT, HABITAT_X, HABITAT_Y)
     world.modules.append(hab)
     world.module_cells[(HABITAT_X, HABITAT_Y)] = hab
     tiles[world.idx(HABITAT_X, HABITAT_Y)] = Tile.GROUND

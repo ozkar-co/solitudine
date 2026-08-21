@@ -349,7 +349,7 @@ Pienso que la partida guardada se puede llevar en SQLite y asi cada partida es u
 - [x] Energía repartida proporcionalmente si hay déficit (factor = reserva / demanda total).
 - [x] Por tick: módulos producen → astronauta consume O₂/agua/comida → game over.
 - [x] Invernadero sigue produciendo O₂ aunque comida/buffer estén llenos (menor E si solo O₂).
-- [x] Hábitat no gasta energía oculta; solo O₂/agua/comida del astronauta en panel.
+- [x] Hábitat consume O₂/agua/comida/energía mínima del astronauta; todo unificado en `module_defs` + `module_tick`.
 - [x] Red logística única (cable): comparte energía, fluidos y sólidos; caps base en hábitat + bonus almacén.
 
 ### Red y estados

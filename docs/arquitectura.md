@@ -10,7 +10,7 @@
 | Principio | En la práctica |
 |-----------|----------------|
 | **KISS** | Sin frameworks ni capas innecesarias. Un `.py` = una responsabilidad clara. |
-| **DRY** | Una sola fuente de verdad: constantes en `config.py`, textos en `locales/`, modales en `ui_modals.py`, colores en `ui_theme.py`. |
+| **DRY** | Una sola fuente de verdad: balance en `config.py`, **flujos de módulos en `module_defs.py`**, textos en `locales/`, modales en `ui_modals.py`. |
 | **Single Responsibility** | La simulación no dibuja; la UI no muta el mundo; `game.py` solo orquesta. |
 
 ---
@@ -28,7 +28,14 @@ flowchart TB
     subgraph orquestacion["Orquestación (1 frame)"]
         game["game.py"]
         ui_input["ui_input.py"]
+        game_input["game_input.py"]
         game_help["game_help.py"]
+    end
+
+    subgraph modulos["Módulos (única fuente)"]
+        module_kind["module_kind.py"]
+        module_defs["module_defs.py"]
+        module_tick["module_tick.py"]
     end
 
     subgraph sim["Simulación"]
@@ -58,11 +65,15 @@ flowchart TB
     game --> simulation
     game --> construction
     game --> ui
+    game --> game_input
     game --> game_help
     simulation --> logistics
-    simulation --> resources
     simulation --> construction
-    logistics --> world
+    logistics --> module_tick
+    module_tick --> module_defs
+    module_defs --> module_kind
+    module_flow --> module_defs
+    module_power --> module_defs
     logistics --> network
     construction --> world
     construction --> network
@@ -97,12 +108,11 @@ Orden fijo cada iteración:
 Por tick (cuando no hay pausa ni game over):
 
 1. Avanzar reloj (`day`, `day_progress`).
-2. **`apply_modules_dt()`** — producción, energía proporcional, buffers (`logistics.py`).
-3. **`consume_astronaut_dt()`** — O₂, agua, comida del astronauta (`resources.py`).
-4. **`build.update_sites()`** — progreso de construcción (`construction.py`).
-5. **`check_death()`** — game over si O₂/agua/comida = 0.
+2. **`apply_modules_dt()`** — producción, consumo y energía proporcional (`module_tick.py` + `logistics.py`).
+3. **`build.update_sites()`** — progreso de construcción (`construction.py`).
+4. **`check_death()`** — game over si O₂/agua/comida = 0.
 
-**Orden importante:** producir → consumir → morir. Cambiar este orden altera el balance.
+**Orden importante:** producir/consumir (incl. hábitat) → morir. El consumo vital del astronauta pasa por el módulo **hábitat** en `module_tick` (O₂, agua, comida y energía mínima).
 
 ---
 
@@ -140,14 +150,18 @@ Por tick (cuando no hay pausa ni game over):
 |---------|-----------------|
 | `resources.py` | Reservas del hábitat (O₂, E, agua, comida) y consumo del astronauta. |
 | `materials.py` | Componentes y mineral (stock de construcción). |
-| `logistics.py` | **Único lugar** para producción/consumo por tick de módulos, buffers y reparto de energía. |
-| `simulation.py` | Reloj, estado global (`game_over`, pausa), encadena los sistemas anteriores. |
+| `logistics.py` | Caps de red (`network_caps`) y orquestación del tick. |
+| `module_kind.py` | Enum `ModuleKind` (sin dependencias — evita ciclos). |
+| `module_defs.py` | **Registro de módulos**: flujos nominales, costes, colores, metadata. Panel y sim leen de aquí. |
+| `module_tick.py` | Lógica de tick por módulo (produce/consume/energía). |
+| `module_flow.py` / `module_power.py` | Delegados finos al panel → `module_defs`. |
 
 ### Construcción
 
 | Archivo | Responsabilidad |
 |---------|-----------------|
-| `construction.py` | Máquina de estados: `NONE` → `MENU` → `PLACE`. Validación, costes, cables, sitios en obra. |
+| `simulation.py` | Reloj, estado global (`game_over`, pausa), encadena los sistemas anteriores. |
+| `game_input.py` | Acciones del jugador por frame (construcción, inspección, pausa). |
 
 ### UI (presentación)
 
@@ -179,13 +193,16 @@ Todos los modales usan **`draw_map_modal()`** en `ui_modals.py`. Para un modal n
 
 ### Nuevo módulo constructible
 
-1. **`config.py`** — coste, tiempo build, producción/consumo diario, buffer si aplica.
-2. **`construction.py`** — `BuildKind`, `BUILD_KINDS`, `module_kind_for`, validación de tile si hace falta.
-3. **`world.py`** — solo si necesita campos nuevos en `Module`.
-4. **`logistics.py`** — lógica de producción en `apply_modules_dt()` (único lugar).
-5. **`module_flow.py`** y **`module_power.py`** — líneas del panel (reflejar logistics).
-6. **`locales/es.json`** — `build.*`, `module.*`, `flow.*` si aplica.
-7. **`ui.py`** — color en `ui_theme.MODULE_COLORS`, dibujo si el módulo es especial.
+1. **`config.py`** — constantes numéricas de balance (si hace falta valor nuevo).
+2. **`module_defs.py`** — entrada en `MODULE_DEFS` (flujos, coste, buffer, depósito, color).
+3. **`module_tick.py`** — handler de tick si el comportamiento no es trivial (extractor, invernadero, …).
+4. **`module_kind.py`** — añadir valor al enum `ModuleKind`.
+5. **`construction.py`** — `BuildKind` + entrada en `BUILD_TO_MODULE`.
+6. **`vision.py`** — `module_radii()` si da visión.
+7. **`locales/es.json`** — strings `build.*`, `module.*`, `flow.*`.
+8. **`diseno-juego.md`** — si cambia diseño visible.
+
+No duplicar flujos en `module_flow.py` ni `module_power.py` — solo delegan a `module_defs`.
 
 ### Nuevo recurso en la red
 
@@ -220,7 +237,7 @@ Decisiones ya tomadas en código — conviene respetarlas al extender:
 | Energía | Demanda total de módulos activos; factor proporcional si falta E; inactivos no demandan. |
 | Buffers | Productores paran (y no gastan E) si buffer + cap red llenos. |
 | O₂ | Hábitat no produce; invernadero +2 O₂/d aunque comida llena (menor E si solo O₂). |
-| Consumo hábitat | Solo O₂/agua/comida del astronauta; E la gastan módulos (visible en panel). |
+| Consumo hábitat | O₂/agua/comida/energía mínima vía módulo hábitat en `module_tick`; visible en panel. |
 | Construcción | `Y` menú modal; colocar en panel + preview en mapa; `B` cancela; no pausa tiempo. |
 | Visión | `explored` permanente; `visible` por contadores (no recomputo global). |
 | Capas mapa | Terreno / Recursos (`X`); overlay semitransparente en explorado. |
@@ -230,7 +247,7 @@ Decisiones ya tomadas en código — conviene respetarlas al extender:
 ## Anti-patrones (evitar)
 
 - Duplicar constantes de balance fuera de `config.py`.
-- Añadir producción en `simulation.py` o `game.py` en lugar de `logistics.py`.
+- Añadir producción en `game.py` o duplicar flujos fuera de `module_defs.py`.
 - Crear otro dibujado de caja modal sin usar `ui_modals.py`.
 - Meter strings en español hardcodeados en Python (usar `locales/`).
 - Hacer que `module_flow`/`module_power` muestren valores distintos a lo que simula `logistics`.
@@ -245,7 +262,10 @@ src/
 ├── game.py              # bucle; orquestación
 ├── game_help.py         # ayuda contextual
 ├── simulation.py        # reloj + encadenar sistemas
-├── logistics.py         # tick de módulos
+├── module_kind.py      # enum ModuleKind
+├── module_defs.py      # registro único de módulos
+├── module_tick.py      # tick produce/consume
+├── game_input.py       # input por frame
 ├── resources.py         # reservas hábitat
 ├── materials.py         # componentes / mineral
 ├── construction.py      # FSM construcción

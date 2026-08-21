@@ -16,8 +16,9 @@ from config import (
     SCREEN_H,
     SCREEN_W,
 )
-from construction import BuildKind, BuildMode
+from construction import BuildMode
 from game_help import context_help
+from game_input import handle_frame_input
 from gamepad import LJOY_DOWN, LJOY_LEFT, LJOY_RIGHT, LJOY_UP
 from i18n import load, t
 from input_state import Input
@@ -161,42 +162,22 @@ def run() -> int:
 
         pause_modal = not sim.game_over and sim.user_paused
 
-        if sim.game_over:
-            if inp.was_pressed(frame, "A"):
-                reset_session()
-        elif not sim.game_over and inp.was_pressed(frame, "START"):
-            sim.user_paused = not sim.user_paused
-        elif not sim.game_over and inp.was_pressed(frame, "Y"):
-            if build.mode == BuildMode.NONE and not sim.user_paused:
-                build.enter_menu()
-        elif not sim.game_over and inp.was_pressed(frame, "B"):
-            if build.mode in (BuildMode.MENU, BuildMode.PLACE):
-                build.cancel_build()
-
-        if not sim.game_over:
-            if build.mode == BuildMode.MENU:
-                if inp.was_pressed(frame, "DPAD_UP") or inp.was_pressed(frame, LJOY_UP):
-                    build.menu_up()
-                if inp.was_pressed(frame, "DPAD_DOWN") or inp.was_pressed(frame, LJOY_DOWN):
-                    build.menu_down()
-                if inp.was_pressed(frame, "A"):
-                    build.enter_place()
-
-            elif build.mode == BuildMode.PLACE:
-                if inp.was_pressed(frame, "A"):
-                    if build.try_place(world, sim.stock, cursor_x, cursor_y):
-                        if build.selected != BuildKind.CABLE:
-                            build.cancel_build()
-
-            elif not sim.user_paused:
-                if inp.was_pressed(frame, "X"):
-                    layer = (
-                        MapLayer.RESOURCES
-                        if layer == MapLayer.TERRAIN
-                        else MapLayer.TERRAIN
-                    )
-                if inp.was_pressed(frame, "A"):
-                    select_x, select_y = cursor_x, cursor_y
+        input_result = handle_frame_input(
+            frame,
+            inp,
+            sim,
+            world,
+            layer=layer,
+            cursor_x=cursor_x,
+            cursor_y=cursor_y,
+            select_x=select_x,
+            select_y=select_y,
+        )
+        if input_result.reset_session:
+            reset_session()
+            continue
+        layer = input_result.layer
+        select_x, select_y = input_result.select_x, input_result.select_y
 
         sim.update(dt, world)
 

@@ -9,12 +9,7 @@ import pygame
 
 from config import (
     BOTTOM_BAR_H,
-    HABITAT_COMPONENTS_CAP,
-    HABITAT_FOOD_CAP,
-    HABITAT_MINERAL_CAP,
-    HABITAT_O2_CAP,
-    HABITAT_POWER_CAP,
-    HABITAT_WATER_CAP,
+    HOURS_PER_DAY,
     SCREEN_H,
     SCREEN_W,
     STORAGE_NETWORK_BONUS,
@@ -28,7 +23,8 @@ from construction import (
     kind_cost,
 )
 from i18n import t
-from logistics import storage_bonus
+from logistics import network_caps
+from module_defs import ModuleKind, ModuleContext
 from module_flow import module_flow_lines
 from module_power import format_energy_daily, module_energy_daily
 from network import compute_connected
@@ -78,6 +74,16 @@ __all__ = [
 class MapLayer(Enum):
     TERRAIN = 0
     RESOURCES = 1
+
+
+def _module_ctx(sim: Simulation, world: World, mod) -> ModuleContext:
+    connected_set = compute_connected(world)
+    connected = mod.kind == ModuleKind.HABITAT or (mod.x, mod.y) in connected_set
+    return ModuleContext(
+        world=world,
+        hour_float=sim.day_progress * HOURS_PER_DAY,
+        connected=connected,
+    )
 
 
 def _blend_color(
@@ -155,8 +161,9 @@ def draw_bottom_bar(surf: pygame.Surface, font_sm: pygame.font.Font, text: str) 
     surf.blit(font_sm.render(text, True, COL_DIM), (8, y + 5))
 
 
-def _panel_energy_line(mod) -> str:
-    value = format_energy_daily(module_energy_daily(mod))
+def _panel_energy_line(mod, sim: Simulation, world: World) -> str:
+    ctx = _module_ctx(sim, world, mod)
+    value = format_energy_daily(module_energy_daily(mod, world, hour_float=ctx.hour_float, connected=ctx.connected))
     return t("panel.energy", value=value)
 
 
@@ -166,10 +173,6 @@ def _panel_flow_line(key: str, value: float) -> str:
     return t(key, value=f"{value:.1f}")
 
 
-def _network_bonus(world: World) -> float:
-    return storage_bonus(world, compute_connected(world))
-
-
 def _draw_module_inspection(
     surf: pygame.Surface,
     font_sm: pygame.font.Font,
@@ -177,16 +180,20 @@ def _draw_module_inspection(
     y: int,
     mod,
     world: World,
+    sim: Simulation,
 ) -> int:
+    ctx = _module_ctx(sim, world, mod)
     _panel_line(surf, font_sm, x, y, t("panel.status", status=t(_module_status_key(mod))))
     y += 16
-    _panel_line(surf, font_sm, x, y, _panel_energy_line(mod))
+    _panel_line(surf, font_sm, x, y, _panel_energy_line(mod, sim, world))
     y += 16
-    if mod.kind == "storage":
+    if mod.kind == ModuleKind.STORAGE:
         _panel_line(surf, font_sm, x, y, t("panel.storage_bonus", value=format_amount(STORAGE_NETWORK_BONUS)))
         y += 16
     else:
-        for key, value in module_flow_lines(mod, world):
+        for key, value in module_flow_lines(
+            mod, world, hour_float=ctx.hour_float, connected=ctx.connected
+        ):
             _panel_line(surf, font_sm, x, y, _panel_flow_line(key, value))
             y += 16
     if mod.buffer_cap > 0:
@@ -198,8 +205,8 @@ def _draw_module_inspection(
             t("panel.buffer", value=format_amount(mod.buffer), cap=format_amount(mod.buffer_cap)),
         )
         y += 16
-    if mod.kind in ("extractor", "mine"):
-        dep = Deposit.WATER if mod.kind == "extractor" else Deposit.MINERAL
+    if mod.kind in (ModuleKind.EXTRACTOR, ModuleKind.MINE):
+        dep = Deposit.WATER if mod.kind == ModuleKind.EXTRACTOR else Deposit.MINERAL
         total = world.patch_deposit_total(mod.x, mod.y, dep)
         _panel_line(surf, font_sm, x, y, t("panel.patch_reserve", value=format_amount(total)), COL_DIM)
         y += 16
@@ -221,7 +228,7 @@ def _module_status_key(mod) -> str:
 
 
 def _draw_module(surf: pygame.Surface, tile_rect: pygame.Rect, mod) -> None:
-    color = MODULE_COLORS.get(mod.kind, COL_HABITAT)
+    color = MODULE_COLORS.get(mod.kind.value, COL_HABITAT)
     pad = max(2, tile_rect.w // 5)
     inner = tile_rect.inflate(-pad, -pad)
 
@@ -555,16 +562,21 @@ def draw_panel(
 
     mod = world.module_at(sel_x, sel_y)
     if mod:
-        name = t("module.habitat") if mod.kind == "habitat" else t(f"module.{mod.kind}")
+        name = t("module.habitat") if mod.kind == ModuleKind.HABITAT else t(f"module.{mod.kind.value}")
         _panel_line(surf, font_sm, rect.x + 8, y, t("panel.module", name=name))
         y += 18
-        if mod.kind == "habitat":
-            for key, value in module_flow_lines(mod, world):
+        if mod.kind == ModuleKind.HABITAT:
+            ctx = _module_ctx(sim, world, mod)
+            for key, value in module_flow_lines(
+                mod, world, hour_float=ctx.hour_float, connected=ctx.connected
+            ):
                 _panel_line(surf, font_sm, rect.x + 8, y, _panel_flow_line(key, value))
                 y += 16
+            _panel_line(surf, font_sm, rect.x + 8, y, _panel_energy_line(mod, sim, world))
+            y += 16
             _draw_habitat_resources(surf, font_sm, rect, y, sim, world)
         else:
-            _draw_module_inspection(surf, font_sm, rect.x + 8, y, mod, world)
+            _draw_module_inspection(surf, font_sm, rect.x + 8, y, mod, world, sim)
         return
 
     tile = world.tile_at(sel_x, sel_y)
@@ -608,7 +620,7 @@ def _draw_habitat_resources(
     sim: Simulation,
     world: World,
 ) -> None:
-    bonus = _network_bonus(world)
+    nc = network_caps(world)
     labels = {
         ResourceId.O2: t("resource.o2"),
         ResourceId.POWER: t("resource.power"),
@@ -616,10 +628,10 @@ def _draw_habitat_resources(
         ResourceId.FOOD: t("resource.food"),
     }
     caps = {
-        ResourceId.O2: HABITAT_O2_CAP + bonus,
-        ResourceId.POWER: HABITAT_POWER_CAP + bonus,
-        ResourceId.WATER: HABITAT_WATER_CAP + bonus,
-        ResourceId.FOOD: HABITAT_FOOD_CAP + bonus,
+        ResourceId.O2: nc.o2,
+        ResourceId.POWER: nc.power,
+        ResourceId.WATER: nc.water,
+        ResourceId.FOOD: nc.food,
     }
     for resource in ResourceId:
         amount = format_amount(sim.resources.amount(resource))
@@ -633,7 +645,7 @@ def _draw_habitat_resources(
         "panel.material_cap",
         name=t("resource.mineral"),
         value=format_amount(sim.stock.mineral),
-        cap=format_amount(HABITAT_MINERAL_CAP + bonus),
+        cap=format_amount(nc.mineral),
     )
     _panel_line(surf, font_sm, rect.x + 8, y, line, COL_DIM)
     y += 16
@@ -641,7 +653,7 @@ def _draw_habitat_resources(
         "panel.material_cap",
         name=t("resource.components"),
         value=format_amount(sim.stock.components),
-        cap=format_amount(HABITAT_COMPONENTS_CAP + bonus),
+        cap=format_amount(nc.components),
     )
     _panel_line(surf, font_sm, rect.x + 8, y, line, COL_DIM)
     y += 16

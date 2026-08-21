@@ -1,36 +1,20 @@
-"""Balance energético por módulo (E/día)."""
+"""Balance energético por módulo (panel) — delegado a module_defs."""
 
 from __future__ import annotations
 
-from config import (
-    EXTRACTOR_POWER_DAILY,
-    FABRICATOR_POWER_DAILY,
-    GREENHOUSE_POWER_DAILY,
-    MINE_POWER_DAILY,
-    RADAR_POWER_DAILY,
-    SOLAR_POWER_DAILY,
-)
-from world import Module, ModuleState
+from module_defs import ModuleContext, panel_power_daily as _panel_power_daily
+from world import Module, World
 
 
-def module_energy_daily(mod: Module) -> float:
-    if mod.kind == "habitat":
-        return 0.0
-    if mod.state != ModuleState.ONLINE:
-        return 0.0
-    if mod.kind == "radar":
-        return -RADAR_POWER_DAILY
-    if mod.kind == "solar":
-        return SOLAR_POWER_DAILY
-    if mod.kind == "extractor":
-        return -EXTRACTOR_POWER_DAILY
-    if mod.kind == "greenhouse":
-        return -GREENHOUSE_POWER_DAILY
-    if mod.kind == "mine":
-        return -MINE_POWER_DAILY
-    if mod.kind == "fabricator":
-        return -FABRICATOR_POWER_DAILY
-    return 0.0
+def module_energy_daily(
+    mod: Module,
+    world: World | None = None,
+    *,
+    hour_float: float = 12.0,
+    connected: bool = True,
+) -> float:
+    ctx = ModuleContext(world=world, hour_float=hour_float, connected=connected)
+    return _panel_power_daily(mod, ctx)
 
 
 def format_energy_daily(value: float) -> str:

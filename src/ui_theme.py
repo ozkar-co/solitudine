@@ -14,7 +14,9 @@ from config import (
 from resources import AlertLevel
 from world import Deposit, Tile
 
-# Colores retro CRT
+from module_defs import COL_HABITAT, module_colors
+
+MODULE_COLORS = module_colors()
 COL_PANEL = (18, 28, 20)
 COL_BORDER = (50, 130, 70)
 COL_TEXT = (80, 255, 120)
@@ -22,14 +24,6 @@ COL_DIM = (45, 110, 60)
 COL_WARN = (255, 200, 60)
 COL_CRITICAL = (255, 80, 70)
 COL_CURSOR = (255, 255, 180)
-COL_HABITAT = (220, 200, 80)
-COL_SOLAR = (255, 140, 40)
-COL_RADAR = (80, 220, 220)
-COL_EXTRACTOR = (60, 150, 230)
-COL_GREENHOUSE = (90, 200, 70)
-COL_MINE = (140, 110, 75)
-COL_FABRICATOR = (200, 120, 180)
-COL_STORAGE = (170, 170, 90)
 COL_CABLE = (255, 230, 80)
 COL_FOG = (20, 32, 24)
 COL_PREVIEW_OK = (120, 255, 160)
@@ -44,17 +38,6 @@ TILE_COLORS = {
 DEPOSIT_OVERLAY = {
     Deposit.WATER: (40, 90, 160),
     Deposit.MINERAL: (120, 95, 55),
-}
-
-MODULE_COLORS = {
-    "habitat": COL_HABITAT,
-    "solar": COL_SOLAR,
-    "radar": COL_RADAR,
-    "extractor": COL_EXTRACTOR,
-    "greenhouse": COL_GREENHOUSE,
-    "mine": COL_MINE,
-    "fabricator": COL_FABRICATOR,
-    "storage": COL_STORAGE,
 }
 
 DEPOSIT_OVERLAY_ALPHA = 0.55
