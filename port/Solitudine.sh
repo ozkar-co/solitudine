@@ -28,7 +28,7 @@ cd "$GAMEDIR" || exit 1
 if [ ! -f "$GAMEDIR/runtime/$RUNTIME_FILE" ]; then
   echo "ERROR: falta runtime pygame-ce" | tee -a "$GAMEDIR/log.txt"
   echo "Coloca $RUNTIME_FILE en roms/ports/solitudine/runtime/" | tee -a "$GAMEDIR/log.txt"
-  echo "En PC: ./scripts/fetch_runtime.sh && ./scripts/build_dist.sh" | tee -a "$GAMEDIR/log.txt"
+  echo "En PC: make port" | tee -a "$GAMEDIR/log.txt"
   sleep 8
   pm_finish
   exit 1
