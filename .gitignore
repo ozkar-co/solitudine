@@ -1,8 +1,8 @@
 .venv/
 dist/
-port/runtime/
 wheelhouse/
 __pycache__/
 *.pyc
 log.txt
+dev_log.txt
 .aider*

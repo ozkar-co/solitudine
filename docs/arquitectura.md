@@ -137,7 +137,7 @@ Por tick (cuando no hay pausa ni game over):
 |---------|-----------------|
 | `gamepad.py` | Nombres semánticos de botones (`A`, `LJOY_UP`, …). |
 | `input_state.py` | Estado del mando por frame (`held`, `pressed`). |
-| `dev_input.py` | Teclado → mando en PC (`SOLITUDINE_DEV=1`). |
+| `dev_input.py` | Teclado → mando en PC (`--dev`). |
 | `ui_input.py` | **Política** de qué input está permitido según modo (pausa, menú construcción, game over). |
 
 ### Mundo y mapa
@@ -264,36 +264,42 @@ Decisiones ya tomadas en código — conviene respetarlas al extender:
 
 ## Estructura del repo (resumen)
 
+Todos los `.py` y `locales/` viven en la raíz. `main.py` es la única entrada.
+
 ```
-src/
-├── main.py              # entry
-├── game.py              # bucle; orquestación
-├── game_help.py         # ayuda contextual
-├── simulation.py        # reloj + encadenar sistemas
-├── module_kind.py      # enum ModuleKind
-├── module_defs.py      # registro único de módulos
-├── module_tick.py      # tick produce/consume
-├── game_input.py       # input por frame
-├── resources.py         # reservas hábitat
-├── materials.py         # componentes / mineral
-├── construction.py      # FSM construcción
-├── world.py             # mapa y entidades
-├── network.py           # conectividad
-├── vision.py            # niebla
-├── camera.py
-├── config.py            # balance numérico
-├── ui.py                # fachada HUD + modales
-├── ui_map.py            # dibujado del mapa
-├── ui_panel.py          # panel lateral
-├── ui_theme.py          # colores y layout
-├── ui_modals.py         # modales sobre mapa
-├── ui_input.py          # política de input
-├── module_flow.py       # panel: flujos
-├── module_power.py      # panel: energía
-├── i18n.py
-├── gamepad.py / input_state.py / dev_input.py
-└── locales/es.json
+main.py                  # entry: argparse (--dev / --handheld)
+game.py                  # bucle; orquestación
+game_help.py             # ayuda contextual
+simulation.py            # reloj + encadenar sistemas
+module_kind.py           # enum ModuleKind
+module_defs.py           # registro único de módulos
+module_tick.py           # tick produce/consume
+game_input.py            # input por frame
+resources.py             # reservas hábitat
+materials.py             # componentes / mineral
+construction.py          # FSM construcción
+world.py                 # mapa y entidades
+network.py               # conectividad
+vision.py                # niebla
+camera.py
+config.py                # balance numérico
+ui.py                    # fachada HUD + modales
+ui_map.py                # dibujado del mapa
+ui_panel.py              # panel lateral
+ui_theme.py              # colores y layout
+ui_modals.py             # modales sobre mapa
+ui_input.py              # política de input
+module_flow.py           # panel: flujos
+module_power.py          # panel: energía
+i18n.py
+gamepad.py / input_state.py / dev_input.py
+locales/es.json
+port/
+├── Solitudine.sh        # lanzador PortMaster
+└── runtime/             # runtime pygame-ce versionado (squashfs)
 ```
+
+`Makefile`: `make config` (venv + wheelhouse), `make fetch`, `make clean`, `make dist` (PortMaster). No hay `make run`; se ejecuta `.venv/bin/python main.py --dev`.
 
 ---
 

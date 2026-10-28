@@ -2,7 +2,6 @@
 """Solitudine — entrada del juego."""
 
 import argparse
-import os
 import sys
 
 from game import run
@@ -15,12 +14,13 @@ def main() -> int:
         action="store_true",
         help="Modo desarrollo: el teclado emula el mando (solo en PC).",
     )
+    parser.add_argument(
+        "--handheld",
+        action="store_true",
+        help="Modo consola (PortMaster): pantalla completa escalada.",
+    )
     args = parser.parse_args()
-
-    if args.dev:
-        os.environ["SOLITUDINE_DEV"] = "1"
-
-    return run()
+    return run(dev=args.dev, handheld=args.handheld)
 
 
 if __name__ == "__main__":

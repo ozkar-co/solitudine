@@ -1,4 +1,4 @@
-"""Emulación de mando con teclado — solo SOLITUDINE_DEV=1 en PC."""
+"""Emulación de mando con teclado — solo con --dev en PC."""
 
 import os
 

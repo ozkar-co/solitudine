@@ -304,9 +304,9 @@ Inicialmente en español, pero de una vez creemos el soporte multilingue haciend
 - Brainstorm histórico: [ideas.md](ideas.md)
 - Organización del código: [arquitectura.md](arquitectura.md)
 - Estado y próximos pasos: [estado.md](estado.md)
-- Balance numérico: `src/config.py` · registro de módulos: `src/module_defs.py`
-- Entrada / bucle: `src/main.py`, `src/game.py`
-- Input: `src/gamepad.py`, `src/ui_input.py`
+- Balance numérico: `config.py` · registro de módulos: `module_defs.py`
+- Entrada / bucle: `main.py`, `game.py`
+- Input: `gamepad.py`, `ui_input.py`
 
 ---
 

@@ -2,7 +2,7 @@
 
 > Punto de entrada para retomar el trabajo sin contexto previo. Actualizar al cerrar una sesión relevante.
 
-**Última actualización:** 2026-08-20
+**Última actualización:** 2026-10-28
 
 ## Dónde estamos
 
@@ -11,7 +11,7 @@
 | 0–3b | **Hecho** — mapa, simulación, construcción, logística, buffers, depósitos finitos, UX construcción |
 | 4+ | **Pendiente** — laboratorio, investigación, O₂ sostenible, eventos climáticos, desgaste, finales |
 
-El juego es jugable en PC (`./scripts/run_dev.sh`) y en R36S vía PortMaster (`./scripts/build_dist.sh`).
+El código está aplanado en la raíz (sin `src/`). El juego es jugable en PC (`make config` + `.venv/bin/python main.py --dev`) y en R36S vía PortMaster (`make dist`).
 
 ## Próximo trabajo sugerido
 
@@ -32,13 +32,13 @@ El juego es jugable en PC (`./scripts/run_dev.sh`) y en R36S vía PortMaster (`.
 
 | Qué | Dónde |
 |-----|--------|
-| Balance numérico | `src/config.py` |
-| Flujos/costes de módulos | `src/module_defs.py` |
-| Tick produce/consume | `src/module_tick.py` |
-| Conectividad (caché) | `src/network.py` → `get_connected()` |
-| Construcción | `src/construction.py` |
-| Bucle principal | `src/game.py` |
-| Textos UI | `src/locales/es.json` |
+| Balance numérico | `config.py` |
+| Flujos/costes de módulos | `module_defs.py` |
+| Tick produce/consume | `module_tick.py` |
+| Conectividad (caché) | `network.py` → `get_connected()` |
+| Construcción | `construction.py` |
+| Bucle principal | `game.py` |
+| Textos UI | `locales/es.json` |
 
 ## Decisiones recientes
 
@@ -46,13 +46,16 @@ El juego es jugable en PC (`./scripts/run_dev.sh`) y en R36S vía PortMaster (`.
 - Red: BFS cacheado; invalidar al colocar cable o módulo.
 - Solar: 12 E/día nominal, repartido solo en horas 6–18 (un panel cubre hábitat 8 E/d).
 - Capa mapa **Recursos** (sin subtítulo “subsuelo” en UI).
+- Aplanado: todos los `.py` y `locales/` viven en la raíz; `main.py` es la única entrada (`--dev`, `--handheld`).
+- Runtime pygame-ce versionado en `port/runtime/` (sin descarga en `make dist`).
 
 ## Comandos habituales
 
 ```bash
-./scripts/run_dev.sh          # PC, teclado como mando
-python3 -m py_compile src/*.py  # verificar sintaxis
-./scripts/build_dist.sh       # empaquetar para R36S
+make config                        # venv + dependencias desde wheelhouse/
+.venv/bin/python main.py --dev     # PC, teclado como mando
+python3 -m py_compile *.py         # verificar sintaxis
+make dist                          # empaquetar para R36S
 ```
 
 ## Verificación manual útil

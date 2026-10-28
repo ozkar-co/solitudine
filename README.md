@@ -11,13 +11,13 @@ Gestión y supervivencia en un planeta hostil: controlas la red de módulos y lo
 
 ## Consola (PortMaster / R36S)
 
-    make port
+    make dist
 
 Copiar a la SD:
 
     dist/Solitudine.sh   →  roms/ports/Solitudine.sh
     dist/solitudine/     →  roms/ports/solitudine/
 
-La consola monta un runtime pygame-ce (squashfs): el `make dist` de Nuitka/PyInstaller no aplica. **SELECT+START** cierra el juego.
+La consola monta el runtime pygame-ce (squashfs) incluido en `port/runtime/`; no se usa Nuitka/PyInstaller. **SELECT+START** cierra el juego.
 
 Más documentación en [docs/](docs/).

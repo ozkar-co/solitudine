@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import time
 
 import pygame
@@ -76,8 +75,8 @@ def _step_cursor_axis(
     return value, acc
 
 
-def create_display() -> pygame.Surface:
-    if os.environ.get("SOLITUDINE_HANDHELD") == "1":
+def create_display(handheld: bool) -> pygame.Surface:
+    if handheld:
         for flags in (pygame.SCALED | pygame.NOFRAME, pygame.SCALED, 0):
             try:
                 return pygame.display.set_mode((SCREEN_W, SCREEN_H), flags)
@@ -86,11 +85,8 @@ def create_display() -> pygame.Surface:
     return pygame.display.set_mode((SCREEN_W, SCREEN_H))
 
 
-def run() -> int:
-    dev_mode = (
-        os.environ.get("SOLITUDINE_DEV") == "1"
-        and os.environ.get("SOLITUDINE_HANDHELD") != "1"
-    )
+def run(dev: bool = False, handheld: bool = False) -> int:
+    dev_mode = dev and not handheld
 
     if dev_mode:
         from dev_input import DEV_KEYMAP, setup_dev_display, setup_dev_env
@@ -101,7 +97,7 @@ def run() -> int:
     pygame.init()
     pygame.joystick.init()
 
-    screen = create_display()
+    screen = create_display(handheld)
     if dev_mode:
         setup_dev_display()
 

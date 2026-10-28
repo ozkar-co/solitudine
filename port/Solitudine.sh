@@ -28,7 +28,7 @@ cd "$GAMEDIR" || exit 1
 if [ ! -f "$GAMEDIR/runtime/$RUNTIME_FILE" ]; then
   echo "ERROR: falta runtime pygame-ce" | tee -a "$GAMEDIR/log.txt"
   echo "Coloca $RUNTIME_FILE en roms/ports/solitudine/runtime/" | tee -a "$GAMEDIR/log.txt"
-  echo "En PC: make port" | tee -a "$GAMEDIR/log.txt"
+  echo "En PC: make dist" | tee -a "$GAMEDIR/log.txt"
   sleep 8
   pm_finish
   exit 1
@@ -43,7 +43,6 @@ fi
 
 $ESUDO mount "$GAMEDIR/runtime/$RUNTIME_FILE" "$PYGAME_DIR"
 
-export SOLITUDINE_HANDHELD=1
 export SDL_GAMECONTROLLERCONFIG="$sdl_controllerconfig"
 
 # ArkOS / R36S: kmsdrm; otros CFW pueden necesitar otro driver
@@ -58,7 +57,7 @@ export PYTHONHOME="$PYGAME_DIR"
 export PYTHONPATH="$PYTHONHOME/lib/python3.12"
 export PYTHONPYCACHEPREFIX="$GAMEDIR/.pycache"
 
-"$PYGAME_DIR/bin/python" "$GAMEDIR/main.py"
+"$PYGAME_DIR/bin/python" "$GAMEDIR/main.py" --handheld
 
 if [[ "$PM_CAN_MOUNT" != "N" ]]; then
   $ESUDO umount "$PYGAME_DIR" 2>/dev/null || true
