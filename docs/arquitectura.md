@@ -172,7 +172,10 @@ Por tick (cuando no hay pausa ni game over):
 
 | Archivo | Responsabilidad |
 |---------|-----------------|
-| `ui_theme.py` | Colores, rects de layout (`map_rect`, `panel_rect`), `format_amount`, `alert_color`. |
+| `ui_theme.py` | Colores, `format_amount`, `alert_color`; re-exporta rects de `ui_layout`. |
+| `ui_layout.py` | Regiones fijas 640×480: mapa, panel, barras. |
+| `ui_assets.py` | Carga/caché de tiles, módulos, iconos y fuente VT323. |
+| `ui_minimap.py` | Minimapa cacheado sobre la región explorada. |
 | `ui_modals.py` | **`draw_map_modal()`** — recuadro centrado en el mapa (pausa, menú construcción, game over). |
 | `ui_map.py` | Mapa: tiles, capas, cables, módulos, preview y cursor. |
 | `ui_panel.py` | Panel lateral: inspección, hábitat, modo colocar. |
@@ -286,7 +289,10 @@ config.py                # balance numérico
 ui.py                    # fachada HUD + modales
 ui_map.py                # dibujado del mapa
 ui_panel.py              # panel lateral
-ui_theme.py              # colores y layout
+ui_layout.py             # regiones 640×480
+ui_theme.py              # colores y formatos
+ui_assets.py             # sprites, iconos y fuente
+ui_minimap.py            # minimapa
 ui_modals.py             # modales sobre mapa
 ui_input.py              # política de input
 module_flow.py           # panel: flujos
@@ -294,6 +300,7 @@ module_power.py          # panel: energía
 i18n.py
 gamepad.py / input_state.py / dev_input.py
 locales/es.json
+assets/                  # tiles, módulos, iconos, fuente y sources
 port/
 ├── Solitudine.sh        # lanzador PortMaster
 └── runtime/             # runtime pygame-ce versionado (squashfs)

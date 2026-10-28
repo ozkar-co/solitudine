@@ -1,20 +1,12 @@
-"""Paleta, layout 640×480 y utilidades de formato para la UI."""
+"""Paleta y utilidades de formato para la UI."""
 
 from __future__ import annotations
 
-import pygame
-
-from config import (
-    BOTTOM_BAR_H,
-    PANEL_W,
-    SCREEN_H,
-    SCREEN_W,
-    TOP_BAR_H,
-)
 from resources import AlertLevel
 from world import Deposit, Tile
 
-from module_defs import COL_HABITAT, module_colors
+from module_defs import module_colors
+from ui_layout import map_rect, panel_rect
 
 MODULE_COLORS = module_colors()
 COL_PANEL = (18, 28, 20)
@@ -41,15 +33,6 @@ DEPOSIT_OVERLAY = {
 }
 
 DEPOSIT_OVERLAY_ALPHA = 0.55
-
-
-def map_rect() -> pygame.Rect:
-    return pygame.Rect(0, TOP_BAR_H, SCREEN_W - PANEL_W, SCREEN_H - TOP_BAR_H - BOTTOM_BAR_H)
-
-
-def panel_rect() -> pygame.Rect:
-    h = SCREEN_H - TOP_BAR_H - BOTTOM_BAR_H
-    return pygame.Rect(SCREEN_W - PANEL_W, TOP_BAR_H, PANEL_W, h)
 
 
 def alert_color(level: AlertLevel) -> tuple[int, int, int]:

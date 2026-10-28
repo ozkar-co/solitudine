@@ -1,4 +1,4 @@
-"""Cámara con zoom fluido y límites sobre área explorada."""
+"""Cámara con zoom entero y límites sobre área explorada."""
 
 from __future__ import annotations
 
@@ -8,13 +8,11 @@ from config import (
     CURSOR_MARGIN_TILES,
     CURSOR_TILES_PER_SEC_FAR,
     CURSOR_TILES_PER_SEC_NEAR,
-    DEFAULT_ZOOM,
+    DEFAULT_ZOOM_LEVEL,
     PAN_TILES_PER_SEC_FAR,
     PAN_TILES_PER_SEC_NEAR,
     WORLD_SIZE,
-    ZOOM_MAX_PX,
-    ZOOM_MIN_PX,
-    ZOOM_SPEED,
+    ZOOM_LEVELS,
 )
 
 
@@ -31,17 +29,23 @@ class Camera:
     def __init__(self, center_x: float, center_y: float) -> None:
         self.x = center_x
         self.y = center_y
-        self.zoom = DEFAULT_ZOOM
+        self.zoom_level = DEFAULT_ZOOM_LEVEL
 
     @property
-    def tile_px(self) -> float:
-        return ZOOM_MIN_PX + (ZOOM_MAX_PX - ZOOM_MIN_PX) * self.zoom
+    def zoom_t(self) -> float:
+        if len(ZOOM_LEVELS) == 1:
+            return 0.0
+        return self.zoom_level / (len(ZOOM_LEVELS) - 1)
 
-    def update_zoom(self, dt: float, zoom_in: bool, zoom_out: bool) -> None:
+    @property
+    def tile_px(self) -> int:
+        return ZOOM_LEVELS[self.zoom_level]
+
+    def update_zoom(self, zoom_in: bool, zoom_out: bool) -> None:
         if zoom_in:
-            self.zoom = min(1.0, self.zoom + ZOOM_SPEED * dt)
+            self.zoom_level = min(len(ZOOM_LEVELS) - 1, self.zoom_level + 1)
         if zoom_out:
-            self.zoom = max(0.0, self.zoom - ZOOM_SPEED * dt)
+            self.zoom_level = max(0, self.zoom_level - 1)
 
     def pan(self, dx: float, dy: float, bounds: tuple[int, int, int, int]) -> None:
         self.x += dx

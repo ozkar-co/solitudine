@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import pygame
 
-from config import BOTTOM_BAR_H, SCREEN_H, SCREEN_W, TOP_BAR_H
+import ui_assets
+from config import SCREEN_W
+from ui_layout import bottom_bar_rect, top_bar_rect
 from construction import BUILD_KINDS, BuildKind, BuildMode, kind_cost
 from i18n import t
 from resources import AlertLevel, ResourceId
@@ -46,42 +48,48 @@ def draw_top_bar(
     font_sm: pygame.font.Font,
     sim: Simulation,
 ) -> None:
-    pygame.draw.rect(surf, COL_PANEL, (0, 0, SCREEN_W, TOP_BAR_H))
+    rect = top_bar_rect()
+    pygame.draw.rect(surf, COL_PANEL, rect)
     worst = sim.resources.worst_alert()
     bar_border = (
         COL_CRITICAL if worst == AlertLevel.CRITICAL else COL_WARN if worst == AlertLevel.WARNING else COL_BORDER
     )
-    pygame.draw.line(surf, bar_border, (0, TOP_BAR_H - 1), (SCREEN_W, TOP_BAR_H - 1))
+    pygame.draw.line(surf, bar_border, (0, rect.bottom - 1), (SCREEN_W, rect.bottom - 1))
     if worst != AlertLevel.OK:
-        pygame.draw.rect(surf, bar_border, (0, 0, SCREEN_W, TOP_BAR_H), 2)
+        pygame.draw.rect(surf, bar_border, rect, 2)
 
-    title = (
-        f"{t('game.title')}  {t('planet.code')}  "
-        f"{t('hud.day', day=sim.day)} {t('hud.hour', hour=sim.hour)}"
+    title = f"{t('game.title')}  {t('planet.code')}"
+    surf.blit(font_sm.render(title, False, COL_TEXT), (8, 1))
+    day = f"{t('hud.day', day=sim.day)} {t('hud.hour', hour=sim.hour)}"
+    day_s = font_sm.render(day, False, COL_DIM)
+    surf.blit(day_s, (SCREEN_W - 8 - day_s.get_width(), 1))
+
+    x = 8
+    vitals = (
+        ("hud.o2", "o2", ResourceId.O2),
+        ("hud.water", "water", ResourceId.WATER),
+        ("hud.food", "food", ResourceId.FOOD),
+        ("hud.power", "power", ResourceId.POWER),
     )
-    surf.blit(font.render(title, True, COL_TEXT), (8, 6))
+    for key, icon_name, resource in vitals:
+        text = t(key, value=format_amount(sim.resources.amount(resource)))
+        level = sim.resources.alert_level(resource)
+        stats_s = font_sm.render(text, False, alert_color(level))
+        surf.blit(ui_assets.icon(icon_name), (x, 17))
+        surf.blit(stats_s, (x + 20, 17))
+        x += 20 + stats_s.get_width() + 16
 
-    stats_x = SCREEN_W - 8
-    mat_s = font_sm.render(t("hud.components", value=format_amount(sim.stock.components)), True, COL_DIM)
-    stats_x -= mat_s.get_width() + 10
-    surf.blit(mat_s, (stats_x, 9))
-
-    o2 = format_amount(sim.resources.o2)
-    power = format_amount(sim.resources.power)
-    for text, level in (
-        (t("hud.power", value=power), sim.resources.alert_level(ResourceId.POWER)),
-        (t("hud.o2", value=o2), sim.resources.alert_level(ResourceId.O2)),
-    ):
-        stats_s = font_sm.render(text, True, alert_color(level))
-        stats_x -= stats_s.get_width() + 10
-        surf.blit(stats_s, (stats_x, 9))
+    if worst != AlertLevel.OK:
+        alert_key = "alert.critical" if worst == AlertLevel.CRITICAL else "alert.warning"
+        alert_s = font_sm.render(t(alert_key), False, alert_color(worst))
+        surf.blit(alert_s, (SCREEN_W - 8 - alert_s.get_width(), 17))
 
 
 def draw_bottom_bar(surf: pygame.Surface, font_sm: pygame.font.Font, text: str) -> None:
-    y = SCREEN_H - BOTTOM_BAR_H
-    pygame.draw.rect(surf, COL_PANEL, (0, y, SCREEN_W, BOTTOM_BAR_H))
-    pygame.draw.line(surf, COL_BORDER, (0, y), (SCREEN_W, y))
-    surf.blit(font_sm.render(text, True, COL_DIM), (8, y + 5))
+    rect = bottom_bar_rect()
+    pygame.draw.rect(surf, COL_PANEL, rect)
+    pygame.draw.line(surf, COL_BORDER, (0, rect.y), (SCREEN_W, rect.y))
+    surf.blit(font_sm.render(text, False, COL_DIM), (8, rect.y + 8))
 
 
 def draw_dev_debug(
@@ -94,23 +102,23 @@ def draw_dev_debug(
     gen_ms: float,
     held: frozenset[str],
     keymap: str,
-    zoom_pct: float,
+    zoom_px: int,
 ) -> None:
     from gamepad import format_actions
 
     rect = map_rect()
     lines = [
-        f"FPS {fps:4.1f}  frame {frame_ms:5.1f}ms  tiles {tiles_drawn}  zoom {zoom_pct:.0f}%",
+        f"FPS {fps:4.1f}  frame {frame_ms:5.1f}ms  tiles {tiles_drawn}  zoom {zoom_px}px",
         f"gen {gen_ms:.0f}ms  held: {format_actions(held)}",
     ]
     y = rect.y + 4
     for line in lines:
-        surf.blit(font_sm.render(line, True, (120, 180, 255)), (rect.x + 4, y))
-        y += 14
+        surf.blit(font_sm.render(line, False, (120, 180, 255)), (rect.x + 4, y))
+        y += 18
     y += 4
     for line in keymap.splitlines():
-        surf.blit(font_sm.render(line, True, (90, 140, 200)), (rect.x + 4, y))
-        y += 13
+        surf.blit(font_sm.render(line, False, (90, 140, 200)), (rect.x + 4, y))
+        y += 16
 
 
 def _build_kind_label(kind: BuildKind) -> str:

@@ -44,7 +44,7 @@ def draw_map_modal(
     h = pad_y * 2
     for line in lines:
         fnt = font if line.large else font_sm
-        s = fnt.render(line.text, True, line.color)
+        s = fnt.render(line.text, False, line.color)
         rendered.append((s, line.large))
         w = max(w, s.get_width() + pad_x * 2)
         h += s.get_height() + (4 if line.large else 2)

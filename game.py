@@ -22,6 +22,7 @@ from gamepad import LJOY_DOWN, LJOY_LEFT, LJOY_RIGHT, LJOY_UP
 from i18n import load, t
 from input_state import Input
 from simulation import Simulation
+import ui_assets
 from ui import (
     MapLayer,
     draw_bottom_bar,
@@ -35,6 +36,7 @@ from ui import (
     map_rect,
 )
 from ui_input import input_policy
+from ui_minimap import draw_minimap
 from world import generate_world
 
 
@@ -103,8 +105,9 @@ def run(dev: bool = False, handheld: bool = False) -> int:
 
     pygame.display.set_caption(t("game.title"))
     clock = pygame.time.Clock()
-    font = pygame.font.Font(None, 22)
-    font_sm = pygame.font.Font(None, 18)
+    ui_assets.load()
+    font = ui_assets.font_lg()
+    font_sm = ui_assets.font_sm()
 
     t0 = time.perf_counter()
     world = generate_world()
@@ -123,6 +126,7 @@ def run(dev: bool = False, handheld: bool = False) -> int:
     mrect = map_rect()
     cursor_acc_x = 0.0
     cursor_acc_y = 0.0
+    minimap_on = True
 
     def reset_session() -> None:
         nonlocal world, sim, camera, cam_bounds, cursor_x, cursor_y
@@ -147,6 +151,9 @@ def run(dev: bool = False, handheld: bool = False) -> int:
             inp.process_event(event)
 
         frame = inp.poll()
+
+        if "R2" in frame.pressed:
+            minimap_on = not minimap_on
 
         if Input.quit_held(frame):
             pygame.quit()
@@ -178,8 +185,8 @@ def run(dev: bool = False, handheld: bool = False) -> int:
         sim.update(dt, world)
 
         if not policy.block_camera_pan:
-            camera.update_zoom(dt, "L1" in frame.held, "L2" in frame.held)
-        cursor_rate, pan_rate = movement_rates(camera.zoom)
+            camera.update_zoom("L1" in frame.pressed, "L2" in frame.pressed)
+        cursor_rate, pan_rate = movement_rates(camera.zoom_t)
 
         if not policy.block_cursor:
             lx_h, lx_p = _axis_active(frame.held, frame.pressed, LJOY_LEFT, "DPAD_LEFT")
@@ -221,6 +228,14 @@ def run(dev: bool = False, handheld: bool = False) -> int:
 
         screen.fill((0, 0, 0))
         tiles_drawn = draw_map(screen, world, sim, camera, layer, cursor_x, cursor_y)
+        draw_minimap(
+            screen,
+            world,
+            camera,
+            cursor_x=cursor_x,
+            cursor_y=cursor_y,
+            visible=minimap_on,
+        )
         draw_top_bar(screen, font, font_sm, sim)
         draw_panel(
             screen, font, font_sm, world, sim, select_x, select_y, layer,
@@ -240,7 +255,7 @@ def run(dev: bool = False, handheld: bool = False) -> int:
                 gen_ms=gen_ms,
                 held=frame.held,
                 keymap=DEV_KEYMAP,
-                zoom_pct=camera.zoom * 100.0,
+                zoom_px=camera.tile_px,
             )
 
         if sim.game_over:

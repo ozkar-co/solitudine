@@ -91,10 +91,12 @@
   "death.o2": "Sin oxigeno",
   "death.water": "Sin agua",
   "death.food": "Sin comida",
-  "help.default": "LJOY=cursor Y=construir X=recursos",
-  "help.selected": "A=inspeccionar Y=construir",
+  "help.default": "LJOY=cursor Y=construir X=recursos R2=minimapa",
+  "help.selected": "A=inspeccionar Y=construir R2=minimapa",
   "help.build_menu": "LJOY/DPAD=elige A=colocar B=cancelar",
   "help.build_place": "A=confirmar B=cancelar",
   "help.game_over": "A = reintentar",
-  "help.paused": "START = continuar"
+  "help.paused": "START = continuar",
+  "hud.water": "H2O: {value}",
+  "hud.food": "Com: {value}"
 }

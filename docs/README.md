@@ -4,6 +4,7 @@
 |---------|-----------|
 | [estado.md](estado.md) | **Retomar trabajo** — fase actual, próximos pasos, archivos clave |
 | [plan-ui.md](plan-ui.md) | **Siguiente etapa** — layout estable, assets pixel, consola y HUD |
+| [assets.md](assets.md) | Prompts, seeds y regeneración de los assets de Genkit |
 | [plan-fase4.md](plan-fase4.md) | **Decisión vigente** — apagado, árbol de tecnologías y matriz de recursos |
 | [plan-fase5.md](plan-fase5.md) | **Siguiente capa** — alimañas, tower defense, botín, inventario y muerte |
 | [diseno-juego.md](diseno-juego.md) | Diseño del juego — **editar aquí para mecánicas nuevas** |

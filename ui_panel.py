@@ -48,7 +48,7 @@ def _module_ctx(sim: Simulation, world: World, mod) -> ModuleContext:
 
 
 def _panel_line(surf, font, x, y, text, color: tuple[int, int, int] = COL_TEXT) -> None:
-    surf.blit(font.render(text, True, color), (x, y))
+    surf.blit(font.render(text, False, color), (x, y))
 
 
 def _panel_flow_line(key: str, value: float) -> str:
@@ -100,7 +100,7 @@ def _draw_build_place(
 ) -> None:
     y = rect.y + 10
     build = sim.build
-    surf.blit(font.render(t("build.title"), True, COL_TEXT), (rect.x + 8, y))
+    surf.blit(font.render(t("build.title"), False, COL_TEXT), (rect.x + 8, y))
     y += 26
     _panel_line(surf, font_sm, rect.x + 8, y, _build_kind_label(build.selected))
     y += 18
@@ -249,13 +249,13 @@ def draw_panel(
         return
 
     y = rect.y + 10
-    surf.blit(font.render(t("panel.title"), True, COL_TEXT), (rect.x + 8, y))
+    surf.blit(font.render(t("panel.title"), False, COL_TEXT), (rect.x + 8, y))
     y += 24
     layer_name = {
         MapLayer.TERRAIN: t("layer.terrain"),
         MapLayer.RESOURCES: t("layer.resources"),
     }[layer]
-    surf.blit(font_sm.render(layer_name, True, COL_DIM), (rect.x + 8, y))
+    surf.blit(font_sm.render(layer_name, False, COL_DIM), (rect.x + 8, y))
     y += 22
 
     if sel_x is None or sel_y is None:

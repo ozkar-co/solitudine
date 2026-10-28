@@ -9,7 +9,7 @@
 | Fase | Estado |
 |------|--------|
 | 0–3b | **Hecho** — mapa, simulación, construcción, logística, buffers, depósitos finitos, UX construcción |
-| UI | **Siguiente** — ver [plan-ui.md](plan-ui.md): grilla 16 px, assets pixel, consola y HUD |
+| UI | **UI-0 hecho** — grilla 16 px, assets pixel, zoom entero, minimapa y barra de vitales; faltan UI-1/2 |
 | 4 | **Decidido, sin implementar** — ver [plan-fase4.md](plan-fase4.md): apagado, consola, tecnología y matriz de recursos |
 | 5 | **Diseñado, sin implementar** — ver [plan-fase5.md](plan-fase5.md): alimañas, tower defense, botín, inventario y muerte |
 | 6+ | **Pendiente** — desgaste, eventos climáticos, radio y finales |
@@ -18,13 +18,12 @@ El código está aplanado en la raíz (sin `src/`). El juego es jugable en PC (`
 
 ## Próximo trabajo sugerido
 
-1. **UI-0** — grilla 16 px, tokens, pipeline de assets y sprites.
-2. **UI-1** — barra superior, barra de acciones y panel con scroll.
-3. **UI-2** — consola con pestañas y huecos para tecnología/inventario/amenaza.
-4. **Slice 4A** — `Module.enabled`, R1 y guardado JSON.
-5. **Slice 4B** — laboratorio + 4 tecnologías.
-6. **Slice 4C** — electrólisis, condensador, reciclaje y batería.
-7. **Slice 5A** — inventario genérico y catálogo de muerte.
+1. **UI-1** — panel con scroll, barra de acciones contextual y estados apagado/dañado.
+2. **UI-2** — consola con pestañas y huecos para tecnología/inventario/amenaza.
+3. **Slice 4A** — `Module.enabled`, R1 y guardado JSON.
+4. **Slice 4B** — laboratorio + 4 tecnologías.
+5. **Slice 4C** — electrólisis, condensador, reciclaje y batería.
+6. **Slice 5A** — inventario genérico y catálogo de muerte.
 
 El orden y los criterios están en [plan-ui.md](plan-ui.md), [plan-fase4.md](plan-fase4.md) y [plan-fase5.md](plan-fase5.md). No abrir un slice nuevo sin cerrar y probar el anterior.
 
@@ -34,6 +33,7 @@ El orden y los criterios están en [plan-ui.md](plan-ui.md), [plan-fase4.md](pla
 |---------|----------------|
 | [diseno-juego.md](diseno-juego.md) | Qué debe hacer el juego, balance de piezas, controles |
 | [plan-ui.md](plan-ui.md) | Siguiente etapa — layout, assets pixel, consola y HUD |
+| [assets.md](assets.md) | Prompts, seeds y regeneración de assets |
 | [plan-fase4.md](plan-fase4.md) | Decisión vigente — UI, apagado, tecnología y recursos |
 | [plan-fase5.md](plan-fase5.md) | Siguiente capa — alimañas, tower defense, botín, inventario y muerte |
 | [arquitectura.md](arquitectura.md) | Dónde va código nuevo, flujo de frame/tick |
@@ -51,6 +51,8 @@ El orden y los criterios están en [plan-ui.md](plan-ui.md), [plan-fase4.md](pla
 | Construcción | `construction.py` |
 | Bucle principal | `game.py` |
 | Textos UI | `locales/es.json` |
+| Sprites/fuente | `assets/` |
+| Registro de assets | `docs/assets.md` |
 
 ## Decisiones recientes
 
@@ -64,7 +66,8 @@ El orden y los criterios están en [plan-ui.md](plan-ui.md), [plan-fase4.md](pla
 - La regla de los seis: no añadir recursos hasta que los 6 actuales tengan ≥2 fuentes y ≥2 usos.
 - Guardado JSON mínimo antes de expandir el árbol de tecnologías.
 - Fase 5: combate automático por capas; el radar explora y atrae alimañas con un radio oculto; el inventario se generaliza antes de añadir botín.
-- UI: grilla de 16 px, zoom entero 1×/2×/3×, panel de 192 px, assets pixel con Genkit (RD Tile/RD+) y consola a pantalla completa. La UI va antes que las fases 4 y 5.
+- UI-0: grilla 16 px, zoom entero 1×/2×/3× (16/32/48), panel de 192 px, sprites de Genkit, minimapa R2, VT323 y barra de vitales. La UI va antes que las fases 4 y 5.
+- Assets: RD Tile para terreno, RD+ para módulos/iconos; finales 16×16 y sources 32×32; registro en `docs/assets.md`.
 - HUD pendiente: hoy la barra superior muestra Cmp/E/O₂ y omite agua/comida; debe pasar a recursos letales + energía.
 
 ## Comandos habituales

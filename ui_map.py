@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import math
 from enum import Enum
 
 import pygame
 
+import ui_assets
 from construction import BuildMode, BuildPreview
 from simulation import Simulation
 from ui_theme import (
@@ -16,13 +16,10 @@ from ui_theme import (
     COL_CURSOR,
     COL_DIM,
     COL_FOG,
-    COL_HABITAT,
     COL_PREVIEW_BAD,
     COL_PREVIEW_OK,
     DEPOSIT_OVERLAY,
     DEPOSIT_OVERLAY_ALPHA,
-    MODULE_COLORS,
-    TILE_COLORS,
     map_rect,
 )
 from world import Deposit, ModuleState, Tile, World
@@ -31,15 +28,6 @@ from world import Deposit, ModuleState, Tile, World
 class MapLayer(Enum):
     TERRAIN = 0
     RESOURCES = 1
-
-
-def _blend_color(
-    base: tuple[int, int, int],
-    overlay: tuple[int, int, int],
-    alpha: float,
-) -> tuple[int, int, int]:
-    a = max(0.0, min(1.0, alpha))
-    return tuple(int(base[c] * (1.0 - a) + overlay[c] * a) for c in range(3))
 
 
 def _resource_overlay(world: World, i: int, tile: Tile) -> tuple[int, int, int] | None:
@@ -54,33 +42,45 @@ def _resource_overlay(world: World, i: int, tile: Tile) -> tuple[int, int, int] 
     return None
 
 
-def _tile_draw_rect(sx: float, sy: float, px: float) -> pygame.Rect:
-    x0 = math.floor(sx)
-    y0 = math.floor(sy)
-    x1 = math.ceil(sx + px)
-    y1 = math.ceil(sy + px)
-    return pygame.Rect(x0, y0, max(1, x1 - x0), max(1, y1 - y0))
+def _tile_draw_rect(sx: float, sy: float, px: int) -> pygame.Rect:
+    return pygame.Rect(round(sx), round(sy), px, px)
+
+
+_OVERLAY_CACHE: dict[tuple[tuple[int, int, int], int], pygame.Surface] = {}
+
+
+def _tint_overlay(color: tuple[int, int, int], size: int) -> pygame.Surface:
+    key = (color, size)
+    overlay = _OVERLAY_CACHE.get(key)
+    if overlay is None:
+        overlay = pygame.Surface((size, size), pygame.SRCALPHA)
+        overlay.fill((*color, int(255 * DEPOSIT_OVERLAY_ALPHA)))
+        _OVERLAY_CACHE[key] = overlay
+    return overlay
 
 
 def _draw_module(surf: pygame.Surface, tile_rect: pygame.Rect, mod) -> None:
-    color = MODULE_COLORS.get(mod.kind.value, COL_HABITAT)
-    pad = max(2, tile_rect.w // 5)
-    inner = tile_rect.inflate(-pad, -pad)
+    sprite = ui_assets.module(mod.kind, tile_rect.w)
+    if mod.state in (ModuleState.WAITING, ModuleState.BUILDING):
+        ghost = sprite.copy()
+        ghost.set_alpha(110)
+        surf.blit(ghost, tile_rect.topleft)
+    else:
+        surf.blit(sprite, tile_rect.topleft)
 
     if mod.state == ModuleState.WAITING:
-        pygame.draw.rect(surf, color, inner, 2)
+        pygame.draw.rect(surf, COL_DIM, tile_rect, 2)
         return
 
     if mod.state == ModuleState.BUILDING and mod.build_total > 0:
-        h = max(1, int(inner.h * (mod.build_progress / mod.build_total)))
-        bar = pygame.Rect(inner.x, inner.bottom - h, inner.w, h)
-        pygame.draw.rect(surf, color, bar)
-        pygame.draw.rect(surf, COL_DIM, inner, 1)
+        h = max(1, int(tile_rect.h * (mod.build_progress / mod.build_total)))
+        bar = pygame.Rect(tile_rect.x, tile_rect.bottom - h, tile_rect.w, h)
+        pygame.draw.rect(surf, COL_CABLE, bar)
+        pygame.draw.rect(surf, COL_DIM, tile_rect, 1)
         return
 
-    pygame.draw.rect(surf, color, inner)
     if mod.state == ModuleState.OFFLINE:
-        pygame.draw.rect(surf, COL_CRITICAL, inner, 2)
+        pygame.draw.rect(surf, COL_CRITICAL, tile_rect, 2)
 
 
 def _draw_cables(
@@ -156,17 +156,19 @@ def draw_map(
                 continue
 
             tile = Tile(world.tiles[i])
-            color = TILE_COLORS[tile]
+
+            if not world.visible[i]:
+                pygame.draw.rect(surf, COL_FOG, tile_rect)
+                continue
+
+            h = (tx * 374761393 + ty * 668265263) & 0xFFFFFFFF
+            h = ((h ^ (h >> 13)) * 1274126177) & 0xFFFFFFFF
+            surf.blit(ui_assets.tile(tile, h, tile_rect.w), tile_rect.topleft)
 
             if layer == MapLayer.RESOURCES:
                 overlay = _resource_overlay(world, i, tile)
                 if overlay is not None:
-                    color = _blend_color(color, overlay, DEPOSIT_OVERLAY_ALPHA)
-
-            if not world.visible[i]:
-                color = COL_FOG
-
-            pygame.draw.rect(surf, color, tile_rect)
+                    surf.blit(_tint_overlay(overlay, tile_rect.w), tile_rect.topleft)
 
     _draw_cables(surf, world, camera, rect, px, x0, y0, x1, y1)
 

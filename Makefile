@@ -32,10 +32,12 @@ clean:
 
 dist:
 	@test -f $(RUNTIME) || { echo "Error: falta $(RUNTIME)" >&2; exit 1; }
+	@test -d assets || { echo "Error: falta assets/" >&2; exit 1; }
 	rm -rf dist
-	mkdir -p dist/solitudine/runtime dist/solitudine/locales
+	mkdir -p dist/solitudine/runtime dist/solitudine/locales dist/solitudine/assets
 	cp *.py dist/solitudine/
 	cp locales/*.json dist/solitudine/locales/
+	cp -r assets/tiles assets/modules assets/icons assets/fonts dist/solitudine/assets/
 	cp port/Solitudine.sh dist/Solitudine.sh
 	chmod +x dist/Solitudine.sh
 	cp $(RUNTIME) dist/solitudine/runtime/

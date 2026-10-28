@@ -1,6 +1,7 @@
 # Plan de UI — base estable y assets pixel
 
 > **Decisión vigente:** 2026-10-28. La UI se adelanta a las fases 4 y 5 para fijar layout, assets y contratos antes de añadir sistemas.
+> **Estado:** UI-0 implementado (grilla 16 px, sprites, zoom entero, minimapa y barra de vitales). Siguiente: UI-1.
 > Objetivo: una UI que no haya que rediseñar cuando lleguen apagado, tecnología, inventario, alimañas y muerte.
 
 ---
@@ -35,7 +36,8 @@ La pantalla 640×480 es exactamente 40×30 tiles de 16×16. El layout se alinea 
 
 ```
 ┌──────────────────────────────────────────────┐ 32
-│ SOLITUDINE  NEP-325   Día 3 14h   O2 H2O Food ⚡│
+│ SOLITUDINE  NEP-325             Día 3 14h    │
+│ O2 10.0  H2O 8.0  Com 6.0  E 12.0            │
 ├───────────────────────────────┬──────────────┤
 │                               │ INSPECCIÓN   │
 │                               │ Módulo: ...  │
@@ -58,7 +60,7 @@ La pantalla 640×480 es exactamente 40×30 tiles de 16×16. El layout se alinea 
 - Tile base 16×16. Niveles de zoom: **1× (16 px), 2× (32 px), 3× (48 px)**.
 - Por defecto 1×, que equivale al tamaño actual (~15,5 px).
 - Sin escalas fraccionarias: `pygame.transform.scale` (nearest), nunca `smoothscale`.
-- Se pierde el zoom lejano actual (6 px). La vista general se resuelve más adelante con un **minimapa** o un modo overview de colores planos, no bajando sprites a 6 px.
+- Se pierde el zoom lejano actual (6 px). La vista general la cubre el **minimapa** (ya implementado); un overview de colores planos queda como opción futura.
 
 ### 2.3 Fuente pixel, no texto generado por IA
 
@@ -69,7 +71,7 @@ La pantalla 640×480 es exactamente 40×30 tiles de 16×16. El layout se alinea 
 
 ### 2.4 Paleta compartida
 
-- Paleta fija de 16–24 colores en `assets/palette.json`, espejada en `ui_theme.py`.
+- Paleta fija en `ui_theme.py`; de momento los assets no se cuantizan, para no perder detalle. Si hace falta cohesión, se reprocesan los sources.
 - Todos los assets generados se cuantizan a esa paleta en el pipeline offline.
 - La UI y los sprites comparten paleta para que el mapa no parezca un collage.
 - Los estados no dependen solo del color: icono + texto + forma (apagado, dañado, bloqueado, crítico).
@@ -109,7 +111,7 @@ Conclusión: **RD+ no es fiable para terrenos de 16 px** (upscalea), pero sí pa
 
 ### 3.2 Perfiles nuevos en Genkit
 
-Genkit es el dueño de los perfiles; Solitudine solo guarda prompts, seeds y rutas en su manifest. Crear en `~/Code/genkit/profiles/image/`:
+Genkit es el dueño de los perfiles; Solitudine guarda prompts, seeds y rutas en `docs/assets.md`. Crear en `~/Code/genkit/profiles/image/`:
 
 ```yaml
 # solitudine-terrain.yaml
@@ -172,7 +174,7 @@ prompt_wrapper: >
 allow_overrides: [seed]
 ```
 
-Ejemplo de corrida (Genkit escribe en la ruta indicada; el manifest vive en Solitudine):
+Ejemplo de corrida (Genkit escribe en la ruta indicada; el registro vive en `docs/assets.md`):
 
 ```bash
 cd ~/Code/genkit
@@ -187,83 +189,43 @@ Notas:
 - El perfil genérico `pixel` (256×256, `topdown_asset`, `remove_bg`) no sirve para terrenos de 16 px; sí como referencia de estilo.
 - Si se itera mucho, evaluar `rd-fast` para borradores y dejar RD+ para finales. No crear perfiles de más sin necesidad.
 
-### 3.3 Pipeline offline
+### 3.3 Estructura y build
 
 ```
 assets/
-├── manifest.json        # prompts, seeds, perfiles, cortes, hashes
-├── palette.json         # 16–24 colores compartidos
-├── CREDITS.md           # modelo/licencia/procedencia
-├── source/              # hojas e imágenes originales de Genkit
+├── source/              # originales de Genkit (hojas 4×5 y PNG 32×32)
 │   ├── terrain/
 │   ├── modules/
 │   └── icons/
 ├── tiles/               # PNG finales 16×16
 ├── modules/             # PNG finales 16×16
-├── icons/               # PNG finales 16×16 / 8×8
-├── ui/                  # 9-slice y adornos (si no se dibujan por código)
-└── fonts/               # fuente pixel con licencia
+├── icons/               # PNG finales 16×16
+└── fonts/               # VT323 + OFL
 ```
 
-- `assets_build.py` en la raíz (respetando “todos los .py en la raíz”):
-  - valida el manifest y que existan las fuentes;
-  - corta hojas RD Tile según `cols/rows/tile_size`;
-  - baja módulos/iconos de 32→16 con nearest y cuantiza a la paleta;
-  - escribe los PNG finales y verifica hashes;
-  - falla rápido si falta algo.
-- `make assets` ejecuta el pipeline con `.venv/bin/python`; no usa red.
-- `make dist` copia `assets/` completo y valida el manifest antes de empaquetar.
-- La generación con Genkit es **manual y fuera del build** (`run.sh image --project solitudine --batch ...`); los assets finales se commitean para que el proyecto siga siendo offline.
+- **No hay pipeline de build permanente.** Los assets finales se generan una vez, se commitean y no se tocan salvo que haya que regenerarlos o editarlos.
+- Los sources se conservan porque permiten editar o volver a cortar sin otra llamada a Genkit.
+- `docs/assets.md` es el registro: perfiles, prompts, seeds, índices de corte y pasos de regeneración.
+- `make dist` copia `assets/` completo y falla si falta; no ejecuta Genkit ni procesa imágenes.
 - `make clean` no borra `assets/`: son fuente, no artefacto de build.
-- No se añade Pillow: pygame-ce ya carga, recorta, escala y guarda PNG. Si el cuantizado a mano se vuelve incómodo, se justifica una dependencia aparte; no antes.
+- No se añade Pillow: el corte y la bajada a 16 se hicieron con pygame; si hay que repetirlo, el procedimiento está en `docs/assets.md`.
 
-### 3.4 Manifiesto mínimo
+### 3.4 Registro de generación
 
-```json
-{
-  "version": 1,
-  "tile_size": 16,
-  "palette": "assets/palette.json",
-  "assets": [
-    {
-      "id": "terrain.ground",
-      "kind": "terrain",
-      "profile": "solitudine-terrain",
-      "prompt": "alien planet ground, dark mossy soil, small stones, seamless",
-      "seed": 42,
-      "source": "assets/source/terrain/ground.png",
-      "sheet": {"cols": 4, "rows": 5, "tile": 16},
-      "outputs": ["assets/tiles/ground_0.png", "assets/tiles/ground_1.png"]
-    },
-    {
-      "id": "module.solar",
-      "kind": "module",
-      "profile": "solitudine-module",
-      "prompt": "solar panel module, dark metal frame, blue cells",
-      "seed": 42,
-      "source": "assets/source/modules/solar.png",
-      "source_size": 32,
-      "output": "assets/modules/solar.png",
-      "output_size": 16
-    }
-  ]
-}
-```
+El detalle vivo está en [assets.md](assets.md): tabla de prompts/seeds, perfiles, índices de la hoja RD Tile y comandos de regeneración. No se conserva un manifest JSON separado; el Markdown es suficiente y evita duplicar la fuente de verdad.
 
-El sidecar de Genkit no se copia tal cual (tiene rutas absolutas y URLs); el manifest guarda solo lo necesario para reproducir: perfil, prompt, seed y modelo.
-
-### 3.5 Set inicial
+### 3.5 Set inicial (implementado)
 
 | Categoría | Cantidad | Fuente | Notas |
 |-----------|----------|--------|-------|
-| Terreno | 3–4 hojas | RD Tile 16×16 | suelo, agua, roca y transiciones |
+| Terreno | 3 hojas | RD Tile 16×16 | suelo, agua, roca; 5 tiles finales |
 | Módulos actuales | 8 | RD+ 32→16 | hábitat, solar, radar, extractor, invernadero, mina, fabricador, almacén |
-| Módulos futuros | 5–8 | RD+ 32→16 | laboratorio, electrolizador, condensador, batería, torreta, trampa |
+| Módulos futuros | 5–8 | RD+ 32→16 | pendientes: laboratorio, electrolizador, condensador, batería, torreta, trampa |
 | Iconos de recurso | 10 | RD+ 32→16 | O₂, agua, comida, energía, componentes, mineral, biomasa, quitina, aleación, núcleo |
 | UI | mínimo | código/9-slice | marcos, barras, pestañas, cursor, glifos |
-| Fuente | 1 | TTF OFL/CC0 | verificar acentos |
+| Fuente | 1 | VT323 OFL | acentos verificados; 16/24 px |
 
-Coste orientativo: 15–25 llamadas × ~$0.02 = **$0.30–0.50** para el primer set. RD Tile rinde 20 tiles por llamada.
+Coste real: 22 generaciones × ~$0.02 ≈ **$0.44**. RD Tile rinde 20 tiles por llamada. El detalle está en [assets.md](assets.md).
 
 ### 3.6 Autotile y variación
 
@@ -279,9 +241,9 @@ Coste orientativo: 15–25 llamadas × ~$0.02 = **$0.30–0.50** para el primer 
 
 ### 4.1 Barra superior
 
-- Día/hora y estado de alerta.
-- Vitales: **O₂, agua, comida y energía** (icono + valor + barra compacta).
-- Si no caben en una fila, la barra de 32 px admite dos filas de 16 px: título arriba, vitales abajo.
+- Dos filas de 16 px: título/día arriba; vitales abajo.
+- Vitales: **O₂, agua, comida y energía** (icono + valor); sin componentes.
+- El estado de alerta usa el borde y un texto a la derecha.
 - Sin componentes ni botín: eso vive en Carga.
 - Alerta de amenaza solo después del primer contacto (fase 5), con icono y texto, no una barra oculta.
 
@@ -376,19 +338,20 @@ Reglas:
 
 ## 6. Plan por etapas
 
-### UI-0 — Base y assets (sin cambiar gameplay)
+### UI-0 — Base y assets (hecho)
 
 - `ui_layout.py` con la grilla 640×480/16 px.
-- Tokens y paleta única; fuente pixel con acentos.
-- `assets_build.py`, manifest, `make assets`, `make dist` con assets.
-- Crear los 3 perfiles de Genkit y generar el primer set (terreno, 8 módulos, iconos base).
+- Tokens y paleta única; VT323 con acentos.
+- 3 perfiles de Genkit y 22 assets generados; registro en [assets.md](assets.md).
 - `ui_assets.py` con caché y escalas 1×/2×/3×.
 - `ui_map.py` dibuja sprites en lugar de rects; niebla y depósitos se mantienen.
+- `ui_minimap.py` con región explorada, módulos, cables y viewport; R2 lo oculta.
+- `make dist` copia `assets/` (sin sources).
 - Criterio: el juego se ve pixel art, sigue jugable y no cambia ninguna regla.
 
-### UI-1 — Shell y HUD
+### UI-1 — Shell y HUD (parcial)
 
-- Barra superior con O₂/agua/comida/energía.
+- Barra superior con O₂/agua/comida/energía (hecho).
 - Barra inferior con acciones y glifos.
 - Panel con secciones, scroll y estados.
 - `Module.enabled` visual (aunque la lógica llegue en 4A): sprite atenuado y glifo.
@@ -408,7 +371,7 @@ Reglas:
 
 - Autotile de agua/roca y variación de terreno.
 - Animaciones cortas (construcción, alerta, apagado).
-- Minimapa/overview para compensar el zoom mínimo de 16 px.
+- Overview opcional; el minimapa ya está implementado para compensar el zoom mínimo de 16 px.
 - Pruebas de rendimiento y capturas de regresión.
 - Criterio: 60 FPS en PC y estable en R36S; sin escalado por frame.
 
@@ -425,50 +388,52 @@ Reglas:
 
 | Riesgo | Prob. | Impacto | Mitigación |
 |--------|-------|---------|------------|
-| Assets de IA inconsistentes | Alta | Medio | Paleta fija, seeds, manifest, cuantizado, retoque manual |
-| RD+ ignora el tamaño pedido | Media | Alto | Terreno con RD Tile; validar dimensiones en el pipeline |
+| Assets de IA inconsistentes | Alta | Medio | Seeds, `docs/assets.md`, sources 32×32 y retoque manual |
+| RD+ ignora el tamaño pedido | Media | Alto | Terreno con RD Tile; dimensiones verificadas al generar |
 | UI reescrita de más y retrasa el juego | Media | Alto | UI-0/1 sin cambiar reglas; juego jugable tras cada etapa |
 | Texto ilegible en 3.5" | Media | Alto | Fuente pixel 16/24, contraste, probar en R36S |
 | Escalado borroso | Media | Medio | Zoom entero y nearest; caché de escalas |
 | Fuente sin acentos/ñ | Media | Medio | Verificar Latin-1 antes de elegir |
 | Sin assets por red/coste | Baja | Alto | Assets finales commiteados; Genkit solo en desarrollo |
-| Licencia de modelos/assets | Baja | Medio | `CREDITS.md` y verificación de licencia |
+| Licencia de modelos/assets | Baja | Medio | OFL de VT323 en `assets/fonts/`; modelos registrados en `docs/assets.md` |
 | UI acoplada a datos futuros | Media | Medio | `ui_state`, placeholders y secciones; no lógica en dibujado |
-| Pipeline añade dependencia | Media | Medio | Usar pygame; no Pillow salvo justificación |
-| Zoom mínimo 16 px limita la vista | Media | Medio | Minimapa/overview en UI-3 |
+| Pipeline añade dependencia | Media | Medio | Corte one-off con pygame; sin build permanente ni Pillow |
+| Zoom mínimo 16 px limita la vista | Media | Medio | Minimapa implementado; overview opcional |
 | Autotile se vuelve un sistema | Media | Medio | Empezar por agua/roca; cables siguen siendo líneas |
 
 ---
 
 ## 8. Criterios de aceptación
 
-- **UI-0:** `make assets` es offline y determinista; `make dist` incluye `assets/`; todos los tiles/módulos se dibujan desde PNG; el juego sigue jugable.
+- **UI-0:** assets finales commiteados; `make dist` incluye `assets/`; todos los tiles/módulos se dibujan desde PNG; zoom 16/32/48; minimapa; barra de vitales; el juego sigue jugable.
 - **UI-1:** la grilla suma 640×480 sin solapes; la barra superior muestra O₂/agua/comida/energía; el panel hace scroll; los textos largos se parten; el estado apagado se distingue sin depender solo del color.
 - **UI-2:** la consola se abre con SELECT y se navega con mando; las pestañas tienen contenido o placeholder; el menú de construcción muestra categorías y candados; el game over muestra causa + días y deja el slot de variante.
-- **UI-3:** autotile visible en agua/roca; minimapa/overview; 60 FPS en PC; capturas de regresión para mapa, panel, consola, construcción y muerte.
+- **UI-3:** autotile visible en agua/roca; overview opcional; 60 FPS en PC; capturas de regresión para mapa, panel, consola, construcción y muerte.
 
 ---
 
 ## 9. Decisiones abiertas
 
-1. Fuente exacta (Pixel Operator, m5x7, otra) y cobertura de acentos.
-2. ¿Módulos finales 16×16 directos o 32→16? Recomendación: 32 de origen, 16 final, nearest.
-3. ¿Se commitean las hojas fuente o solo los PNG finales? Recomendación: ambas; son pequeños y permiten reprocesar.
+1. Fuente: VT323 elegida y verificada con acentos; se puede cambiar si no convence en R36S.
+2. Módulos: 32×32 de origen, 16×16 final con nearest; sources conservados.
+3. Sources: se commitean las hojas/PNG 32×32 y los finales; son pequeños y permiten editar.
 4. ¿Autotile en UI-1 o UI-3? Recomendación: UI-3, después de que el shell esté estable.
-5. ¿Minimapa o modo overview con colores planos? Recomendación: minimapa en UI-3.
+5. Minimapa implementado; el modo overview con colores planos queda como opción futura.
 6. ¿Marco de paneles por código o 9-slice generado? Recomendación: código/9-slice simple, no IA.
 7. ¿Animaciones? Recomendación: solo construcción, apagado y alerta; nada que bloquee la lectura.
 8. ¿RD Fast para borradores? Recomendación: solo si RD+ se vuelve lento/caro; no duplicar perfiles.
 9. ¿Se permite zoom <16 px con LOD de colores? Recomendación: no en esta etapa; minimapa.
-10. ¿La paleta es de 16 o 24 colores? Recomendación: 24 para cubrir terreno + UI + alertas.
+10. Paleta: los assets no se cuantizaron; si hace falta cohesión, se reprocesan los sources.
 
 ---
 
 ## 10. Próximo paso concreto
 
-1. Añadir los 3 perfiles en `~/Code/genkit` (fuera de este repo).
-2. Generar el primer set: 3–4 hojas de terreno, 8 módulos y 10 iconos; guardar fuentes y `assets/manifest.json`.
-3. UI-0: `ui_layout.py`, tokens, `assets_build.py`, `ui_assets.py` y sprites en el mapa.
-4. Playtest corto; después UI-1 y UI-2.
+UI-0 ya está implementado:
 
-No abrir UI-2 hasta que UI-0 y UI-1 estén cerradas y probadas en R36S.
+- perfiles `solitudine-terrain`, `solitudine-module` y `solitudine-icon` en Genkit;
+- 22 assets generados (3 hojas de terreno, 8 módulos, 10 iconos) y registrados en [assets.md](assets.md);
+- `ui_layout.py`, `ui_assets.py`, `ui_minimap.py`, sprites en el mapa, zoom 16/32/48 y barra de vitales;
+- `make dist` copia `assets/`.
+
+Siguiente: **UI-1** (panel con scroll, barra de acciones contextual, estados apagado/dañado) y después UI-2 (consola).

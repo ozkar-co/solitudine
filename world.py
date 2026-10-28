@@ -87,6 +87,7 @@ class World:
     expl_min_y: int = WORLD_SIZE
     expl_max_x: int = 0
     expl_max_y: int = 0
+    explored_version: int = 0
     _network_cache: set[tuple[int, int]] | None = field(default=None, repr=False, compare=False)
 
     def invalidate_network_cache(self) -> None:
@@ -234,9 +235,12 @@ class World:
                     continue
                 x, y = cx + dx, cy + dy
                 if self.in_bounds(x, y):
-                    mask[self.idx(x, y)] = 1
-                    if track:
+                    i = self.idx(x, y)
+                    was_explored = mask[i]
+                    mask[i] = 1
+                    if track and not was_explored:
                         self._touch_explored(x, y)
+                        self.explored_version += 1
 
 
 def _seed_int(text: str) -> int:
