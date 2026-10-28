@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import json
 import tempfile
 import unittest
 from pathlib import Path
 
 from config import HABITAT_X, HABITAT_Y
+from construction import BuildController, BuildKind, kind_locked
 from logistics import network_caps
 from module_defs import buffer_cap, module_active
 from module_kind import ModuleKind
@@ -80,6 +82,9 @@ class SaveTests(unittest.TestCase):
         fab = add_module(world, ModuleKind.FABRICATOR, 1, enabled=False)
         lamp = add_module(world, ModuleKind.LAMP, 2)
         sim.resources.power = 33.0
+        sim.research.unlocked = {"condensador"}
+        sim.research.active = "electrolisis"
+        sim.research.progress = 0.5
 
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "save.json"
@@ -95,8 +100,91 @@ class SaveTests(unittest.TestCase):
             self.assertIsNotNone(mod)
             self.assertFalse(mod.enabled)
             self.assertEqual(world2.module_at(lamp.x, lamp.y).kind, ModuleKind.LAMP)
+            self.assertEqual(sim2.research.unlocked, {"condensador"})
+            self.assertEqual(sim2.research.active, "electrolisis")
+            self.assertAlmostEqual(sim2.research.progress, 0.5)
             delete_save(path)
             self.assertIsNone(load_game(path))
+
+
+    def test_v1_loads_without_research(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "save.json"
+            save_game(world, sim, path)
+            data = json.loads(path.read_text(encoding="utf-8"))
+            data["version"] = 1
+            data["sim"].pop("research")
+            path.write_text(json.dumps(data), encoding="utf-8")
+            loaded = load_game(path)
+            self.assertIsNotNone(loaded)
+            self.assertEqual(loaded[1].research.unlocked, set())
+
+
+class ResearchTests(unittest.TestCase):
+    def test_research_spends_and_completes(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        sim.day_progress = 0.5
+        lab = add_module(world, ModuleKind.LABORATORY, 1)
+        before = sim.stock.components
+        self.assertTrue(sim.start_research(world))
+        self.assertEqual(sim.stock.components, before - 6.0)
+        run(sim, world, 1.0)
+        self.assertGreater(sim.research.progress, 0.0)
+        lab.enabled = False
+        paused_at = sim.research.progress
+        run(sim, world, 1.0)
+        self.assertEqual(sim.research.progress, paused_at)
+        lab.enabled = True
+        run(sim, world, 100.0)
+        self.assertIn("electrolisis", sim.research.unlocked)
+        self.assertIsNone(sim.research.active)
+
+    def test_research_needs_lab(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        before = sim.stock.components
+        self.assertFalse(sim.start_research(world))
+        self.assertEqual(sim.stock.components, before)
+
+    def test_tech_gating(self) -> None:
+        self.assertTrue(kind_locked(BuildKind.ELECTROLYZER, set()))
+        self.assertFalse(kind_locked(BuildKind.ELECTROLYZER, {"electrolisis"}))
+        self.assertTrue(kind_locked(BuildKind.CONDENSER, set()))
+
+
+class TechModuleTests(unittest.TestCase):
+    def test_electrolyzer_produces_o2(self) -> None:
+        def after(with_electrolyzer: bool) -> tuple[float, float]:
+            world = generate_world()
+            sim = Simulation()
+            sim.day_progress = 0.5
+            sim.resources.water = 20.0
+            sim.resources.o2 = 40.0
+            if with_electrolyzer:
+                add_module(world, ModuleKind.ELECTROLYZER, 1)
+            run(sim, world, 1.0)
+            return sim.resources.water, sim.resources.o2
+
+        water_with, o2_with = after(True)
+        water_without, o2_without = after(False)
+        self.assertLess(water_with, water_without)
+        self.assertGreater(o2_with, o2_without)
+
+    def test_condenser_produces_water(self) -> None:
+        def water_after(seconds: float, with_condenser: bool) -> float:
+            world = generate_world()
+            sim = Simulation()
+            sim.day_progress = 0.5
+            sim.resources.water = 10.0
+            if with_condenser:
+                add_module(world, ModuleKind.CONDENSER, 1)
+            run(sim, world, seconds)
+            return sim.resources.water
+
+        self.assertGreater(water_after(1.0, True), water_after(1.0, False))
 
 
 class LampTests(unittest.TestCase):
