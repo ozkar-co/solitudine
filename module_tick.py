@@ -18,9 +18,9 @@ from config import (
 )
 from daylight import darkness
 from materials import Stockpile
-from module_defs import BufferOutput, ModuleKind, module_def
+from module_defs import BufferOutput, ModuleKind, module_active, module_def
 from resources import ResourcePool
-from world import Deposit, Module, ModuleState, World
+from world import Deposit, Module, World
 
 
 @dataclass
@@ -77,10 +77,7 @@ def _output_space(mod: Module, pool: float, cap: float) -> float:
 
 
 def _mod_online(mod: Module, ctx: TickContext) -> bool:
-    defn = module_def(mod.kind)
-    if defn.always_online:
-        return True
-    return mod.state == ModuleState.ONLINE and (mod.x, mod.y) in ctx.connected
+    return module_active(mod, (mod.x, mod.y) in ctx.connected)
 
 
 def tick_solar_production(ctx: TickContext) -> None:

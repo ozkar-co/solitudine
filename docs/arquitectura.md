@@ -146,7 +146,7 @@ Por tick (cuando no hay pausa ni game over):
 |---------|-----------------|
 | `world.py` | Grid 1024², tiles, depósitos, módulos, generación procedural. |
 | `network.py` | Red logística (BFS desde hábitat). **`get_connected()`** cachea el resultado en `World`; invalidar al añadir cables o módulos. |
-| `vision.py` | Niebla/explorado/visión clara (contadores incrementales). |
+| `vision.py` | Niebla/explorado/visión clara (contadores incrementales); respeta `enabled`. |
 | `camera.py` | Pan, zoom, conversión tile ↔ pantalla. |
 
 ### Economía y supervivencia
@@ -157,7 +157,7 @@ Por tick (cuando no hay pausa ni game over):
 | `materials.py` | Componentes y mineral (stock de construcción). |
 | `logistics.py` | Caps de red (`network_caps`) y orquestación del tick. |
 | `module_kind.py` | Enum `ModuleKind` (sin dependencias — evita ciclos). |
-| `module_defs.py` | **Registro de módulos**: flujos nominales, costes, colores, metadata. Panel y sim leen de aquí. |
+| `module_defs.py` | **Registro de módulos**: flujos, costes, colores y `module_active()`. Panel y sim leen de aquí. |
 | `module_tick.py` | Lógica de tick por módulo (produce/consume/energía). |
 | `daylight.py` | Curva de luz natural compartida (día/noche). |
 | `module_flow.py` / `module_power.py` | Delegados finos al panel → `module_defs`. |
@@ -177,7 +177,8 @@ Por tick (cuando no hay pausa ni game over):
 | Archivo | Responsabilidad |
 |---------|-----------------|
 | `simulation.py` | Reloj, estado global (`game_over`, pausa), encadena los sistemas anteriores. |
-| `game_input.py` | Acciones del jugador por frame (construcción, inspección, pausa). |
+| `savegame.py` | Guardado/carga JSON con arrays comprimidos; `save.json`. |
+| `game_input.py` | Acciones por frame: construcción, inspección, pausa y R1 (encender/apagar). |
 
 ### UI (presentación)
 
@@ -292,6 +293,8 @@ module_defs.py           # registro único de módulos
 module_tick.py           # tick produce/consume
 daylight.py              # curva de luz natural
 game_input.py            # input por frame
+savegame.py              # guardado/carga JSON
+test_sim.py              # tests de regresión
 resources.py             # reservas hábitat
 materials.py             # componentes / mineral
 construction.py          # FSM construcción

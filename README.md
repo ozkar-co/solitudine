@@ -5,6 +5,7 @@ Gestión y supervivencia en un planeta hostil: controlas la red de módulos y lo
 ## Desarrollo (PC)
 
     make config
+    make test
     .venv/bin/python main.py --dev
 
 `--dev` hace que el teclado emule el mando. Controles y teclas en [docs/diseno-juego.md](docs/diseno-juego.md).

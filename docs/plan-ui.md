@@ -359,7 +359,7 @@ Reglas:
 - Dithering nocturno atenuado por hábitat/lámpara (hecho); consumo de lámpara proporcional a la oscuridad (hecho).
 - Barra inferior con acciones y glifos.
 - Panel con secciones, scroll y estados.
-- `Module.enabled` visual (aunque la lógica llegue en 4A): sprite atenuado y glifo.
+- `Module.enabled`: R1, sprite atenuado, estado Apagado y efecto real en tick/visión/caps/luz (hecho).
 - Modales con marco 9-slice y wrap.
 - Criterio: 640×480 sin solapes; textos largos se parten; APAGADO se ve claro; R36S legible.
 
@@ -382,7 +382,7 @@ Reglas:
 
 ### Después de UI-2
 
-- **4A** aporta `enabled`, guardado y tests; la UI ya tiene el estado visual.
+- **4A** hecho: `enabled`, guardado y tests.
 - **4B** rellena la pestaña Tecnología.
 - **4C/5A** rellenan Carga e inventario.
 - **5B** rellena amenaza/combate y el registro.

@@ -9,8 +9,8 @@
 | Fase | Estado |
 |------|--------|
 | 0–3b | **Hecho** — mapa, simulación, construcción, logística, buffers, depósitos finitos, UX construcción |
-| UI | **UI-0 hecho** — grilla 16 px, assets pixel, zoom entero, minimapa y barra de vitales; faltan UI-1/2 |
-| 4 | **Decidido, sin implementar** — ver [plan-fase4.md](plan-fase4.md): apagado, consola, tecnología y matriz de recursos |
+| UI | **UI-0 hecho** — grilla, assets, minimapa, día/noche y lámpara; faltan scroll/consola |
+| 4 | **4A hecho** — apagado, guardado y tests; faltan 4B/4C — ver [plan-fase4.md](plan-fase4.md) |
 | 5 | **Diseñado, sin implementar** — ver [plan-fase5.md](plan-fase5.md): alimañas, tower defense, botín, inventario y muerte |
 | 6+ | **Pendiente** — desgaste, eventos climáticos, radio y finales |
 
@@ -18,12 +18,11 @@ El código está aplanado en la raíz (sin `src/`). El juego es jugable en PC (`
 
 ## Próximo trabajo sugerido
 
-1. **UI-1** — panel con scroll, barra de acciones contextual y estados apagado/dañado.
+1. **UI-1 restante** — panel con scroll y barra de acciones más explícita.
 2. **UI-2** — consola con pestañas y huecos para tecnología/inventario/amenaza.
-3. **Slice 4A** — `Module.enabled`, R1 y guardado JSON.
-4. **Slice 4B** — laboratorio + 4 tecnologías.
-5. **Slice 4C** — electrólisis, condensador, reciclaje y batería.
-6. **Slice 5A** — inventario genérico y catálogo de muerte.
+3. **Slice 4B** — laboratorio + 4 tecnologías.
+4. **Slice 4C** — electrólisis, condensador, reciclaje y batería.
+5. **Slice 5A** — inventario genérico y catálogo de muerte.
 
 El orden y los criterios están en [plan-ui.md](plan-ui.md), [plan-fase4.md](plan-fase4.md) y [plan-fase5.md](plan-fase5.md). No abrir un slice nuevo sin cerrar y probar el anterior.
 
@@ -53,6 +52,8 @@ El orden y los criterios están en [plan-ui.md](plan-ui.md), [plan-fase4.md](pla
 | Textos UI | `locales/es.json` |
 | Sprites/fuente | `assets/` |
 | Registro de assets | `docs/assets.md` |
+| Guardado | `savegame.py` (ignorado: `save.json`) |
+| Tests | `test_sim.py` |
 
 ## Decisiones recientes
 
@@ -71,11 +72,14 @@ El orden y los criterios están en [plan-ui.md](plan-ui.md), [plan-fase4.md](pla
 - HUD: etiquetas completas Agua/Comida/Energía. `Comida` y `Energía` bajan a 8/día; el agua a 10/día por soporte vital. Componentes no tiene drenaje pasivo: solo cambia al construir o con fabricador.
 - Día/noche: dithering de 8 niveles con colorkey (sin alpha), solo sobre el terreno; módulos, cables y cursor quedan brillantes. Coste medido despreciable en headless.
 - Luz artificial visual: el hábitat ilumina radio 8 desde el inicio; la lámpara es un módulo construible de radio 10. La luz solo reduce el dithering nocturno y no altera producción. La lámpara consume energía solo de noche, proporcional a la oscuridad (máx. 4/día). Cálculo por tile visible, sin mapa global.
+- Apagado: `Module.enabled` + `module_active()`. R1 apaga/enciende el módulo seleccionado (excepto hábitat); un módulo apagado no produce, no consume energía, no aporta visión, no suma cap de almacén, no emite luz y no vacía buffers.
+- Guardado: `savegame.py` con JSON + arrays comprimidos; auto-save al pausar/cambiar de día/salir y carga al iniciar. `save.json` está ignorado por git. Versión de esquema 1.
 
 ## Comandos habituales
 
 ```bash
 make config                        # venv + dependencias desde wheelhouse/
+make test                          # tests de regresión
 .venv/bin/python main.py --dev     # PC, teclado como mando
 python3 -m py_compile *.py         # verificar sintaxis
 make dist                          # empaquetar para R36S

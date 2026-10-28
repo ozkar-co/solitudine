@@ -11,7 +11,7 @@ from config import (
     HABITAT_WATER_CAP,
 )
 from materials import Stockpile
-from module_defs import ModuleKind, module_def
+from module_defs import ModuleKind, module_active, module_def
 from module_tick import (
     NetworkCaps,
     TickContext,
@@ -23,7 +23,7 @@ from module_tick import (
 )
 from network import get_connected
 from resources import ResourcePool
-from world import ModuleState, World
+from world import World
 
 
 class SimulationProxy:
@@ -37,8 +37,7 @@ def storage_bonus(world: World, connected: set[tuple[int, int]]) -> float:
         bonus
         for mod in world.modules
         if mod.kind == ModuleKind.STORAGE
-        and mod.state == ModuleState.ONLINE
-        and (mod.x, mod.y) in connected
+        and module_active(mod, (mod.x, mod.y) in connected)
     )
 
 

@@ -165,6 +165,12 @@ el unico modulo precolocado es el habitat en el cento del mundo, tiene recusos a
 los modulos contiguos se asumen conectado, pero de resto debe haber conexion explicita, lo que no esté conectado al habitat no es controlable ni legible su estado (hasta que se desarrolle la tecnologia de conmunicacion inalambrica)
 - [x] Estados: ok / degradado / offline. ok todo funciona hasta cierto nivel de daño, mientras este dañado pero no del todo se muesta degradado, el simbolo de alerta funciona como un semaforo, un circulo verde es ok, un triangulo amarillo significa que no esta funcionando al 100% y necesita reparacion mantenimiento, un cuadrado rojo es que esta demasiado dañado para funcionar o que esta desconectado o que algo impide que funcione.
 
+### 8.2.1 Apagado manual
+
+- R1 enciende/apaga el módulo seleccionado, salvo el hábitat.
+- Un módulo apagado no produce, no consume energía, no aporta visión, no suma capacidad de almacén, no emite luz y no vacía buffers.
+- La conectividad no cambia: apagar no desconecta cables ni módulos.
+
 ### 8.3 Conexiones (sustituyen al grafo abstracto)
 
 - [x] Tipos: cable eléctrico, tubería agua, cinta/bot logistic (¿cuáles en MVP?).

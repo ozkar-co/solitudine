@@ -59,6 +59,7 @@ class Module:
     x: int
     y: int
     state: ModuleState = ModuleState.ONLINE
+    enabled: bool = True
     build_progress: float = 0.0
     build_total: float = 0.0
     buffer: float = 0.0

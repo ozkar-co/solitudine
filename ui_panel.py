@@ -67,6 +67,8 @@ def _panel_energy_line(mod, sim: Simulation, world: World) -> str:
 
 
 def _module_status_key(mod) -> str:
+    if not mod.enabled:
+        return "status.disabled"
     if mod.state == ModuleState.WAITING:
         return "status.waiting"
     if mod.state == ModuleState.BUILDING:

@@ -78,6 +78,7 @@ def ensure_module_shadow(world, mod) -> None:
 
 
 def set_module_clear(world, mod, active: bool) -> None:
+    active = active and mod.enabled
     if mod.clear_active == active:
         return
     radii = module_radii(mod.kind)

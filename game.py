@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 import time
 
 import pygame
@@ -22,6 +23,7 @@ from gamepad import LJOY_DOWN, LJOY_LEFT, LJOY_RIGHT, LJOY_UP
 from i18n import load, t
 from input_state import Input
 from simulation import Simulation
+import savegame
 import ui_assets
 from ui import (
     MapLayer,
@@ -110,7 +112,16 @@ def run(dev: bool = False, handheld: bool = False) -> int:
     font_sm = ui_assets.font_sm()
 
     t0 = time.perf_counter()
-    world = generate_world()
+    try:
+        loaded = savegame.load_game()
+    except Exception as exc:
+        print(f"Guardado ignorado: {exc}", file=sys.stderr)
+        loaded = None
+    if loaded is None:
+        world = generate_world()
+        sim = Simulation()
+    else:
+        world, sim = loaded
     gen_ms = (time.perf_counter() - t0) * 1000.0
 
     camera = Camera(float(HABITAT_X), float(HABITAT_Y))
@@ -121,16 +132,24 @@ def run(dev: bool = False, handheld: bool = False) -> int:
     select_x: int | None = None
     select_y: int | None = None
     layer = MapLayer.TERRAIN
-    sim = Simulation()
     cam_bounds = world.camera_bounds(CAMERA_MARGIN)
     mrect = map_rect()
     cursor_acc_x = 0.0
     cursor_acc_y = 0.0
     minimap_on = True
 
+    def save_now() -> None:
+        if sim.game_over:
+            return
+        try:
+            savegame.save_game(world, sim)
+        except OSError as exc:
+            print(f"No se pudo guardar: {exc}", file=sys.stderr)
+
     def reset_session() -> None:
         nonlocal world, sim, camera, cam_bounds, cursor_x, cursor_y
         nonlocal select_x, select_y, layer, cursor_acc_x, cursor_acc_y
+        savegame.delete_save()
         world = generate_world()
         sim = Simulation()
         camera = Camera(float(HABITAT_X), float(HABITAT_Y))
@@ -146,6 +165,7 @@ def run(dev: bool = False, handheld: bool = False) -> int:
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                save_now()
                 pygame.quit()
                 return 0
             inp.process_event(event)
@@ -156,6 +176,7 @@ def run(dev: bool = False, handheld: bool = False) -> int:
             minimap_on = not minimap_on
 
         if Input.quit_held(frame):
+            save_now()
             pygame.quit()
             return 0
 
@@ -164,6 +185,7 @@ def run(dev: bool = False, handheld: bool = False) -> int:
         sim.paused = policy.pause_time
 
         pause_modal = not sim.game_over and sim.user_paused
+        was_paused = sim.user_paused
 
         input_result = handle_frame_input(
             frame,
@@ -182,7 +204,13 @@ def run(dev: bool = False, handheld: bool = False) -> int:
         layer = input_result.layer
         select_x, select_y = input_result.select_x, input_result.select_y
 
+        if not was_paused and sim.user_paused:
+            save_now()
+
+        previous_day = sim.day
         sim.update(dt, world)
+        if sim.day != previous_day:
+            save_now()
 
         if not policy.block_camera_pan:
             camera.update_zoom("L1" in frame.pressed, "L2" in frame.pressed)

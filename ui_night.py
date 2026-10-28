@@ -8,9 +8,9 @@ from __future__ import annotations
 
 import pygame
 
-from module_defs import module_def
+from module_defs import module_active, module_def
 from module_kind import ModuleKind
-from world import ModuleState, World
+from world import World
 
 _LEVELS = 8
 _MAX_DENSITY = 0.65
@@ -38,9 +38,8 @@ def light_sources(world: World, connected: set[tuple[int, int]]) -> list[tuple[i
         radius = module_def(mod.kind).light_radius
         if radius <= 0:
             continue
-        if mod.kind != ModuleKind.HABITAT:
-            if mod.state != ModuleState.ONLINE or (mod.x, mod.y) not in connected:
-                continue
+        if not module_active(mod, (mod.x, mod.y) in connected):
+            continue
         sources.append((mod.x, mod.y, radius))
     return sources
 

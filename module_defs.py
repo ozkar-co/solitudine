@@ -219,6 +219,14 @@ def module_def(kind: ModuleKind) -> ModuleDef:
     return MODULE_DEFS[kind]
 
 
+def module_active(mod: Module, connected: bool) -> bool:
+    """Activo para tick/visión/luz: online, conectado y encendido (salvo hábitat)."""
+    defn = MODULE_DEFS[mod.kind]
+    if defn.always_online:
+        return True
+    return mod.enabled and mod.state == ModuleState.ONLINE and connected
+
+
 def buffer_cap(kind: ModuleKind) -> float:
     return MODULE_BUFFER_CAP if MODULE_DEFS[kind].has_buffer else 0.0
 
@@ -235,10 +243,7 @@ class ModuleContext:
 
 
 def _is_online(mod: Module, ctx: ModuleContext) -> bool:
-    defn = module_def(mod.kind)
-    if defn.always_online:
-        return True
-    return mod.state == ModuleState.ONLINE and ctx.connected
+    return module_active(mod, ctx.connected)
 
 
 def _solar_active(hour_float: float) -> bool:

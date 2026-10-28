@@ -7,7 +7,7 @@
 #   sha256 4c102f82291dc6d75ca3e6c4ab55acb2b07fc2cdeb552d961bd44aba704f2ebd
 # Ejecución en PC: .venv/bin/python main.py --dev
 
-.PHONY: config fetch clean dist
+.PHONY: config fetch clean dist test
 
 PY := .venv/bin/python
 RUNTIME := port/runtime/pygame-ce_2.5.6_python_3.12.8.squashfs
@@ -27,6 +27,9 @@ fetch:
 		exit 1; \
 	fi
 
+test:
+	$(PY) -m unittest -v
+
 clean:
 	rm -rf .venv dist __pycache__
 
@@ -35,7 +38,7 @@ dist:
 	@test -d assets || { echo "Error: falta assets/" >&2; exit 1; }
 	rm -rf dist
 	mkdir -p dist/solitudine/runtime dist/solitudine/locales dist/solitudine/assets
-	cp *.py dist/solitudine/
+	cp $(filter-out test_%.py,$(wildcard *.py)) dist/solitudine/
 	cp locales/*.json dist/solitudine/locales/
 	cp -r assets/tiles assets/modules assets/icons assets/fonts dist/solitudine/assets/
 	cp port/Solitudine.sh dist/Solitudine.sh

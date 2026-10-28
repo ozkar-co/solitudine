@@ -7,9 +7,13 @@ from dataclasses import dataclass
 from construction import BuildController, BuildKind, BuildMode
 from gamepad import LJOY_DOWN, LJOY_LEFT, LJOY_RIGHT, LJOY_UP
 from input_state import FrameInput, Input
+from module_defs import module_active
+from module_kind import ModuleKind
+from network import get_connected
 from simulation import Simulation
 from ui import MapLayer
-from world import World
+from vision import set_module_clear
+from world import ModuleState, World
 
 
 @dataclass
@@ -64,6 +68,16 @@ def handle_frame_input(
                     build.cancel_build()
 
     elif not sim.user_paused:
+        if inp.was_pressed(frame, "R1") and select_x is not None and select_y is not None:
+            mod = world.module_at(select_x, select_y)
+            if (
+                mod is not None
+                and mod.kind != ModuleKind.HABITAT
+                and mod.state in (ModuleState.ONLINE, ModuleState.OFFLINE)
+            ):
+                mod.enabled = not mod.enabled
+                connected = (mod.x, mod.y) in get_connected(world)
+                set_module_clear(world, mod, module_active(mod, connected))
         if inp.was_pressed(frame, "X"):
             result.layer = (
                 MapLayer.RESOURCES if layer == MapLayer.TERRAIN else MapLayer.TERRAIN

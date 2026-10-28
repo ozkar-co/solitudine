@@ -50,6 +50,7 @@ def _tile_draw_rect(sx: float, sy: float, px: int) -> pygame.Rect:
 
 
 _OVERLAY_CACHE: dict[tuple[tuple[int, int, int], int], pygame.Surface] = {}
+_DISABLED_CACHE: dict[int, pygame.Surface] = {}
 
 
 def _tint_overlay(color: tuple[int, int, int], size: int) -> pygame.Surface:
@@ -62,6 +63,15 @@ def _tint_overlay(color: tuple[int, int, int], size: int) -> pygame.Surface:
     return overlay
 
 
+def _disabled_overlay(size: int) -> pygame.Surface:
+    overlay = _DISABLED_CACHE.get(size)
+    if overlay is None:
+        overlay = pygame.Surface((size, size), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 120))
+        _DISABLED_CACHE[size] = overlay
+    return overlay
+
+
 def _draw_module(surf: pygame.Surface, tile_rect: pygame.Rect, mod) -> None:
     sprite = ui_assets.module(mod.kind, tile_rect.w)
     if mod.state in (ModuleState.WAITING, ModuleState.BUILDING):
@@ -70,6 +80,10 @@ def _draw_module(surf: pygame.Surface, tile_rect: pygame.Rect, mod) -> None:
         surf.blit(ghost, tile_rect.topleft)
     else:
         surf.blit(sprite, tile_rect.topleft)
+
+    if not mod.enabled:
+        surf.blit(_disabled_overlay(tile_rect.w), tile_rect.topleft)
+        pygame.draw.rect(surf, COL_DIM, tile_rect, 1)
 
     if mod.state == ModuleState.WAITING:
         pygame.draw.rect(surf, COL_DIM, tile_rect, 2)

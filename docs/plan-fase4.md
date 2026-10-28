@@ -176,12 +176,13 @@ Sin persistencia, un árbol de tecnologías es una trampa: el jugador pierde hor
 
 ## 7. Plan por slices
 
-### Slice 4A — Control y guardado (después de UI-2)
+### Slice 4A — Control y guardado (hecho)
 
-- `Module.enabled` + helper `module_active()`.
-- Acción R1 conectada a la UI ya construida; hábitat no toggleable.
-- Guardado JSON mínimo.
+- `Module.enabled` + helper `module_active()` (hecho).
+- Acción R1 conectada a la UI; hábitat no toggleable (hecho).
+- Guardado JSON mínimo (hecho).
 - Tests: toggle no altera recursos, visión ni caps; guardado/carga conserva `enabled`.
+- Hecho: `make test` cubre fabricador apagado, almacén apagado, hábitat always-on y consumo de lámpara.
 - La barra superior, el panel con scroll y la consola ya vienen de [plan-ui.md](plan-ui.md); no duplicar ese trabajo aquí.
 
 ### Slice 4B — Tecnología mínima
@@ -221,7 +222,7 @@ Sin persistencia, un árbol de tecnologías es una trampa: el jugador pierde hor
 
 ## 8. Criterios de aceptación
 
-- **4A:** R1 apaga/enciende el módulo seleccionado; un módulo apagado consume 0, produce 0 y no da visión; el hábitat no se puede apagar; guardar/cargar conserva el estado; test headless pasa.
+- **4A:** R1 apaga/enciende el módulo seleccionado; un módulo apagado consume 0, produce 0 y no da visión; el hábitat no se puede apagar; guardar/cargar conserva el estado; `make test` pasa.
 - **4B:** la lab solo investiga si está online y con energía; una tecnología desbloquea una pieza en el menú; el árbol se navega con mando; guardar/cargar conserva desbloqueos y progreso.
 - **4C:** existen al menos dos fuentes para O₂, energía, agua, mineral y componentes, y dos usos para energía, agua, mineral y componentes; cada fuente tiene una limitación real (energía, espacio, depósito finito o tecnología).
 - **4D:** una plaga puede dañar un módulo, una trampa la contiene y el jugador puede reparar con componentes.
@@ -242,12 +243,10 @@ Sin persistencia, un árbol de tecnologías es una trampa: el jugador pierde hor
 
 ## 10. Próximo paso concreto
 
-Primero [plan-ui.md](plan-ui.md): UI-0, UI-1 y UI-2. La UI deja el panel, la barra y la consola listos.
+UI-0 y 4A están hechos. Siguiente:
 
-Después, **Slice 4A** en este orden:
+1. **UI-1 restante** — panel con scroll y barra de acciones más explícita.
+2. **UI-2** — consola con pestañas y huecos para tecnología/inventario/amenaza.
+3. **Slice 4B** — laboratorio + 4 tecnologías.
 
-1. `Module.enabled` + `module_active()` y tests.
-2. Acción R1 conectada a la UI existente.
-3. Guardado JSON mínimo.
-
-Después de 4A, playtest corto y recién entonces abrir 4B.
+Después de UI-2, playtest corto y recién entonces abrir 4B.

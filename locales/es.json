@@ -92,7 +92,7 @@
   "death.water": "Sin agua",
   "death.food": "Sin comida",
   "help.default": "LJOY=cursor Y=construir X=recursos R2=minimapa",
-  "help.selected": "A=inspeccionar Y=construir R2=minimapa",
+  "help.selected": "A=inspeccionar Y=construir R1=apagar/encender R2=minimapa",
   "help.build_menu": "LJOY/DPAD=elige A=colocar B=cancelar",
   "help.build_place": "A=confirmar B=cancelar",
   "help.game_over": "A = reintentar",
@@ -102,5 +102,6 @@
   "module.lamp": "Lámpara",
   "build.lamp": "Lámpara",
   "build.light_radius": "Ilumina: radio {radius}",
-  "panel.light_radius": "Ilumina: radio {radius}"
+  "panel.light_radius": "Ilumina: radio {radius}",
+  "status.disabled": "Apagado"
 }
