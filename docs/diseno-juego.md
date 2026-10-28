@@ -285,10 +285,13 @@ Inicialmente en español, pero de una vez creemos el soporte multilingue haciend
 - **UI ilegible** en 3.5" si hay demasiados tiles/iconos.
 - **Scope creep** del mapa (pathfinding, zoom, edición) vs KISS.
 - **Doble complejidad** terreno + simulación de recursos desde el día 1.
+- **Combate tower defense** (alimañas + torretas + oleadas): puede comerse el proyecto; se planifica por capas en [plan-fase5.md](plan-fase5.md).
 
 ---
 
 ## 12. Roadmap de diseño sugerido (no código aún)
+
+> Histórico: este roadmap corresponde al MVP y ya se cumplió. Para el bloque vigente usar [plan-ui.md](plan-ui.md), [plan-fase4.md](plan-fase4.md) y [plan-fase5.md](plan-fase5.md).
 
 1. Responder sección 10 (marcar checkboxes arriba).
 2. Boceto en papel del mapa MVP: hábitat + 3 módulos + 2 recursos.

@@ -9,21 +9,33 @@
 | Fase | Estado |
 |------|--------|
 | 0–3b | **Hecho** — mapa, simulación, construcción, logística, buffers, depósitos finitos, UX construcción |
-| 4+ | **Pendiente** — laboratorio, investigación, O₂ sostenible, eventos climáticos, desgaste, finales |
+| UI | **Siguiente** — ver [plan-ui.md](plan-ui.md): grilla 16 px, assets pixel, consola y HUD |
+| 4 | **Decidido, sin implementar** — ver [plan-fase4.md](plan-fase4.md): apagado, consola, tecnología y matriz de recursos |
+| 5 | **Diseñado, sin implementar** — ver [plan-fase5.md](plan-fase5.md): alimañas, tower defense, botín, inventario y muerte |
+| 6+ | **Pendiente** — desgaste, eventos climáticos, radio y finales |
 
 El código está aplanado en la raíz (sin `src/`). El juego es jugable en PC (`make config` + `.venv/bin/python main.py --dev`) y en R36S vía PortMaster (`make dist`).
 
 ## Próximo trabajo sugerido
 
-1. **Laboratorio + investigación** — O₂ sostenible (hoy solo reserva inicial + invernadero +2/d).
-2. **Eventos globales** — heladas, calor, tormentas (diseño en `diseno-juego.md` § eventos).
-3. **Desgaste / estados degradados** — enum existe; falta simulación real.
+1. **UI-0** — grilla 16 px, tokens, pipeline de assets y sprites.
+2. **UI-1** — barra superior, barra de acciones y panel con scroll.
+3. **UI-2** — consola con pestañas y huecos para tecnología/inventario/amenaza.
+4. **Slice 4A** — `Module.enabled`, R1 y guardado JSON.
+5. **Slice 4B** — laboratorio + 4 tecnologías.
+6. **Slice 4C** — electrólisis, condensador, reciclaje y batería.
+7. **Slice 5A** — inventario genérico y catálogo de muerte.
+
+El orden y los criterios están en [plan-ui.md](plan-ui.md), [plan-fase4.md](plan-fase4.md) y [plan-fase5.md](plan-fase5.md). No abrir un slice nuevo sin cerrar y probar el anterior.
 
 ## Mapa de documentación
 
 | Archivo | Cuándo leerlo |
 |---------|----------------|
 | [diseno-juego.md](diseno-juego.md) | Qué debe hacer el juego, balance de piezas, controles |
+| [plan-ui.md](plan-ui.md) | Siguiente etapa — layout, assets pixel, consola y HUD |
+| [plan-fase4.md](plan-fase4.md) | Decisión vigente — UI, apagado, tecnología y recursos |
+| [plan-fase5.md](plan-fase5.md) | Siguiente capa — alimañas, tower defense, botín, inventario y muerte |
 | [arquitectura.md](arquitectura.md) | Dónde va código nuevo, flujo de frame/tick |
 | [estado.md](estado.md) | Este archivo — continuidad entre sesiones |
 | [ideas.md](ideas.md) | Brainstorm original; **no** es fuente de verdad de implementación |
@@ -48,6 +60,12 @@ El código está aplanado en la raíz (sin `src/`). El juego es jugable en PC (`
 - Capa mapa **Recursos** (sin subtítulo “subsuelo” en UI).
 - Aplanado: todos los `.py` y `locales/` viven en la raíz; `main.py` es la única entrada (`--dev`, `--handheld`).
 - Runtime pygame-ce versionado en `port/runtime/` (sin descarga en `make dist`).
+- Fase 4: vertical slice (no contenido masivo). Apagado con `enabled`, árbol de tecnología como DAG de datos y consola a pantalla completa, sin recurso “ciencia” ni recursos nuevos.
+- La regla de los seis: no añadir recursos hasta que los 6 actuales tengan ≥2 fuentes y ≥2 usos.
+- Guardado JSON mínimo antes de expandir el árbol de tecnologías.
+- Fase 5: combate automático por capas; el radar explora y atrae alimañas con un radio oculto; el inventario se generaliza antes de añadir botín.
+- UI: grilla de 16 px, zoom entero 1×/2×/3×, panel de 192 px, assets pixel con Genkit (RD Tile/RD+) y consola a pantalla completa. La UI va antes que las fases 4 y 5.
+- HUD pendiente: hoy la barra superior muestra Cmp/E/O₂ y omite agua/comida; debe pasar a recursos letales + energía.
 
 ## Comandos habituales
 
