@@ -8,6 +8,7 @@ from enum import Enum, auto
 from materials import Stockpile
 from module_defs import CABLE_COST, ModuleKind, module_def
 from network import get_connected, invalidate_network_cache, is_adjacent_to_network
+from tech_defs import tech_for_module
 from vision import on_cable_added, on_module_built, on_module_online_changed
 from world import Deposit, Module, ModuleState, Tile, World
 
@@ -22,19 +23,23 @@ class BuildKind(Enum):
     STORAGE = auto()
     RADAR = auto()
     LAMP = auto()
+    LABORATORY = auto()
+    ELECTROLYZER = auto()
+    CONDENSER = auto()
 
 
-BUILD_KINDS = (
-    BuildKind.CABLE,
-    BuildKind.SOLAR,
-    BuildKind.EXTRACTOR,
-    BuildKind.MINE,
-    BuildKind.FABRICATOR,
-    BuildKind.GREENHOUSE,
-    BuildKind.STORAGE,
-    BuildKind.RADAR,
-    BuildKind.LAMP,
+BUILD_CATEGORIES: tuple[tuple[str, tuple[BuildKind, ...]], ...] = (
+    ("category.energy", (BuildKind.SOLAR,)),
+    ("category.extraction", (BuildKind.EXTRACTOR, BuildKind.MINE)),
+    (
+        "category.support",
+        (BuildKind.GREENHOUSE, BuildKind.LAMP, BuildKind.ELECTROLYZER, BuildKind.CONDENSER),
+    ),
+    ("category.logistics", (BuildKind.CABLE, BuildKind.FABRICATOR, BuildKind.STORAGE)),
+    ("category.science", (BuildKind.RADAR, BuildKind.LABORATORY)),
 )
+
+BUILD_KINDS = tuple(kind for _key, kinds in BUILD_CATEGORIES for kind in kinds)
 
 
 class BuildMode(Enum):
@@ -71,6 +76,9 @@ BUILD_TO_MODULE: dict[BuildKind, ModuleKind] = {
     BuildKind.FABRICATOR: ModuleKind.FABRICATOR,
     BuildKind.STORAGE: ModuleKind.STORAGE,
     BuildKind.LAMP: ModuleKind.LAMP,
+    BuildKind.LABORATORY: ModuleKind.LABORATORY,
+    BuildKind.ELECTROLYZER: ModuleKind.ELECTROLYZER,
+    BuildKind.CONDENSER: ModuleKind.CONDENSER,
 }
 
 
@@ -88,6 +96,13 @@ def kind_build_days(kind: BuildKind) -> float:
 
 def module_kind_for(build: BuildKind) -> ModuleKind:
     return BUILD_TO_MODULE[build]
+
+
+def kind_locked(build: BuildKind, unlocked: set[str]) -> bool:
+    if build == BuildKind.CABLE:
+        return False
+    tech_id = tech_for_module(BUILD_TO_MODULE[build])
+    return tech_id is not None and tech_id not in unlocked
 
 
 @dataclass
@@ -192,7 +207,19 @@ class BuildController:
     def preview_valid(self, world: World, stock: Stockpile, x: int, y: int) -> bool:
         return self.preview(world, stock, x, y) == BuildPreview.OK
 
-    def try_place(self, world: World, stock: Stockpile, x: int, y: int) -> bool:
+    def selected_locked(self, unlocked: set[str]) -> bool:
+        return kind_locked(self.selected, unlocked)
+
+    def try_place(
+        self,
+        world: World,
+        stock: Stockpile,
+        x: int,
+        y: int,
+        unlocked: set[str] | None = None,
+    ) -> bool:
+        if unlocked is not None and self.selected_locked(unlocked):
+            return False
         connected = get_connected(world)
         if self.selected == BuildKind.CABLE:
             if not self._can_extend_cable(world, x, y, connected):

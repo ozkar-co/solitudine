@@ -7,10 +7,11 @@ import pygame
 import ui_assets
 from config import SCREEN_W
 from ui_layout import bottom_bar_rect, top_bar_rect
-from construction import BUILD_KINDS, BuildKind, BuildMode, kind_cost
+from construction import BUILD_CATEGORIES, BuildKind, BuildMode, kind_cost, kind_locked, module_kind_for
 from i18n import t
 from resources import AlertLevel, ResourceId
 from simulation import Simulation
+from tech_defs import tech_def, tech_for_module
 from ui_map import MapLayer, draw_map
 from ui_modals import ModalLine, draw_map_modal
 from ui_panel import draw_panel
@@ -132,6 +133,9 @@ def _build_kind_label(kind: BuildKind) -> str:
         BuildKind.GREENHOUSE: t("build.greenhouse"),
         BuildKind.STORAGE: t("build.storage"),
         BuildKind.LAMP: t("build.lamp"),
+        BuildKind.LABORATORY: t("build.laboratory"),
+        BuildKind.ELECTROLYZER: t("build.electrolyzer"),
+        BuildKind.CONDENSER: t("build.condenser"),
     }[kind]
 
 
@@ -149,12 +153,22 @@ def draw_build_menu_modal(
         ModalLine(t("build.title"), COL_TEXT, large=True),
         ModalLine(t("build.components", value=format_amount(sim.stock.components)), COL_DIM),
     ]
-    for i, kind in enumerate(BUILD_KINDS):
-        prefix = ">" if i == build.menu_index else " "
-        label = _build_kind_label(kind)
-        cost = format_amount(kind_cost(kind))
-        color = COL_TEXT if i == build.menu_index else COL_DIM
-        lines.append(ModalLine(f"{prefix} {label} ({cost})", color))
+    idx = 0
+    for category_key, kinds in BUILD_CATEGORIES:
+        lines.append(ModalLine(t(category_key), COL_WARN))
+        for kind in kinds:
+            selected = idx == build.menu_index
+            prefix = ">" if selected else " "
+            locked = kind_locked(kind, sim.research.unlocked)
+            text = f"{prefix} {_build_kind_label(kind)} ({format_amount(kind_cost(kind))})"
+            color = COL_TEXT if selected else COL_DIM
+            if locked:
+                tech_id = tech_for_module(module_kind_for(kind))
+                if tech_id is not None:
+                    text += f"  {t('build.locked', tech=t(tech_def(tech_id).name_key))}"
+                color = COL_WARN if selected else COL_DIM
+            lines.append(ModalLine(text, color))
+            idx += 1
     lines.append(ModalLine(t("build.hint_menu"), COL_DIM))
     draw_map_modal(surf, font, font_sm, lines, dim_map=True)
 

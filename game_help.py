@@ -15,6 +15,8 @@ def context_help(
 ) -> str:
     if sim.game_over:
         return t("help.game_over")
+    if sim.research.open:
+        return t("help.tech")
     if sim.user_paused:
         return t("help.paused")
     if build.mode == BuildMode.MENU:

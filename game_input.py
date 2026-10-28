@@ -44,6 +44,21 @@ def handle_frame_input(
             result.reset_session = True
         return result
 
+    if sim.research.open:
+        if inp.was_pressed(frame, "B") or inp.was_pressed(frame, "SELECT"):
+            sim.research.open = False
+        elif inp.was_pressed(frame, "DPAD_UP") or inp.was_pressed(frame, LJOY_UP):
+            sim.research.select(-1)
+        elif inp.was_pressed(frame, "DPAD_DOWN") or inp.was_pressed(frame, LJOY_DOWN):
+            sim.research.select(1)
+        elif inp.was_pressed(frame, "A"):
+            sim.start_research(world)
+        return result
+
+    if inp.was_pressed(frame, "SELECT") and build.mode == BuildMode.NONE and not sim.user_paused:
+        sim.research.open = True
+        return result
+
     if inp.was_pressed(frame, "START"):
         sim.user_paused = not sim.user_paused
     elif inp.was_pressed(frame, "Y"):
@@ -58,12 +73,12 @@ def handle_frame_input(
             build.menu_up()
         if inp.was_pressed(frame, "DPAD_DOWN") or inp.was_pressed(frame, LJOY_DOWN):
             build.menu_down()
-        if inp.was_pressed(frame, "A"):
+        if inp.was_pressed(frame, "A") and not build.selected_locked(sim.research.unlocked):
             build.enter_place()
 
     elif build.mode == BuildMode.PLACE:
         if inp.was_pressed(frame, "A"):
-            if build.try_place(world, sim.stock, cursor_x, cursor_y):
+            if build.try_place(world, sim.stock, cursor_x, cursor_y, sim.research.unlocked):
                 if build.selected != BuildKind.CABLE:
                     build.cancel_build()
 

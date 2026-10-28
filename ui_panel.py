@@ -89,6 +89,9 @@ def _build_kind_label(kind: BuildKind) -> str:
         BuildKind.GREENHOUSE: t("build.greenhouse"),
         BuildKind.STORAGE: t("build.storage"),
         BuildKind.LAMP: t("build.lamp"),
+        BuildKind.LABORATORY: t("build.laboratory"),
+        BuildKind.ELECTROLYZER: t("build.electrolyzer"),
+        BuildKind.CONDENSER: t("build.condenser"),
     }[kind]
 
 

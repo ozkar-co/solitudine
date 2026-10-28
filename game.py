@@ -181,7 +181,12 @@ def run(dev: bool = False, handheld: bool = False) -> int:
             return 0
 
         build = sim.build
-        policy = input_policy(build, game_over=sim.game_over, user_paused=sim.user_paused)
+        policy = input_policy(
+            build,
+            game_over=sim.game_over,
+            user_paused=sim.user_paused,
+            tech_open=sim.research.open,
+        )
         sim.paused = policy.pause_time
 
         pause_modal = not sim.game_over and sim.user_paused
@@ -288,6 +293,8 @@ def run(dev: bool = False, handheld: bool = False) -> int:
 
         if sim.game_over:
             draw_game_over(screen, font, font_sm, sim)
+        elif sim.research.open:
+            draw_tech_screen(screen, font, font_sm, sim, world)
         elif build.mode == BuildMode.MENU:
             draw_build_menu_modal(screen, font, font_sm, sim)
         elif pause_modal:
