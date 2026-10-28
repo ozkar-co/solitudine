@@ -11,10 +11,11 @@ from logistics import network_caps
 from module_defs import buffer_cap, module_active
 from module_kind import ModuleKind
 from module_power import module_energy_daily
-from network import invalidate_network_cache
+from network import get_connected, invalidate_network_cache
 from savegame import delete_save, load_game, save_game
 from simulation import Simulation
 from vision import on_module_built
+from ui_night import light_sources
 from world import Module, ModuleState, generate_world
 
 
@@ -111,6 +112,15 @@ class LampTests(unittest.TestCase):
         world = generate_world()
         lamp = add_module(world, ModuleKind.LAMP, 1, enabled=False)
         self.assertEqual(module_energy_daily(lamp, world, hour_float=0.0), 0.0)
+
+    def test_disabled_lamp_does_not_light(self) -> None:
+        world = generate_world()
+        lamp = add_module(world, ModuleKind.LAMP, 1)
+        connected = get_connected(world)
+        self.assertIn((lamp.x, lamp.y, 10), light_sources(world, connected))
+        lamp.enabled = False
+        self.assertNotIn((lamp.x, lamp.y, 10), light_sources(world, connected))
+        self.assertIn((HABITAT_X, HABITAT_Y, 8), light_sources(world, connected))
 
 
 if __name__ == "__main__":

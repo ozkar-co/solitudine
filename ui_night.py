@@ -1,7 +1,7 @@
 """Día/noche por dithering, contrarrestado por fuentes de luz.
 
-La luz es puramente visual: no altera producción ni consumo. El hábitat
-ilumina desde el inicio y las lámparas amplían la zona sin dithering.
+La luz es visual: no altera producción. El hábitat ilumina desde el inicio
+y las lámparas amplían la zona sin dithering; la lámpara sí consume energía.
 """
 
 from __future__ import annotations
@@ -9,7 +9,6 @@ from __future__ import annotations
 import pygame
 
 from module_defs import module_active, module_def
-from module_kind import ModuleKind
 from world import World
 
 _LEVELS = 8
@@ -32,7 +31,7 @@ _patterns: dict[tuple[int, int], pygame.Surface] = {}
 
 
 def light_sources(world: World, connected: set[tuple[int, int]]) -> list[tuple[int, int, int]]:
-    """(x, y, radio) de hábitat y lámparas activas. Sin demanda ni consumo."""
+    """(x, y, radio) de hábitat y lámparas activas; sin demanda por módulo."""
     sources: list[tuple[int, int, int]] = []
     for mod in world.modules:
         radius = module_def(mod.kind).light_radius

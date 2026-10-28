@@ -5,10 +5,8 @@ from __future__ import annotations
 from resources import AlertLevel
 from world import Deposit, Tile
 
-from module_defs import module_colors
 from ui_layout import map_rect, panel_rect
 
-MODULE_COLORS = module_colors()
 COL_PANEL = (18, 28, 20)
 COL_BORDER = (50, 130, 70)
 COL_TEXT = (80, 255, 120)

@@ -77,7 +77,6 @@ class ResourceFlow:
 class ModuleDef:
     kind: ModuleKind
     nominal: ResourceFlow
-    color: tuple[int, int, int]
     cost: float = 0.0
     build_days: float = 0.0
     has_buffer: bool = False
@@ -89,17 +88,6 @@ class ModuleDef:
     light_radius: int = 0
 
 
-# --- Colores (referenciados por ui_theme) ---
-COL_HABITAT = (220, 200, 80)
-COL_SOLAR = (255, 140, 40)
-COL_RADAR = (80, 220, 220)
-COL_EXTRACTOR = (60, 150, 230)
-COL_GREENHOUSE = (90, 200, 70)
-COL_MINE = (140, 110, 75)
-COL_FABRICATOR = (200, 120, 180)
-COL_STORAGE = (170, 170, 90)
-COL_LAMP = (255, 220, 120)
-
 MODULE_DEFS: dict[ModuleKind, ModuleDef] = {
     ModuleKind.HABITAT: ModuleDef(
         kind=ModuleKind.HABITAT,
@@ -109,14 +97,12 @@ MODULE_DEFS: dict[ModuleKind, ModuleDef] = {
             water=-HABITAT_WATER_DAILY,
             food=-HABITAT_FOOD_DAILY,
         ),
-        color=COL_HABITAT,
         always_online=True,
         light_radius=HABITAT_LIGHT_RADIUS,
     ),
     ModuleKind.SOLAR: ModuleDef(
         kind=ModuleKind.SOLAR,
         nominal=ResourceFlow(power=SOLAR_POWER_DAILY),
-        color=COL_SOLAR,
         cost=COST_SOLAR,
         build_days=BUILD_DAYS_SOLAR,
         solar_producer=True,
@@ -124,14 +110,12 @@ MODULE_DEFS: dict[ModuleKind, ModuleDef] = {
     ModuleKind.RADAR: ModuleDef(
         kind=ModuleKind.RADAR,
         nominal=ResourceFlow(power=-RADAR_POWER_DAILY),
-        color=COL_RADAR,
         cost=COST_RADAR,
         build_days=BUILD_DAYS_RADAR,
     ),
     ModuleKind.EXTRACTOR: ModuleDef(
         kind=ModuleKind.EXTRACTOR,
         nominal=ResourceFlow(power=-EXTRACTOR_POWER_DAILY, water=EXTRACTOR_WATER_DAILY),
-        color=COL_EXTRACTOR,
         cost=COST_EXTRACTOR,
         build_days=BUILD_DAYS_EXTRACTOR,
         has_buffer=True,
@@ -146,7 +130,6 @@ MODULE_DEFS: dict[ModuleKind, ModuleDef] = {
             food=GREENHOUSE_FOOD_DAILY,
             o2=GREENHOUSE_O2_DAILY,
         ),
-        color=COL_GREENHOUSE,
         cost=COST_GREENHOUSE,
         build_days=BUILD_DAYS_GREENHOUSE,
         has_buffer=True,
@@ -155,7 +138,6 @@ MODULE_DEFS: dict[ModuleKind, ModuleDef] = {
     ModuleKind.MINE: ModuleDef(
         kind=ModuleKind.MINE,
         nominal=ResourceFlow(power=-MINE_POWER_DAILY, mineral=MINE_MINERAL_DAILY),
-        color=COL_MINE,
         cost=COST_MINE,
         build_days=BUILD_DAYS_MINE,
         has_buffer=True,
@@ -169,7 +151,6 @@ MODULE_DEFS: dict[ModuleKind, ModuleDef] = {
             mineral=-FABRICATOR_MINERAL_DAILY,
             components=FABRICATOR_COMPONENTS_DAILY,
         ),
-        color=COL_FABRICATOR,
         cost=COST_FABRICATOR,
         build_days=BUILD_DAYS_FABRICATOR,
         has_buffer=True,
@@ -178,7 +159,6 @@ MODULE_DEFS: dict[ModuleKind, ModuleDef] = {
     ModuleKind.STORAGE: ModuleDef(
         kind=ModuleKind.STORAGE,
         nominal=ResourceFlow(),
-        color=COL_STORAGE,
         cost=COST_STORAGE,
         build_days=BUILD_DAYS_STORAGE,
         storage_cap_bonus=STORAGE_NETWORK_BONUS,
@@ -186,7 +166,6 @@ MODULE_DEFS: dict[ModuleKind, ModuleDef] = {
     ModuleKind.LAMP: ModuleDef(
         kind=ModuleKind.LAMP,
         nominal=ResourceFlow(power=-LAMP_POWER_DAILY),
-        color=COL_LAMP,
         cost=COST_LAMP,
         build_days=BUILD_DAYS_LAMP,
         light_radius=LAMP_LIGHT_RADIUS,
@@ -229,10 +208,6 @@ def module_active(mod: Module, connected: bool) -> bool:
 
 def buffer_cap(kind: ModuleKind) -> float:
     return MODULE_BUFFER_CAP if MODULE_DEFS[kind].has_buffer else 0.0
-
-
-def module_colors() -> dict[str, tuple[int, int, int]]:
-    return {k.value: d.color for k, d in MODULE_DEFS.items()}
 
 
 @dataclass

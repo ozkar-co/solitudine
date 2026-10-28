@@ -1,13 +1,12 @@
-# Documentación de diseño
+# Documentación
 
-| Archivo | Contenido |
-|---------|-----------|
-| [estado.md](estado.md) | **Retomar trabajo** — fase actual, próximos pasos, archivos clave |
-| [plan-ui.md](plan-ui.md) | **Siguiente etapa** — layout estable, assets pixel, consola y HUD |
-| [assets.md](assets.md) | Prompts, seeds y regeneración de los assets de Genkit |
-| [plan-fase4.md](plan-fase4.md) | **Decisión vigente** — apagado, árbol de tecnologías y matriz de recursos |
-| [plan-fase5.md](plan-fase5.md) | **Siguiente capa** — alimañas, tower defense, botín, inventario y muerte |
-| [diseno-juego.md](diseno-juego.md) | Diseño del juego — **editar aquí para mecánicas nuevas** |
-| [arquitectura.md](arquitectura.md) | Organización del código, flujos y guía para extender el proyecto |
-| [ideas.md](ideas.md) | Brainstorm original; no es fuente de verdad de implementación |
-| [joy2input.md](joy2input.md) | Notas de input directo en R36S / PortMaster |
+| Archivo | Para qué |
+|---------|----------|
+| [estado.md](estado.md) | **Retomar trabajo** — dónde estamos, próximos pasos, comandos |
+| [plan.md](plan.md) | **Roadmap y alcance** — próximo slice, matriz de recursos y backlog |
+| [diseno-juego.md](diseno-juego.md) | Qué es el juego, loop, sistemas y controles |
+| [arquitectura.md](arquitectura.md) | Mapa de código, flujo y reglas para añadir cosas |
+| [assets.md](assets.md) | Prompts, seeds y regeneración de sprites |
+| [joy2input.md](joy2input.md) | Referencia de input/hardware en R36S (no es roadmap) |
+
+Regla: si una decisión no está en `plan.md`, no es parte del plan. Si no está en `arquitectura.md`, no es una regla de código.
