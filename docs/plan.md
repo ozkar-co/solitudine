@@ -1,47 +1,43 @@
 # Plan
 
-> Única fuente del roadmap. Estado actual: [estado.md](estado.md). Código: [arquitectura.md](arquitectura.md). Juego: [diseno-juego.md](diseno-juego.md).
+> Fuente única del roadmap. Catálogo de módulos/tecnologías: [catalogo.md](catalogo.md). Estado: [estado.md](estado.md). Código: [arquitectura.md](arquitectura.md). Juego: [diseno-juego.md](diseno-juego.md).
 >
-> Regla: un slice a la vez. El backlog no se abre hasta cerrar 4B/4C y hacer un playtest corto.
+> Regla: un slice a la vez. 4B/4C están cerrados; toca playtest antes de abrir backlog.
 
 ## Norte
 
-Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y decisiones de mantenimiento desde la consola del astronauta. La base ya es jugable; el siguiente problema es la **progresión**.
+Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y mantenimiento desde la consola del astronauta. La base ya es jugable; el siguiente problema es la **progresión**.
 
 ## Hecho (resumen)
 
-- Mapa 1024², cámara, niebla, cables, módulos, buffers, depósitos finitos y muerte por O₂/agua/comida.
-- UI 640×480 en grilla de 16 px, sprites, zoom 16/32/48, minimapa, día/noche y lámpara.
+- Mapa, cámara, niebla, cables, módulos, buffers, depósitos finitos y muerte por O₂/agua/comida.
+- UI 640×480 en grilla de 16 px, sprites, zoom, minimapa, día/noche y lámpara.
 - Apagado con **R1**, `Module.enabled` y guardado JSON automático.
-- El detalle está en [estado.md](estado.md).
 
-## 4B — Tecnología mínima (siguiente)
+## 4B — Tecnología mínima (hecho)
 
-Objetivo: un laboratorio, **2 tecnologías** y una pantalla de tecnología mínima. Nada de árbol grande ni consola multipestaña.
+Objetivo: laboratorio, **2 tecnologías** y pantalla de Tecnología mínima. Nada de árbol grande ni consola multipestaña.
 
-- **Laboratorio**: construible desde el inicio. Coste 10 Cmp, 2 días, 3 E/día.
-- **Investigación**: un nodo a la vez; solo avanza si el laboratorio está online, conectado y con energía.
-- **Pantalla**: SELECT abre una lista de 2 nodos con coste, progreso y bloqueo. DPAD navega, A investiga, B sale.
-- **Desbloqueo**: el menú de construcción muestra la pieza bloqueada en gris hasta investigar.
-- **Guardado**: desbloqueos, investigación activa y progreso.
+- **Laboratorio** construible desde el inicio.
+- Investigación: un nodo a la vez; solo avanza si el laboratorio está online, conectado y con energía.
+- Pantalla SELECT: lista de los 2 nodos implementados, coste, progreso y bloqueo.
+- Menú de construcción por categorías (Energía, Extracción, Soporte, Logística, Ciencia) con piezas bloqueadas.
+- Guardado de desbloqueos, investigación activa y progreso.
+- Tecnologías del slice: `electrolisis` y `condensador` (ver [catalogo.md](catalogo.md)). Las mejoras Mk II quedan en backlog.
+- Criterio: construir laboratorio, investigar, ver la pieza desbloqueada en su categoría, guardar/cargar y conservar progreso.
 
-| Tecnología | Efecto | Coste | Días | Requisito |
-|------------|--------|-------|------|-----------|
-| Electrólisis | Desbloquea **Electrolizador** | 6 Cmp | 2 | Laboratorio |
-| Condensador | Desbloquea **Condensador** | 6 Cmp | 2 | Laboratorio |
+## 4C — Dos fuentes alternativas (hecho)
 
-Criterio de cierre: puedo construir el laboratorio, investigar una tecnología, ver la pieza desbloqueada, guardar/cargar y conservar el progreso.
+- Módulos: `electrolyzer` y `condenser` (efectos en [catalogo.md](catalogo.md)).
+- Ambos se desbloquean con las tecnologías de 4B.
+- La producción no depende de la luz; la lámpara es visual y solo consume energía.
+- Criterio: O₂ y agua tienen dos fuentes; los módulos se detienen si falta energía; tests de tick y guardado.
 
-## 4C — Dos fuentes alternativas (después de 4B)
+## Siguiente: playtest
 
-| Módulo | Coste | Obra | Energía | Entrada | Salida |
-|--------|-------|------|---------|---------|--------|
-| Electrolizador | 8 Cmp | 1,5 d | 4 E/d | 6 agua/d | 4 O₂/d |
-| Condensador | 8 Cmp | 1,5 d | 6 E/d | — | 5 agua/d |
-
-- La producción **no depende de la luz**; la lámpara es visual y solo consume energía.
-- Valores provisionales: se ajustan en playtest.
-- Criterio de cierre: O₂ y agua tienen dos fuentes; los módulos se detienen si falta energía; tests de tick y guardado.
+- Jugar 4B/4C en PC y R36S.
+- Verificar que el laboratorio, la pantalla de Tecnología y las categorías se entienden sin explicación.
+- Ajustar costes/tiempos y recién después elegir el siguiente backlog.
 
 ## Matriz de recursos
 
@@ -54,14 +50,13 @@ Criterio de cierre: puedo construir el laboratorio, investigar una tecnología, 
 | Mineral | Mina | — | Fabricador |
 | Componentes | Fabricador | — | Construcción |
 
-Este slice solo cierra la segunda fuente de **O₂ y agua**. El resto queda para backlog. Regla: no se agrega un recurso nuevo hasta que los seis actuales tengan dos fuentes y dos usos.
+Este slice solo cierra la segunda fuente de **O₂ y agua**. Regla: no se agrega un recurso nuevo hasta que los seis actuales tengan dos fuentes y dos usos.
 
 ## Backlog (no agendado)
 
-- **Reciclaje**: idea para una tecnología que, al demoler un módulo, devuelva ~50% de su coste en componentes. **No está en 4B/4C** porque hoy no existe una acción de demolición. Se retoma cuando exista retirar módulos.
-- **Batería** y otras fuentes de energía.
-- **Alimañas ambientales** (roer cables) primero; tower defense, botín, inventario y variantes de muerte mucho después.
-- **UI**: scroll del panel, 9-slice, categorías de construcción, autotile, animaciones y overview. Solo si el contenido lo pide.
+- Reciclaje, batería y mejoras Mk II: ver [catalogo.md](catalogo.md).
+- Alimañas ambientales primero; tower defense, botín, inventario y variantes de muerte después.
+- UI: scroll, 9-slice, categorías, autotile, animaciones y overview solo si el contenido lo pide.
 - Desgaste, eventos climáticos, radio y finales.
 
 ## No-goals
@@ -75,7 +70,7 @@ Este slice solo cierra la segunda fuente de **O₂ y agua**. El resto queda para
 ## Riesgos y decisiones
 
 - **Scope creep**: 2 techs, 2 módulos, una pantalla. Todo lo demás es backlog.
-- **UI**: no se toca el layout 16 px ni se crea `ui_state`/`ui_widgets` hasta que duela.
+- **UI**: no se toca el layout de 16 px ni se crea `ui_state`/`ui_widgets`.
 - **Balance**: los números de 4B/4C son propuestas; el playtest manda.
 - **Save**: versión 1; si cambia el esquema, subir versión.
 - **Luz**: visual; la lámpara consume energía de noche proporcional a la oscuridad.

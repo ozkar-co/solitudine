@@ -8,17 +8,17 @@
 |------|--------|
 | 0–3b | **Hecho** — mapa, red, módulos, logística, supervivencia y UI base |
 | 4A | **Hecho** — apagado con R1, `Module.enabled`, guardado JSON y tests |
-| 4B | **Siguiente** — laboratorio, 2 tecnologías y pantalla de Tecnología mínima |
-| 4C | **Pendiente** — electrolizador y condensador |
+| 4B | **Hecho** — laboratorio, 2 tecnologías y pantalla de Tecnología |
+| 4C | **Hecho** — electrolizador y condensador |
 | 5+ | **Backlog** — alimañas, inventario, combate, eventos, finales |
 
 El juego es jugable en PC y en R36S. La UI (grilla de 16 px, sprites, zoom, minimapa, día/noche, lámpara) ya está estable.
 
 ## Próximo trabajo
 
-1. **4B** — ver [plan.md](plan.md).
-2. **4C** — ver [plan.md](plan.md).
-3. **Playtest corto** antes de abrir cualquier backlog.
+1. **Playtest** de 4B/4C en PC y R36S.
+2. Ajustar balance si hace falta.
+3. Elegir el siguiente backlog (mejoras Mk II, alimañas ambientales, etc.).
 
 ## Comandos
 
@@ -42,6 +42,7 @@ make dist                          # paquete PortMaster
 ## Documentación
 
 - [plan.md](plan.md) — roadmap y alcance del próximo slice.
+- [catalogo.md](catalogo.md) — módulos, categorías, tecnologías y upgrades.
 - [diseno-juego.md](diseno-juego.md) — concepto, loop, sistemas y controles.
 - [arquitectura.md](arquitectura.md) — mapa de código y flujo.
 - [assets.md](assets.md) — prompts, seeds y regeneración.

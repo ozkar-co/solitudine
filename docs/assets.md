@@ -42,6 +42,9 @@ La hoja RD Tile es 4 columnas × 5 filas de tiles de 16×16. Los índices no usa
 | `assets/modules/fabricator.png` | `source/modules/fabricator.png` | fabricator module, industrial machine, dark metal, orange lights | 1207 |
 | `assets/modules/storage.png` | `source/modules/storage.png` | storage container module, stacked crates, dark metal, green stripes | 1208 |
 | `assets/modules/lamp.png` | `source/modules/lamp.png` | lamp post module, tall pole with warm glowing lamp, dark metal base, top-down view, clear silhouette | 1214 |
+| `assets/modules/laboratory.png` | `source/modules/laboratory.png` | laboratory module, compact science lab, domed glass, dark metal, cyan lights, top-down | 1215 |
+| `assets/modules/electrolyzer.png` | `source/modules/electrolyzer.png` | electrolysis machine, water tank and electrodes, dark metal, cyan bubbles, top-down | 1216 |
+| `assets/modules/condenser.png` | `source/modules/condenser.png` | atmospheric condenser, coils and fan, dark metal, blue, top-down | 1217 |
 
 ### Iconos
 
@@ -89,5 +92,5 @@ El sidecar `.meta.json` de Genkit no se commitea; esta tabla es el registro que 
 
 - No se cuantizó a una paleta fija todavía. Si hace falta cohesión, se puede hacer una pasada posterior; los sources permiten reprocesar.
 - Los assets finales se commitean; `make dist` copia `tiles/`, `modules/`, `icons/` y `fonts/` a `dist/solitudine/assets/`. `source/` no se copia: es para editar/regenerar.
-- Coste del set actual: 23 generaciones × ~$0.02 ≈ **$0.46**.
+- Coste del set actual: 26 generaciones × ~$0.02 ≈ **$0.52**.
 - Si un asset no gusta: editar el PNG final o regenerar con otro seed y actualizar la tabla. No hace falta conservar un pipeline.

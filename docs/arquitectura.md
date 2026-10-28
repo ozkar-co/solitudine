@@ -1,6 +1,6 @@
 # Arquitectura
 
-> Cómo está organizado el código. Qué debe hacer el juego: [diseno-juego.md](diseno-juego.md). Próximo trabajo: [plan.md](plan.md).
+> Cómo está organizado el código. Juego: [diseno-juego.md](diseno-juego.md). Roadmap: [plan.md](plan.md). Catálogo: [catalogo.md](catalogo.md).
 
 ## Principios
 
@@ -17,8 +17,9 @@ main.py
   └─ game.run()
        ├─ input_policy / handle_frame_input
        ├─ simulation.update(dt, world)
-       │    ├─ construction.update_sites
        │    ├─ apply_modules_dt (logística/energía)
+       │    ├─ research.advance si hay laboratorio activo
+       │    ├─ construction.update_sites
        │    └─ muerte / game over
        ├─ draw_map / draw_minimap / draw_top_bar / draw_panel
        └─ modales / flip / clock.tick(60)
@@ -33,13 +34,15 @@ main.py
 | `simulation.py` | Reloj, día, pausa, muerte y estado global. |
 | `config.py` | Balance numérico y layout. |
 | `world.py` | Mapa, tiles, depósitos, módulos, cables y visión. |
+| `tech_defs.py` | 2 tecnologías del slice y mapeo módulo → tecnología. |
+| `research.py` | Investigación activa, progreso, desbloqueos y laboratorio. |
 | `module_kind.py` | Enum de módulos. |
 | `module_defs.py` | Registro de módulos, flujos, costes, `module_active()`. |
 | `module_tick.py` | Tick: producción, consumo, energía y lámpara. |
 | `module_flow.py` / `module_power.py` | Delegados finos del panel a `module_defs`. |
 | `logistics.py` | Caps de red, buffers y orquestación del tick. |
 | `resources.py` / `materials.py` | Reservas vitales / stock de construcción. |
-| `construction.py` | Menú, preview y colocación. |
+| `construction.py` | Menú por categorías, preview, bloqueo por tecnología y colocación. |
 | `network.py` | Conectividad BFS cacheada. |
 | `vision.py` | Niebla y visión incremental; respeta `enabled`. |
 | `daylight.py` | Curva de luz natural. |
@@ -55,6 +58,7 @@ main.py
 | `ui_minimap.py` | Minimapa cacheado. |
 | `ui_night.py` | Fuentes de luz visual y dithering por tile. |
 | `ui_panel.py` | Inspección y modo colocar. |
+| `ui_tech.py` | Pantalla de Tecnología mínima. |
 | `ui_modals.py` | Modales (pausa, construcción, game over). |
 | `ui_input.py` / `game_help.py` | Política de input / texto contextual. |
 | `ui.py` | HUD, modales y fachada de mapa/panel. |
@@ -78,12 +82,21 @@ main.py
 6. `ui.py` / `ui_panel.py`: etiqueta del menú.
 7. `locales/es.json`: `build.*`, `module.*`.
 8. `assets/`: sprite final 16×16 + source; registrar en [assets.md](assets.md).
-9. Tests en `test_sim.py`.
+9. Si una tecnología lo desbloquea, añadir `TechDef.unlock_kind` en `tech_defs.py` y la fila en [catalogo.md](catalogo.md).
+10. Tests en `test_sim.py`.
+
+## Tecnología
+
+- `tech_defs.py` define los nodos; `research.py` guarda activo/progreso/desbloqueos.
+- `start_research()` exige laboratorio activo, energía y gasta componentes.
+- El progreso escala con el factor de energía; si el laboratorio se apaga o desconecta, se pausa.
+- `construction.kind_locked()` consulta las tecnologías desbloqueadas para el menú y la colocación.
+- La pantalla `ui_tech.py` es una lista simple; no hay consola multipestaña.
 
 ## Guardado
 
 - `save.json` junto al ejecutable; ignorado por git.
-- Guarda simulación, recursos, stock, módulos/cables, `enabled` y arrays del mundo comprimidos.
+- Guarda simulación, recursos, stock, módulos/cables, `enabled`, investigación y arrays del mundo comprimidos.
 - Auto-save al pausar, cambiar de día o salir; carga al iniciar.
 - Si cambia el esquema, subir `VERSION` en `savegame.py`.
 

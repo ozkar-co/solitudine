@@ -1,6 +1,6 @@
 # Diseño del juego
 
-> Este documento describe el juego. El roadmap y los números concretos viven en [plan.md](plan.md); el código en [arquitectura.md](arquitectura.md).
+> Este documento describe el juego. Roadmap: [plan.md](plan.md). Catálogo de módulos/tecnologías: [catalogo.md](catalogo.md). Código: [arquitectura.md](arquitectura.md).
 
 ## Concepto
 
@@ -18,7 +18,7 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 ## Mapa y módulos
 
 - Mapa de 1024×1024 tiles; cámara con zoom entero (16/32/48 px).
-- Módulos: hábitat, solar, radar, extractor, invernadero, mina, fabricador, almacén y lámpara.
+- Los módulos y sus categorías están en [catalogo.md](catalogo.md).
 - Todo se conecta por cables desde el hábitat. Sin conexión, el módulo queda offline.
 - **R1** apaga/enciende el módulo seleccionado (excepto el hábitat).
 - Un módulo apagado no produce, no consume energía, no aporta visión, no suma capacidad de almacén y no emite luz.
@@ -63,6 +63,7 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 | Zoom | L1/L2 (teclas Q/E o [/]) | L1/L2 |
 | Apagar/encender | R1 | R1 |
 | Minimapa | R2 | R2 |
+| Tecnología | SELECT | SELECT |
 | Pausa | START | START |
 | Salir | SELECT+START | SELECT+START |
 
@@ -72,6 +73,7 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 - Barra superior: O₂, agua, comida y energía.
 - Panel lateral: tile, estado, flujos, buffer y acciones.
 - Minimapa con región explorada, módulos, cables y viewport.
+- Menú de construcción por categorías (Energía, Extracción, Soporte, Logística, Ciencia).
 - Consola de tecnología: una pantalla simple, sin pestañas vacías.
 
 ## Backlog
