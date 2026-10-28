@@ -34,7 +34,7 @@
   "panel.deposit_amount": "Cantidad: {value}",
   "panel.storage_bonus": "Cap. red: +{value}",
   "panel.build_pct": "Progreso: {pct}%",
-  "panel.energy": "E: {value}/d",
+  "panel.energy": "Energía: {value}/d",
   "panel.deposit": "Subsuelo: {name}",
   "deposit.water": "Agua",
   "deposit.mineral": "Mineral",
@@ -47,8 +47,8 @@
   "hud.day": "Dia {day}",
   "hud.hour": "{hour}h",
   "hud.o2": "O2: {value}",
-  "hud.power": "E: {value}",
-  "hud.components": "Cmp: {value}",
+  "hud.power": "Energía: {value}",
+  "hud.components": "Componentes: {value}",
   "alert.warning": "Reservas bajas",
   "alert.critical": "Reservas criticas",
   "build.title": "CONSTRUCCION",
@@ -83,7 +83,7 @@
   "flow.o2_use": "O2: {value}/d",
   "flow.mineral": "Mineral: {value}/d",
   "flow.mineral_use": "Mineral: {value}/d",
-  "flow.components": "Cmp: {value}/d",
+  "flow.components": "Componentes: {value}/d",
   "game_over.title": "FIN DE MISION",
   "game_over.restart": "A = reintentar",
   "pause.title": "PAUSA",
@@ -97,6 +97,6 @@
   "help.build_place": "A=confirmar B=cancelar",
   "help.game_over": "A = reintentar",
   "help.paused": "START = continuar",
-  "hud.water": "H2O: {value}",
-  "hud.food": "Com: {value}"
+  "hud.water": "Agua: {value}",
+  "hud.food": "Comida: {value}"
 }
