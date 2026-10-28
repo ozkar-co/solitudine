@@ -20,4 +20,6 @@ def module_energy_daily(
 def format_energy_daily(value: float) -> str:
     if value > 0:
         return f"+{value:.1f}"
+    if value == 0:
+        return "0.0"
     return f"{value:.1f}"

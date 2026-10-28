@@ -59,7 +59,7 @@ MODULE_BUFFER_CAP = 10.0
 STORAGE_NETWORK_BONUS = 40.0
 
 # Módulos que envían producción directo a la red (sin buffer local)
-MODULES_NO_BUFFER = frozenset({"habitat", "solar", "radar", "storage"})
+MODULES_NO_BUFFER = frozenset({"habitat", "solar", "radar", "storage", "lamp"})
 
 ALERT_WARNING_DAYS = 3.0
 ALERT_CRITICAL_DAYS = 1.0
@@ -79,6 +79,7 @@ COST_GREENHOUSE = 8.0
 COST_MINE = 4.0
 COST_FABRICATOR = 6.0
 COST_STORAGE = 5.0
+COST_LAMP = 6.0
 
 BUILD_DAYS_SOLAR = 1.0
 BUILD_DAYS_RADAR = 1.5
@@ -87,6 +88,7 @@ BUILD_DAYS_GREENHOUSE = 1.5
 BUILD_DAYS_MINE = 1.5
 BUILD_DAYS_FABRICATOR = 2.0
 BUILD_DAYS_STORAGE = 1.0
+BUILD_DAYS_LAMP = 1.0
 
 # Producción / consumo de módulos (por día)
 SOLAR_POWER_DAILY = 12.0
@@ -103,6 +105,12 @@ MINE_MINERAL_DAILY = 8.0
 FABRICATOR_POWER_DAILY = 4.0
 FABRICATOR_MINERAL_DAILY = 6.0
 FABRICATOR_COMPONENTS_DAILY = 4.0
+
+# Luz visual: hábitat y lámpara aclaran el dithering nocturno.
+HABITAT_LIGHT_RADIUS = 8
+LAMP_LIGHT_RADIUS = 10
+# Consumo máximo de la lámpara (noche plena); escala con la oscuridad.
+LAMP_POWER_DAILY = 4.0
 
 # Depósitos finitos por tile
 DEPOSIT_WATER_PER_TILE = 40.0

@@ -226,6 +226,15 @@ si tendremos un solo final por partida, sea bueno o malo, da un informe final y 
 
 ---
 
+### 8.10 Luz artificial (visual)
+
+- La luz natural va de 1 (día) a 0 (noche), con rampas en alba y ocaso.
+- La luz artificial **solo contrarresta el dithering nocturno**; no cambia producción.
+- El **hábitat** ilumina desde el inicio (radio 8) sin coste. La **lámpara** es un módulo construible (radio 10) que consume energía solo de noche, proporcional a la oscuridad (máx. 4/día).
+- El dithering se calcula por tile visible: a más luz, menos píxeles oscuros. Sin glow aditivo ni sombreado de módulos.
+- El cálculo es O(tiles visibles × fuentes de luz), sin recorrer 1024² ni hacer raycasting por frame.
+- Sin oclusión/sombras por terreno en v1: la luz es radial.
+
 ## 9. Progresión por capas (recordatorio)
 
 | Era | Jugador hace | Automatización desbloqueada |

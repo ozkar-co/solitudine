@@ -131,6 +131,7 @@ def _build_kind_label(kind: BuildKind) -> str:
         BuildKind.FABRICATOR: t("build.fabricator"),
         BuildKind.GREENHOUSE: t("build.greenhouse"),
         BuildKind.STORAGE: t("build.storage"),
+        BuildKind.LAMP: t("build.lamp"),
     }[kind]
 
 

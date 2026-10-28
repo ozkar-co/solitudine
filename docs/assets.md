@@ -41,6 +41,7 @@ La hoja RD Tile es 4 columnas × 5 filas de tiles de 16×16. Los índices no usa
 | `assets/modules/mine.png` | `source/modules/mine.png` | mining rig module, drill, dark metal, amber lights | 1206 |
 | `assets/modules/fabricator.png` | `source/modules/fabricator.png` | fabricator module, industrial machine, dark metal, orange lights | 1207 |
 | `assets/modules/storage.png` | `source/modules/storage.png` | storage container module, stacked crates, dark metal, green stripes | 1208 |
+| `assets/modules/lamp.png` | `source/modules/lamp.png` | lamp post module, tall pole with warm glowing lamp, dark metal base, top-down view, clear silhouette | 1214 |
 
 ### Iconos
 
@@ -88,5 +89,5 @@ El sidecar `.meta.json` de Genkit no se commitea; esta tabla es el registro que 
 
 - No se cuantizó a una paleta fija todavía. Si hace falta cohesión, se puede hacer una pasada posterior; los sources permiten reprocesar.
 - Los assets finales se commitean; `make dist` copia `tiles/`, `modules/`, `icons/` y `fonts/` a `dist/solitudine/assets/`. `source/` no se copia: es para editar/regenerar.
-- Coste del set actual: 22 generaciones × ~$0.02 ≈ **$0.44**.
+- Coste del set actual: 23 generaciones × ~$0.02 ≈ **$0.46**.
 - Si un asset no gusta: editar el PNG final o regenerar con otro seed y actualizar la tabla. No hace falta conservar un pipeline.

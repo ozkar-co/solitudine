@@ -16,6 +16,7 @@ from config import (
     SOLAR_HOUR_END,
     SOLAR_HOUR_START,
 )
+from daylight import darkness
 from materials import Stockpile
 from module_defs import BufferOutput, ModuleKind, module_def
 from resources import ResourcePool
@@ -128,6 +129,13 @@ def collect_power_jobs(ctx: TickContext) -> list[PowerJob]:
 
         if mod.kind == ModuleKind.RADAR:
             jobs.append(PowerJob(abs(module_def(ModuleKind.RADAR).nominal.power) * ctx.scale, lambda _f: None))
+            continue
+
+        if mod.kind == ModuleKind.LAMP:
+            dark = darkness(ctx.hour_float / HOURS_PER_DAY)
+            if dark > 0.0:
+                power = abs(module_def(ModuleKind.LAMP).nominal.power) * ctx.scale * dark
+                jobs.append(PowerJob(power, lambda _f: None))
             continue
 
         if mod.kind == ModuleKind.EXTRACTOR:

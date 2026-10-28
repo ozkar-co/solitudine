@@ -219,13 +219,13 @@ El detalle vivo está en [assets.md](assets.md): tabla de prompts/seeds, perfile
 | Categoría | Cantidad | Fuente | Notas |
 |-----------|----------|--------|-------|
 | Terreno | 3 hojas | RD Tile 16×16 | suelo, agua, roca; 5 tiles finales |
-| Módulos actuales | 8 | RD+ 32→16 | hábitat, solar, radar, extractor, invernadero, mina, fabricador, almacén |
-| Módulos futuros | 5–8 | RD+ 32→16 | pendientes: laboratorio, electrolizador, condensador, batería, torreta, trampa |
+| Módulos actuales | 9 | RD+ 32→16 | hábitat, solar, radar, extractor, invernadero, mina, fabricador, almacén, lámpara |
+| Módulos futuros | 5–7 | RD+ 32→16 | pendientes: laboratorio, electrolizador, condensador, batería, torreta, trampa |
 | Iconos de recurso | 10 | RD+ 32→16 | O₂, agua, comida, energía, componentes, mineral, biomasa, quitina, aleación, núcleo |
 | UI | mínimo | código/9-slice | marcos, barras, pestañas, cursor, glifos |
 | Fuente | 1 | VT323 OFL | acentos verificados; 16/24 px |
 
-Coste real: 22 generaciones × ~$0.02 ≈ **$0.44**. RD Tile rinde 20 tiles por llamada. El detalle está en [assets.md](assets.md).
+Coste real: 23 generaciones × ~$0.02 ≈ **$0.46**. RD Tile rinde 20 tiles por llamada. El detalle está en [assets.md](assets.md).
 
 ### 3.6 Autotile y variación
 
@@ -320,6 +320,8 @@ Aunque apagado/dañado aún no tengan lógica completa, los assets, colores y he
 | `ui_widgets.py` | panel, barra, lista, pestañas, botón, icono, wrap |
 | `ui_assets.py` | carga/caché de sprites, fuentes y escalas |
 | `ui_map.py` | tiles, autotile, módulos, cables, niebla, preview |
+| `ui_minimap.py` | minimapa cacheado sobre el área explorada |
+| `ui_night.py` | día/noche por dithering atenuado por hábitat/lámparas |
 | `ui_panel.py` | inspección con secciones y scroll |
 | `ui_console.py` | Tecnología / Carga / Registro / Ayuda |
 | `ui_modals.py` | modal 9-slice y wrap |
@@ -342,16 +344,19 @@ Reglas:
 
 - `ui_layout.py` con la grilla 640×480/16 px.
 - Tokens y paleta única; VT323 con acentos.
-- 3 perfiles de Genkit y 22 assets generados; registro en [assets.md](assets.md).
+- 3 perfiles de Genkit y 23 assets generados; registro en [assets.md](assets.md).
 - `ui_assets.py` con caché y escalas 1×/2×/3×.
 - `ui_map.py` dibuja sprites en lugar de rects; niebla y depósitos se mantienen.
 - `ui_minimap.py` con región explorada, módulos, cables y viewport; R2 lo oculta.
+- `ui_night.py`: día/noche por dithering de 8 niveles; el hábitat y la lámpara reducen el dithering en su radio. La lámpara consume energía solo de noche, proporcional a la oscuridad.
 - `make dist` copia `assets/` (sin sources).
 - Criterio: el juego se ve pixel art, sigue jugable y no cambia ninguna regla.
 
 ### UI-1 — Shell y HUD (parcial)
 
 - Barra superior con O₂/agua/comida/energía (hecho).
+- Día/noche por dithering, sin alpha (hecho).
+- Dithering nocturno atenuado por hábitat/lámpara (hecho); consumo de lámpara proporcional a la oscuridad (hecho).
 - Barra inferior con acciones y glifos.
 - Panel con secciones, scroll y estados.
 - `Module.enabled` visual (aunque la lógica llegue en 4A): sprite atenuado y glifo.
@@ -432,8 +437,8 @@ Reglas:
 UI-0 ya está implementado:
 
 - perfiles `solitudine-terrain`, `solitudine-module` y `solitudine-icon` en Genkit;
-- 22 assets generados (3 hojas de terreno, 8 módulos, 10 iconos) y registrados en [assets.md](assets.md);
-- `ui_layout.py`, `ui_assets.py`, `ui_minimap.py`, sprites en el mapa, zoom 16/32/48 y barra de vitales;
+- 23 assets generados (3 hojas de terreno, 9 módulos, 10 iconos) y registrados en [assets.md](assets.md);
+- `ui_layout.py`, `ui_assets.py`, `ui_minimap.py`, `ui_night.py`, sprites en el mapa, zoom 16/32/48 y barra de vitales;
 - `make dist` copia `assets/`.
 
 Siguiente: **UI-1** (panel con scroll, barra de acciones contextual, estados apagado/dañado) y después UI-2 (consola).

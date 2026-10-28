@@ -8,7 +8,10 @@ import pygame
 
 import ui_assets
 from construction import BuildMode, BuildPreview
+from network import get_connected
 from simulation import Simulation
+from daylight import natural_light
+from ui_night import dither_pattern, light_sources, tile_level
 from ui_theme import (
     COL_BORDER,
     COL_CABLE,
@@ -140,6 +143,8 @@ def draw_map(
 
     px = camera.tile_px
     x0, y0, x1, y1 = camera.visible_tiles(rect.w, rect.h)
+    natural = natural_light(sim.day_progress)
+    sources = light_sources(world, get_connected(world)) if natural < 0.999 else []
     drawn = 0
 
     for ty in range(y0, y1):
@@ -169,6 +174,12 @@ def draw_map(
                 overlay = _resource_overlay(world, i, tile)
                 if overlay is not None:
                     surf.blit(_tint_overlay(overlay, tile_rect.w), tile_rect.topleft)
+
+            if natural < 0.999:
+                level = tile_level(tx, ty, natural, sources)
+                pattern = dither_pattern(level, tile_rect.w)
+                if pattern is not None:
+                    surf.blit(pattern, tile_rect.topleft)
 
     _draw_cables(surf, world, camera, rect, px, x0, y0, x1, y1)
 

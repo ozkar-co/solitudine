@@ -11,11 +11,12 @@ from construction import (
     BuildPreview,
     kind_build_days,
     kind_cost,
+    module_kind_for,
     preview_locale_key,
 )
 from i18n import t
 from logistics import network_caps
-from module_defs import ModuleContext, ModuleKind
+from module_defs import ModuleContext, ModuleKind, module_def
 from module_flow import module_flow_lines
 from module_power import format_energy_daily, module_energy_daily
 from network import get_connected
@@ -85,6 +86,7 @@ def _build_kind_label(kind: BuildKind) -> str:
         BuildKind.FABRICATOR: t("build.fabricator"),
         BuildKind.GREENHOUSE: t("build.greenhouse"),
         BuildKind.STORAGE: t("build.storage"),
+        BuildKind.LAMP: t("build.lamp"),
     }[kind]
 
 
@@ -110,6 +112,11 @@ def _draw_build_place(
     if days > 0:
         _panel_line(surf, font_sm, rect.x + 8, y, t("build.time", days=f"{days:.1f}"))
         y += 16
+    if build.selected != BuildKind.CABLE:
+        radius = module_def(module_kind_for(build.selected)).light_radius
+        if radius > 0:
+            _panel_line(surf, font_sm, rect.x + 8, y, t("build.light_radius", radius=radius))
+            y += 16
     if world.in_bounds(cursor_x, cursor_y):
         preview = build.preview(world, sim.stock, cursor_x, cursor_y)
         ok = preview == BuildPreview.OK
@@ -143,6 +150,10 @@ def _draw_module_inspection(
     y += 16
     _panel_line(surf, font_sm, x, y, _panel_energy_line(mod, sim, world))
     y += 16
+    radius = module_def(mod.kind).light_radius
+    if radius > 0:
+        _panel_line(surf, font_sm, x, y, t("panel.light_radius", radius=radius))
+        y += 16
     if mod.kind == ModuleKind.STORAGE:
         _panel_line(surf, font_sm, x, y, t("panel.storage_bonus", value=format_amount(STORAGE_NETWORK_BONUS)))
         y += 16

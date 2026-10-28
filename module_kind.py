@@ -12,3 +12,4 @@ class ModuleKind(StrEnum):
     MINE = "mine"
     FABRICATOR = "fabricator"
     STORAGE = "storage"
+    LAMP = "lamp"

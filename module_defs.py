@@ -9,6 +9,7 @@ from config import (
     BUILD_DAYS_EXTRACTOR,
     BUILD_DAYS_FABRICATOR,
     BUILD_DAYS_GREENHOUSE,
+    BUILD_DAYS_LAMP,
     BUILD_DAYS_MINE,
     BUILD_DAYS_RADAR,
     BUILD_DAYS_SOLAR,
@@ -17,6 +18,7 @@ from config import (
     COST_EXTRACTOR,
     COST_FABRICATOR,
     COST_GREENHOUSE,
+    COST_LAMP,
     COST_MINE,
     COST_RADAR,
     COST_SOLAR,
@@ -31,9 +33,13 @@ from config import (
     GREENHOUSE_POWER_DAILY,
     GREENHOUSE_WATER_DAILY,
     HABITAT_FOOD_DAILY,
+    HOURS_PER_DAY,
     HABITAT_O2_DAILY,
     HABITAT_POWER_DAILY,
+    HABITAT_LIGHT_RADIUS,
     HABITAT_WATER_DAILY,
+    LAMP_LIGHT_RADIUS,
+    LAMP_POWER_DAILY,
     MINE_MINERAL_DAILY,
     MINE_POWER_DAILY,
     MODULE_BUFFER_CAP,
@@ -45,6 +51,7 @@ from config import (
 )
 from module_kind import ModuleKind
 from world import Deposit, Module, ModuleState, World
+from daylight import darkness
 
 
 class BufferOutput(StrEnum):
@@ -79,6 +86,7 @@ class ModuleDef:
     solar_producer: bool = False
     storage_cap_bonus: float = 0.0
     always_online: bool = False
+    light_radius: int = 0
 
 
 # --- Colores (referenciados por ui_theme) ---
@@ -90,6 +98,7 @@ COL_GREENHOUSE = (90, 200, 70)
 COL_MINE = (140, 110, 75)
 COL_FABRICATOR = (200, 120, 180)
 COL_STORAGE = (170, 170, 90)
+COL_LAMP = (255, 220, 120)
 
 MODULE_DEFS: dict[ModuleKind, ModuleDef] = {
     ModuleKind.HABITAT: ModuleDef(
@@ -102,6 +111,7 @@ MODULE_DEFS: dict[ModuleKind, ModuleDef] = {
         ),
         color=COL_HABITAT,
         always_online=True,
+        light_radius=HABITAT_LIGHT_RADIUS,
     ),
     ModuleKind.SOLAR: ModuleDef(
         kind=ModuleKind.SOLAR,
@@ -173,6 +183,14 @@ MODULE_DEFS: dict[ModuleKind, ModuleDef] = {
         build_days=BUILD_DAYS_STORAGE,
         storage_cap_bonus=STORAGE_NETWORK_BONUS,
     ),
+    ModuleKind.LAMP: ModuleDef(
+        kind=ModuleKind.LAMP,
+        nominal=ResourceFlow(power=-LAMP_POWER_DAILY),
+        color=COL_LAMP,
+        cost=COST_LAMP,
+        build_days=BUILD_DAYS_LAMP,
+        light_radius=LAMP_LIGHT_RADIUS,
+    ),
 }
 
 BUILDABLE_KINDS: tuple[ModuleKind, ...] = (
@@ -183,6 +201,7 @@ BUILDABLE_KINDS: tuple[ModuleKind, ...] = (
     ModuleKind.GREENHOUSE,
     ModuleKind.STORAGE,
     ModuleKind.RADAR,
+    ModuleKind.LAMP,
 )
 
 CABLE_COST = COST_CABLE
@@ -245,6 +264,8 @@ def effective_flow(mod: Module, ctx: ModuleContext) -> ResourceFlow:
         return ResourceFlow()
     if defn.placement_deposit is not None and not _has_deposit(mod, ctx):
         return ResourceFlow()
+    if mod.kind == ModuleKind.LAMP:
+        return ResourceFlow(power=defn.nominal.power * darkness(ctx.hour_float / HOURS_PER_DAY))
     return flow
 
 

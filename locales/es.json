@@ -98,5 +98,9 @@
   "help.game_over": "A = reintentar",
   "help.paused": "START = continuar",
   "hud.water": "Agua: {value}",
-  "hud.food": "Comida: {value}"
+  "hud.food": "Comida: {value}",
+  "module.lamp": "Lámpara",
+  "build.lamp": "Lámpara",
+  "build.light_radius": "Ilumina: radio {radius}",
+  "panel.light_radius": "Ilumina: radio {radius}"
 }

@@ -21,6 +21,7 @@ class BuildKind(Enum):
     GREENHOUSE = auto()
     STORAGE = auto()
     RADAR = auto()
+    LAMP = auto()
 
 
 BUILD_KINDS = (
@@ -32,6 +33,7 @@ BUILD_KINDS = (
     BuildKind.GREENHOUSE,
     BuildKind.STORAGE,
     BuildKind.RADAR,
+    BuildKind.LAMP,
 )
 
 
@@ -68,6 +70,7 @@ BUILD_TO_MODULE: dict[BuildKind, ModuleKind] = {
     BuildKind.MINE: ModuleKind.MINE,
     BuildKind.FABRICATOR: ModuleKind.FABRICATOR,
     BuildKind.STORAGE: ModuleKind.STORAGE,
+    BuildKind.LAMP: ModuleKind.LAMP,
 }
 
 

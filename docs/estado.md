@@ -69,7 +69,8 @@ El orden y los criterios están en [plan-ui.md](plan-ui.md), [plan-fase4.md](pla
 - UI-0: grilla 16 px, zoom entero 1×/2×/3× (16/32/48), panel de 192 px, sprites de Genkit, minimapa R2, VT323 y barra de vitales. La UI va antes que las fases 4 y 5.
 - Assets: RD Tile para terreno, RD+ para módulos/iconos; finales 16×16 y sources 32×32; registro en `docs/assets.md`.
 - HUD: etiquetas completas Agua/Comida/Energía. `Comida` y `Energía` bajan a 8/día; el agua a 10/día por soporte vital. Componentes no tiene drenaje pasivo: solo cambia al construir o con fabricador.
-- HUD pendiente: hoy la barra superior muestra Cmp/E/O₂ y omite agua/comida; debe pasar a recursos letales + energía.
+- Día/noche: dithering de 8 niveles con colorkey (sin alpha), solo sobre el terreno; módulos, cables y cursor quedan brillantes. Coste medido despreciable en headless.
+- Luz artificial visual: el hábitat ilumina radio 8 desde el inicio; la lámpara es un módulo construible de radio 10. La luz solo reduce el dithering nocturno y no altera producción. La lámpara consume energía solo de noche, proporcional a la oscuridad (máx. 4/día). Cálculo por tile visible, sin mapa global.
 
 ## Comandos habituales
 

@@ -12,7 +12,7 @@
 Verificado en el código actual:
 
 - Juego Pygame en la raíz, una sola entrada (`main.py`) y `Makefile` con `config`, `fetch`, `clean`, `dist`.
-- Mapa 1024², cámara, niebla, construcción libre por cables, 8 tipos de módulo.
+- Mapa 1024², cámara, niebla, construcción libre por cables, 9 tipos de módulo.
 - Simulación por días de 48 s, energía proporcional, buffers, depósitos finitos y game over por O₂/agua/comida.
 - 6 recursos: O₂, energía, agua, comida, mineral y componentes.
 - UI de mapa + panel lateral de 168 px, modal de construcción, pausa y game over.

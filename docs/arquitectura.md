@@ -159,7 +159,18 @@ Por tick (cuando no hay pausa ni game over):
 | `module_kind.py` | Enum `ModuleKind` (sin dependencias — evita ciclos). |
 | `module_defs.py` | **Registro de módulos**: flujos nominales, costes, colores, metadata. Panel y sim leen de aquí. |
 | `module_tick.py` | Lógica de tick por módulo (produce/consume/energía). |
+| `daylight.py` | Curva de luz natural compartida (día/noche). |
 | `module_flow.py` / `module_power.py` | Delegados finos al panel → `module_defs`. |
+
+### Luz artificial (visual)
+
+- La luz no altera producción. Solo decide cuánto dithering nocturno se dibuja en cada tile.
+- La lámpara consume energía solo de noche: `LAMP_POWER_DAILY * darkness`, con `darkness = 1 - natural_light`.
+- `natural_light(day_progress)` devuelve 0..1 (día 1, noche 0, rampas en alba/ocaso).
+- `light_sources()` devuelve hábitat y lámparas activas: `(x, y, radio)`. El hábitat ya ilumina desde el inicio.
+- `tile_level()` calcula el nivel de dithering 0..7 según la mejor fuente con caída cuadrática `1 - d²/r²`.
+- `dither_pattern()` cachea un patrón por nivel y tamaño de tile.
+- Coste: O(tiles visibles × fuentes) por frame; solo se recorre lo visible, no 1024².
 
 ### Construcción
 
@@ -176,6 +187,7 @@ Por tick (cuando no hay pausa ni game over):
 | `ui_layout.py` | Regiones fijas 640×480: mapa, panel, barras. |
 | `ui_assets.py` | Carga/caché de tiles, módulos, iconos y fuente VT323. |
 | `ui_minimap.py` | Minimapa cacheado sobre la región explorada. |
+| `ui_night.py` | Día/noche por dithering (8 niveles) atenuado por hábitat/lámparas. |
 | `ui_modals.py` | **`draw_map_modal()`** — recuadro centrado en el mapa (pausa, menú construcción, game over). |
 | `ui_map.py` | Mapa: tiles, capas, cables, módulos, preview y cursor. |
 | `ui_panel.py` | Panel lateral: inspección, hábitat, modo colocar. |
@@ -204,13 +216,14 @@ Todos los modales usan **`draw_map_modal()`** en `ui_modals.py`. Para un modal n
 ### Nuevo módulo constructible
 
 1. **`config.py`** — constantes numéricas de balance (si hace falta valor nuevo).
-2. **`module_defs.py`** — entrada en `MODULE_DEFS` (flujos, coste, buffer, depósito, color).
+2. **`module_defs.py`** — entrada en `MODULE_DEFS` (flujos, coste, buffer, depósito, color). Si ilumina visualmente, `light_radius` (hábitat/lámpara).
 3. **`module_tick.py`** — handler de tick si el comportamiento no es trivial (extractor, invernadero, …).
 4. **`module_kind.py`** — añadir valor al enum `ModuleKind`.
-5. **`construction.py`** — `BuildKind` + entrada en `BUILD_TO_MODULE`.
+5. **`construction.py`** — `BuildKind`, `BUILD_KINDS` y `BUILD_TO_MODULE`.
 6. **`vision.py`** — `module_radii()` si da visión.
-7. **`locales/es.json`** — strings `build.*`, `module.*`, `flow.*`.
-8. **`diseno-juego.md`** — si cambia diseño visible.
+7. **`locales/es.json`** — strings `build.*`, `module.*`, `flow.*`; y `ui.py`/`ui_panel.py` para la etiqueta.
+8. **`assets/`** — sprite final 16×16 + source 32×32; registrar en `docs/assets.md`.
+9. **`diseno-juego.md`** — si cambia diseño visible.
 
 No duplicar flujos en `module_flow.py` ni `module_power.py` — solo delegan a `module_defs`.
 
@@ -277,6 +290,7 @@ simulation.py            # reloj + encadenar sistemas
 module_kind.py           # enum ModuleKind
 module_defs.py           # registro único de módulos
 module_tick.py           # tick produce/consume
+daylight.py              # curva de luz natural
 game_input.py            # input por frame
 resources.py             # reservas hábitat
 materials.py             # componentes / mineral
@@ -293,6 +307,7 @@ ui_layout.py             # regiones 640×480
 ui_theme.py              # colores y formatos
 ui_assets.py             # sprites, iconos y fuente
 ui_minimap.py            # minimapa
+ui_night.py              # día/noche por dithering
 ui_modals.py             # modales sobre mapa
 ui_input.py              # política de input
 module_flow.py           # panel: flujos
