@@ -17,7 +17,7 @@ from simulation import Simulation
 from world import Module, ModuleState, World, generate_world
 
 SAVE_PATH = Path(__file__).resolve().parent / "save.json"
-VERSION = 1
+VERSION = 2
 
 
 def _pack(data: bytes) -> str:
@@ -37,6 +37,11 @@ def _save_data(world: World, sim: Simulation) -> dict:
             "day_progress": sim.day_progress,
             "resources": asdict(sim.resources),
             "stock": asdict(sim.stock),
+            "research": {
+                "unlocked": sorted(sim.research.unlocked),
+                "active": sim.research.active,
+                "progress": sim.research.progress,
+            },
         },
         "world": {
             "size": world.size,
@@ -87,7 +92,7 @@ def load_game(path: Path = SAVE_PATH) -> tuple[World, Simulation] | None:
     if not path.exists():
         return None
     data = json.loads(path.read_text(encoding="utf-8"))
-    if data.get("version") != VERSION:
+    if data.get("version") not in (1, VERSION):
         raise ValueError("Versión de guardado incompatible")
 
     wd = data["world"]
@@ -152,4 +157,8 @@ def load_game(path: Path = SAVE_PATH) -> tuple[World, Simulation] | None:
         resources=ResourcePool(**sd["resources"]),
         stock=Stockpile(**sd["stock"]),
     )
+    rd = sd.get("research", {})
+    sim.research.unlocked = set(rd.get("unlocked", ()))
+    sim.research.active = rd.get("active")
+    sim.research.progress = float(rd.get("progress", 0.0))
     return world, sim

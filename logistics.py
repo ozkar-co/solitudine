@@ -61,7 +61,7 @@ def apply_modules_dt(
     dt: float,
     seconds_per_day: float,
     hour_float: float,
-) -> None:
+) -> float:
     scale = dt / seconds_per_day
     connected = get_connected(world)
     caps = network_caps(world, connected)
@@ -76,6 +76,7 @@ def apply_modules_dt(
     )
     tick_solar_production(ctx)
     jobs = collect_power_jobs(ctx)
-    apply_power_jobs(ctx, jobs)
+    factor = apply_power_jobs(ctx, jobs)
     flush_module_buffers(ctx)
     clamp_pools(ctx)
+    return factor

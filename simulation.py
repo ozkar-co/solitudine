@@ -8,6 +8,7 @@ from config import HOURS_PER_DAY, SECONDS_PER_DAY
 from construction import BuildController
 from logistics import apply_modules_dt
 from materials import Stockpile
+from research import ResearchState, active_labs, has_active_lab
 from resources import ResourcePool
 from world import World
 
@@ -19,6 +20,7 @@ class Simulation:
     resources: ResourcePool = field(default_factory=ResourcePool.initial)
     stock: Stockpile = field(default_factory=Stockpile)
     build: BuildController = field(default_factory=BuildController)
+    research: ResearchState = field(default_factory=ResearchState)
     paused: bool = False
     user_paused: bool = False
     game_over: bool = False
@@ -41,10 +43,18 @@ class Simulation:
             while self.day_progress >= 1.0:
                 self.day_progress -= 1.0
                 self.day += 1
-            apply_modules_dt(world, self, dt, SECONDS_PER_DAY, self._hour_float())
+            factor = apply_modules_dt(world, self, dt, SECONDS_PER_DAY, self._hour_float())
+            labs = active_labs(world)
+            if self.research.active is not None and labs:
+                self.research.advance(dt_days * factor * labs)
             self.build.update_sites(world, dt_days)
 
         self._apply_death_if_needed()
+
+    def start_research(self, world: World) -> bool:
+        if self.resources.power <= 0.0:
+            return False
+        return self.research.start(self.research.selected_tech(), self.stock, has_active_lab(world))
 
     def _apply_death_if_needed(self) -> None:
         cause = self.resources.death_cause()

@@ -128,6 +128,12 @@ def collect_power_jobs(ctx: TickContext) -> list[PowerJob]:
             jobs.append(PowerJob(abs(module_def(ModuleKind.RADAR).nominal.power) * ctx.scale, lambda _f: None))
             continue
 
+        if mod.kind == ModuleKind.LABORATORY:
+            jobs.append(
+                PowerJob(abs(module_def(ModuleKind.LABORATORY).nominal.power) * ctx.scale, lambda _f: None)
+            )
+            continue
+
         if mod.kind == ModuleKind.LAMP:
             dark = darkness(ctx.hour_float / HOURS_PER_DAY)
             if dark > 0.0:
@@ -155,6 +161,18 @@ def collect_power_jobs(ctx: TickContext) -> list[PowerJob]:
 
         if mod.kind == ModuleKind.FABRICATOR:
             job = _job_fabricator(ctx, mod)
+            if job:
+                jobs.append(job)
+            continue
+
+        if mod.kind == ModuleKind.ELECTROLYZER:
+            job = _job_electrolyzer(ctx)
+            if job:
+                jobs.append(job)
+            continue
+
+        if mod.kind == ModuleKind.CONDENSER:
+            job = _job_condenser(ctx)
             if job:
                 jobs.append(job)
 
@@ -261,14 +279,52 @@ def _job_fabricator(ctx: TickContext, mod: Module) -> PowerJob | None:
     return PowerJob(abs(rate.power) * ctx.scale, run)
 
 
-def apply_power_jobs(ctx: TickContext, jobs: list[PowerJob]) -> None:
+def _job_electrolyzer(ctx: TickContext) -> PowerJob | None:
+    o2_space = max(0.0, ctx.caps.o2 - ctx.resources.o2)
+    if o2_space <= 0.0 or ctx.resources.water <= 0.0:
+        return None
+    rate = module_def(ModuleKind.ELECTROLYZER).nominal
+
+    def run(f: float, sp=o2_space) -> None:
+        if f <= 0.0:
+            return
+        water_need = abs(rate.water) * ctx.scale * f
+        if ctx.resources.water < water_need:
+            f *= ctx.resources.water / water_need if water_need > 0 else 0.0
+            water_need = abs(rate.water) * ctx.scale * f
+        if f <= 0.0 or water_need <= 0.0:
+            return
+        ctx.resources.water -= water_need
+        o2 = min(rate.o2 * ctx.scale * f, sp)
+        ctx.resources.o2, _ = _push(ctx.resources.o2, ctx.caps.o2, o2)
+
+    return PowerJob(abs(rate.power) * ctx.scale, run)
+
+
+def _job_condenser(ctx: TickContext) -> PowerJob | None:
+    space = max(0.0, ctx.caps.water - ctx.resources.water)
+    if space <= 0.0:
+        return None
+    rate = module_def(ModuleKind.CONDENSER).nominal
+
+    def run(f: float, sp=space) -> None:
+        if f <= 0.0:
+            return
+        water = min(rate.water * ctx.scale * f, sp)
+        ctx.resources.water, _ = _push(ctx.resources.water, ctx.caps.water, water)
+
+    return PowerJob(abs(rate.power) * ctx.scale, run)
+
+
+def apply_power_jobs(ctx: TickContext, jobs: list[PowerJob]) -> float:
     total = sum(j.power for j in jobs)
     if total <= 0:
-        return
+        return 1.0
     factor = min(1.0, ctx.resources.power / total)
     ctx.resources.power = max(0.0, ctx.resources.power - total * factor)
     for job in jobs:
         job.run(factor)
+    return factor
 
 
 def flush_module_buffers(ctx: TickContext) -> None:

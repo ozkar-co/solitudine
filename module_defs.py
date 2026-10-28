@@ -8,7 +8,10 @@ from enum import StrEnum
 from config import (
     BUILD_DAYS_EXTRACTOR,
     BUILD_DAYS_FABRICATOR,
+    BUILD_DAYS_CONDENSER,
+    BUILD_DAYS_ELECTROLYZER,
     BUILD_DAYS_GREENHOUSE,
+    BUILD_DAYS_LABORATORY,
     BUILD_DAYS_LAMP,
     BUILD_DAYS_MINE,
     BUILD_DAYS_RADAR,
@@ -17,7 +20,10 @@ from config import (
     COST_CABLE,
     COST_EXTRACTOR,
     COST_FABRICATOR,
+    COST_CONDENSER,
+    COST_ELECTROLYZER,
     COST_GREENHOUSE,
+    COST_LABORATORY,
     COST_LAMP,
     COST_MINE,
     COST_RADAR,
@@ -25,9 +31,15 @@ from config import (
     COST_STORAGE,
     EXTRACTOR_POWER_DAILY,
     EXTRACTOR_WATER_DAILY,
+    ELECTROLYZER_O2_DAILY,
+    ELECTROLYZER_POWER_DAILY,
+    ELECTROLYZER_WATER_DAILY,
     FABRICATOR_COMPONENTS_DAILY,
     FABRICATOR_MINERAL_DAILY,
     FABRICATOR_POWER_DAILY,
+    CONDENSER_POWER_DAILY,
+    CONDENSER_WATER_DAILY,
+    LABORATORY_POWER_DAILY,
     GREENHOUSE_FOOD_DAILY,
     GREENHOUSE_O2_DAILY,
     GREENHOUSE_POWER_DAILY,
@@ -170,6 +182,28 @@ MODULE_DEFS: dict[ModuleKind, ModuleDef] = {
         build_days=BUILD_DAYS_LAMP,
         light_radius=LAMP_LIGHT_RADIUS,
     ),
+    ModuleKind.LABORATORY: ModuleDef(
+        kind=ModuleKind.LABORATORY,
+        nominal=ResourceFlow(power=-LABORATORY_POWER_DAILY),
+        cost=COST_LABORATORY,
+        build_days=BUILD_DAYS_LABORATORY,
+    ),
+    ModuleKind.ELECTROLYZER: ModuleDef(
+        kind=ModuleKind.ELECTROLYZER,
+        nominal=ResourceFlow(
+            power=-ELECTROLYZER_POWER_DAILY,
+            water=-ELECTROLYZER_WATER_DAILY,
+            o2=ELECTROLYZER_O2_DAILY,
+        ),
+        cost=COST_ELECTROLYZER,
+        build_days=BUILD_DAYS_ELECTROLYZER,
+    ),
+    ModuleKind.CONDENSER: ModuleDef(
+        kind=ModuleKind.CONDENSER,
+        nominal=ResourceFlow(power=-CONDENSER_POWER_DAILY, water=CONDENSER_WATER_DAILY),
+        cost=COST_CONDENSER,
+        build_days=BUILD_DAYS_CONDENSER,
+    ),
 }
 
 BUILDABLE_KINDS: tuple[ModuleKind, ...] = (
@@ -181,6 +215,9 @@ BUILDABLE_KINDS: tuple[ModuleKind, ...] = (
     ModuleKind.STORAGE,
     ModuleKind.RADAR,
     ModuleKind.LAMP,
+    ModuleKind.LABORATORY,
+    ModuleKind.ELECTROLYZER,
+    ModuleKind.CONDENSER,
 )
 
 CABLE_COST = COST_CABLE

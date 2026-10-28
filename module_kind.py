@@ -13,3 +13,6 @@ class ModuleKind(StrEnum):
     FABRICATOR = "fabricator"
     STORAGE = "storage"
     LAMP = "lamp"
+    LABORATORY = "laboratory"
+    ELECTROLYZER = "electrolyzer"
+    CONDENSER = "condenser"
