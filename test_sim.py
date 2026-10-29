@@ -240,6 +240,39 @@ class BuildInputTests(unittest.TestCase):
         self.assertEqual(result.layer, MapLayer.TERRAIN)
         self.assertEqual((result.select_x, result.select_y), (HABITAT_X, HABITAT_Y))
 
+    def test_a_again_on_selected_lab_opens_research(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        lab = add_module(world, ModuleKind.LABORATORY, 1)
+        frame = FrameInput(frozenset({"A"}), frozenset({"A"}), frozenset())
+
+        first = handle_frame_input(
+            frame,
+            Input(dev_mode=False),
+            sim,
+            world,
+            layer=MapLayer.TERRAIN,
+            cursor_x=lab.x,
+            cursor_y=lab.y,
+            select_x=None,
+            select_y=None,
+        )
+        self.assertEqual((first.select_x, first.select_y), (lab.x, lab.y))
+        self.assertFalse(sim.research.open)
+
+        handle_frame_input(
+            frame,
+            Input(dev_mode=False),
+            sim,
+            world,
+            layer=MapLayer.TERRAIN,
+            cursor_x=lab.x,
+            cursor_y=lab.y,
+            select_x=first.select_x,
+            select_y=first.select_y,
+        )
+        self.assertTrue(sim.research.open)
+
 
 class SaveTests(unittest.TestCase):
     def test_roundtrip(self) -> None:
@@ -277,6 +310,23 @@ class SaveTests(unittest.TestCase):
             delete_save(path)
             self.assertIsNone(load_game(path))
 
+    def test_death_state_roundtrip(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        sim.resources.o2 = 0.0
+        sim.update(1 / 60, world)
+        self.assertTrue(sim.game_over)
+        self.assertEqual(sim.death_cause, "death.o2")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "save.json"
+            save_game(world, sim, path)
+            loaded = load_game(path)
+            self.assertIsNotNone(loaded)
+            _world, sim2 = loaded
+            self.assertTrue(sim2.game_over)
+            self.assertTrue(sim2.paused)
+            self.assertEqual(sim2.death_cause, "death.o2")
 
     def test_v1_loads_without_research(self) -> None:
         world = generate_world()

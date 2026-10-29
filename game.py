@@ -143,8 +143,6 @@ def run(dev: bool = False, handheld: bool = False) -> int:
     minimap_on = True
 
     def save_now() -> None:
-        if sim.game_over:
-            return
         try:
             savegame.save_game(world, sim)
         except OSError as exc:
@@ -217,8 +215,11 @@ def run(dev: bool = False, handheld: bool = False) -> int:
             save_now()
 
         previous_day = sim.day
+        was_game_over = sim.game_over
         sim.update(dt, world)
-        if sim.day != previous_day:
+        if sim.game_over and not was_game_over:
+            save_now()
+        elif sim.day != previous_day:
             save_now()
 
         if not policy.block_camera_pan:

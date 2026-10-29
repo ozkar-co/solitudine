@@ -22,7 +22,8 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
   - Badges de modo/pausa (`RECURSOS`, `CONSTRUIR`, `COLOCAR`, `PAUSA`), tile seleccionado marcado y X disponible en modo colocar.
   - Menú de pausa con Continuar/Créditos; créditos con scroll y easter egg.
   - **Correcciones de playtest (2026-10-29):** hábitat solo con consumo y alertas; recursos sin gasto diario y A vuelve a inspección; construcción con iconos, sin cap de componentes, modal de altura fija con controles al pie y categoría `< >`; estados sin paréntesis.
-- Guardado `VERSION` 3; `built_day` es un campo opcional compatible con saves viejos. 26 tests de regresión.
+  - **Tecnología y muerte (2026-10-29):** SELECT o A otra vez sobre el laboratorio inspeccionado abre Tecnología; la muerte guarda el estado de game over y al reabrir se mantiene.
+- Guardado `VERSION` 3; `built_day`, `game_over` y `death_cause` son campos opcionales compatibles con saves viejos. 28 tests de regresión.
 
 ## Ahora: playtest (en curso)
 
@@ -34,7 +35,7 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
   - Panel: descripción, flujos, día de construcción, buffer, reserva y estados.
   - Modos: badges, pausa, X en colocar, selección de tile y ayuda contextual.
   - Balance: margen inicial, núcleo 2 solar + 2 extractores + invernadero + laboratorio + electrolizador, O₂ en break-even, agua/energía, invernadero sin agua, radar y condensador.
-  - Guardado/carga de `built_day` y del progreso.
+  - Guardado/carga de `built_day`, `game_over`/`death_cause` y del progreso.
 - Registrar hallazgos en este plan o en el backlog; **no crear otro análisis temporal**.
 
 ## Decisiones cerradas
@@ -94,6 +95,7 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 - Panel del hábitat: solo consumo diario por vital y alertas; las cantidades/caps viven en modo recursos.
 - Menú de construcción por pestañas; categorías vacías ocultas; no disponibles en gris; coste y faltante visibles. Recursos con iconos y sin cap de componentes; modal de altura fija con controles en pie separado; categoría seleccionada resaltada y entre `< >`.
 - Panel de módulo: estado, descripción, producción/consumo con nombres y día de construcción. Los módulos mixtos muestran ambas cosas.
+- Tecnología: SELECT abre la pantalla; con el laboratorio inspeccionado, A otra vez también la abre. El panel del laboratorio muestra el atajo.
 - Badge de modo/pausa y tile seleccionado. X cambia capa también en modo colocar. Los estados son concisos, sin paréntesis explicativos.
 - Sin menú de ayuda dedicado: la UI debe ser autoexplicativa; se mantienen los hints contextuales.
 - Créditos en pausa con scroll y easter egg sin pistas.
@@ -167,6 +169,6 @@ El playtest manda. Cualquier cambio se refleja en `config.py` y en [catalogo.md]
 - **Scope creep:** un slice a la vez; el backlog no se agenda solo.
 - **UI:** se mantiene la grilla de 16 px; no crear `ui_state`/`ui_widgets` hasta que haya varias pantallas.
 - **Balance:** los números actuales son propuestas de playtest; pueden cambiar.
-- **Save:** `VERSION` 3; al agregar recursos o costes multi-material, subir a v4 con migración. Los IDs de módulos, recursos y tecnologías no se renombran.
+- **Save:** `VERSION` 3; al agregar recursos o costes multi-material, subir a v4 con migración. Los IDs de módulos, recursos y tecnologías no se renombran. No hay multisave: la muerte pisa el guardado y el game over persiste al reabrir.
 - **Contenido:** módulos y recursos se declaran por datos (flujos, costes, placement y tech); evitar ramas de código por contenido.
 - **Documentación:** `plan.md` es el roadmap; `catalogo.md` manda en módulos/tecnologías; `diseno-juego.md` describe el juego; `analisis-temporal.md` fue eliminado el 2026-10-29; este plan es el roadmap vigente.

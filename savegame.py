@@ -37,6 +37,8 @@ def _save_data(world: World, sim: Simulation) -> dict:
             "day_progress": sim.day_progress,
             "resources": asdict(sim.resources),
             "stock": asdict(sim.stock),
+            "game_over": sim.game_over,
+            "death_cause": sim.death_cause,
             "research": {
                 "unlocked": sorted(sim.research.unlocked),
                 "active": sim.research.active,
@@ -167,6 +169,9 @@ def load_game(path: Path = SAVE_PATH) -> tuple[World, Simulation] | None:
         resources=ResourcePool(**resources),
         stock=Stockpile(**sd["stock"]),
     )
+    sim.game_over = bool(sd.get("game_over", False))
+    sim.death_cause = sd.get("death_cause", "")
+    sim.paused = sim.game_over
     rd = sd.get("research", {})
     sim.research.unlocked = set(rd.get("unlocked", ()))
     sim.research.active = rd.get("active")

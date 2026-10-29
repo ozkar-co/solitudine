@@ -118,6 +118,7 @@ def handle_frame_input(
 
     if inp.was_pressed(frame, "SELECT") and build.mode == BuildMode.NONE:
         sim.research.open = True
+        sim.paused = True
         return result
 
     if inp.was_pressed(frame, "START"):
@@ -180,8 +181,20 @@ def handle_frame_input(
                 MapLayer.RESOURCES if layer == MapLayer.TERRAIN else MapLayer.TERRAIN
             )
         if inp.was_pressed(frame, "A"):
-            result.select_x, result.select_y = cursor_x, cursor_y
             if layer == MapLayer.RESOURCES:
+                result.select_x, result.select_y = cursor_x, cursor_y
                 result.layer = MapLayer.TERRAIN
+            else:
+                mod = world.module_at(cursor_x, cursor_y)
+                already_selected = select_x == cursor_x and select_y == cursor_y
+                if (
+                    mod is not None
+                    and mod.kind == ModuleKind.LABORATORY
+                    and already_selected
+                ):
+                    sim.research.open = True
+                    sim.paused = True
+                else:
+                    result.select_x, result.select_y = cursor_x, cursor_y
 
     return result
