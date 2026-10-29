@@ -198,52 +198,85 @@ Las respuestas cierran la dirección, pero no el orden. El choque principal es q
 **Orden y alcance**
 
 1. ¿La regla de 2 fuentes/2 usos se mantiene para los seis recursos actuales y se relaja para intermedios como la chatarra, o se reemplaza por una taxonomía?
+2 fuentes/ 2 usos no es una regla estricta, es una sugerencia para evaluar y evitar crear recursos de un solo uso o de una sola fuente, a menos que valga la pena.
 2. ¿Qué se implementa antes del playtest: solo UI/balance actual, o también chatarra/reciclador? La respuesta 9 sugiere lo primero.
+primero solo UI/balance que son los cambios que estan rompiento, el resto se debe acomodar en el plan (reformandolo por completo si hace falta, por eso este analisis es temporal e importante dejarlo claro todo antes de reescribir el plan)
 3. ¿Los recursos nuevos se agregan al catálogo como `backlog` ahora, o se diseñan acá y se pasan al catálogo recién después del playtest?
+todo lo que se diseñe pasa al catalogo segun su estado, si se implementa con su definicion, si no backlog.
 4. ¿Cuál es el próximo slice concreto y su criterio de aceptación?
+inmediato arreglar la UI el balance. lo siguiente dependerá del plan.
 
 **Chatarra y reciclador**
 
 5. ¿La chatarra entra a la red (stock con cap, save, panel) o es un inventario aparte? ¿Se muestra en "modo recursos"?
+entra a la red y se muestra entre los recursos.
 6. ¿Cómo se recoge: acción sobre ruinas, módulo recolector, cable, o el reciclador la absorbe?
+es una accion sobre las ruinas, se puede recoger desde el dia 0 pero quizas no se pueda usar aun, el monto de chatarra que produce una ruina es variable y esta almacenado en ella (se define en su creacion) al destruir un modulo pasa a ser ruinas y la chatarra es proporcional al costo que tuvo.
 7. ¿El reciclador produce solo mineral o también componentes? ¿Qué pasa con el fabricador en cada caso?
+el reciclador solo produce mineral, pero tiene chances muy bajos de producir trazas de otros materiales, en su info lleva el registro de cuanta chatarra ha procesado y que ha producido.
 8. ¿Ratio chatarra→mineral, tiempo, energía y coste del reciclador? ¿Requiere tecnología o está desde el inicio? ¿Por qué no vuelve obsoleta a la mina?
+requiere una tecnologia, consume poca energia y es barato, no se exactamente cuanto debemos comparar con otros modulos, pienso quizas 2 o 3 de componentes, se construye en medio dia y gasta 1 de energia y 0.5 de agua. para investigarlo se requieren 5 de chatarra, 2 componentes y 1 mineral.
+no vuelve obsoleta la mina porque la chatarra en el mundo es un recurso limitado, rng y menos abundante que las minas, es solo el extra que cierra el ciclo de cuando destruyo algo que construí, resuelve el tener mas de una fuente de minerales y añade el primer componente "gacha" al juego.
 9. ¿Demoler módulos propios da chatarra, mineral o ambos? ¿Se puede reciclar en loop? ¿Qué evita el abuso?
+demoler modulos propios produce chatarra pero siempre menos que el mineral equivalente que se usó para construirlos, produce entre un 0.6 y un 0.9 (equivalente en chatarra) a los minerales usados para crear la cantidad de componenetes que se usaron para construirlo. cancelar una construccion produce un porcentaje de chatarra equivalente al progreso que llevaba con un cap de 0.9
 10. ¿La chatarra para investigación se gasta al iniciar la tecnología o durante? ¿Qué tecnologías y cuánto? ¿Compite con convertirla en mineral?
+los materiales requeridos para iniciar una investigacion se gastan al iniciar la investigación inmediatamente, asi no compite.
 11. ¿Las ruinas procedurales están garantizadas, usan seed y se guardan? ¿Pueden bloquear construcción? ¿Las revela el radar o la visión inicial?
+si hay unas garantizadas pero pocas el resto se generan como los lagos o depositos de minerales. bloquean la construccion.
 
 **Bosques, cristales y parametrización**
 
 12. ¿Qué problema resuelve cada recurso y qué dos usos tiene? Sin eso, chocan con la regla de la matriz.
+estos son ideas que aun no se terminan de desarrollar pero apuntan a ser requisitos de inverstigacion, materiales de construccion de modulos nuevos que aun no nos hemos inventado y consumibles de modulos que aun no nos hemos inventado.
 13. ¿Los bosques son renovables/replantables? ¿Los cristales son finitos y requieren radar? ¿Qué módulo y placement usa cada uno?
+los bosques son renovables, dejan los brotes en el suelo pero toman varios meses en volver a crecer. los cristales son finitos y solo aparecen bajo tierra.
 14. ¿Ambos son base desde el inicio o se desbloquean? ¿En qué categoría/pestaña?
+ambos estan desde el principio asi el jugador se pregunta ¿que será esto, como lo obtengo? podemos incluso añadirlos de una vez aunque no sean obtenibles.
 15. ¿Se crea `resource_defs` antes de agregarlos? ¿Qué campos (ID, nombre, icono, vital, cap, color, fuentes/usos) y cómo afecta save/UI?
+debemos analizar como estan definidos los otros recursos para poder crear un estandar.
 16. ¿El mapa 1024 mantiene recursos iniciales a 2-5 tiles o se alejan para que el radar tenga sentido? Las respuestas 5 y 7 apuntan a que el radar puede volverse necesario.
+los recursos iniciales es para evitar partidas donde sea imposible sobrevivir al pirincipio y tener recursos para poder explorar, una vez se agotan toca explorar y para eso el radar es fundamental.
 
 **Comida, biodiésel y construcción**
 
 17. ¿Qué consume biodiésel y qué módulo lo produce? ¿Es recurso nuevo, combustible o estado? ¿Compite con comer?
+biodisel seria otro recurso mas, similar a madera y cristales. solo que este (al igual que los componentes) no se extrae si no que se produce, todos los recursos que se gastan por mas de un modulo o supervivencia (modulo habitacional) compiten, para eso se implementará la posibilidad de apagarlos, para que el jugador controle, si se esta quedando sin un recurso cuales son los que deben seguir funcionando.
 18. ¿"Trampa" es trampa de peces (comida), trampa de defensa (combate) o ambas? ¿Es consumible/reconstruible? ¿Qué consume al fabricarse y qué produce o consume al usarse?
+tenemos dos tipos de trampas la de peces que será inical y la alternativa a conseguir comida del invernadero. es barata (1 o 2 componentes) requiere ponerse sobre agua y estar conectada a la red (aunque no consuma energia) produce de forma aleatoria 1 o 2 de comida y solo durante la noche, no es una fuente primaria (a menos que se tengan muchas) y si el agua se seca deja de producir. la trampa de defensa es otra para la fase donde se implementen las alimañas, aun no se ha definido, será el complemento a las torretas quizas haga de varios tipos (explosivas, cebo, etc...) pero se define bien cuando lleguemos a ese punto.
 19. ¿Qué construcciones requieren más de un material? ¿Se paga al iniciar? ¿Cómo se muestra, cancela y reembolsa? ¿La comida usada puede matar de inanición?
+todo costo (al igual que componentes) se paga al iniciar, componentes es el base o principal de la mayoria de recursos, el menu de construccion debe mostrar el costo de cada construccion, por eso se planteo reformular y que las categorias sean pestañas, para dar mas espacio a tener mas detalles de cada construccion. depende mucho de la logica saber que extras gastar, por ejemplo tiene sentido usar una pequeña cantidad de minerales en bruto para construir el invernadero, o usar chatarra para construir el fabricador o el laboratorio, muchos van a seguir costando solo componentes, pero el motor del juego debe permitir tener mas de un costo.
 20. ¿Las tecnologías también costarán múltiples materiales (chatarra, mineral, comida)? Hoy `TechDef.cost` es solo componentes.
+exacto, por ejemplo cristales para algunas tecnologias avanzadas o recursos relacionados con la naturaleza de la investigacion.
 
 **Agua y energía**
 
 21. ¿El agua RNG reemplaza los depósitos iniciales fijos o se suma? ¿Hay un depósito inicial garantizado para no perder por seed?
+se suma y hay uno garantizado para no perder por seed.
 22. ¿"El agua puede desaparecer" es agotamiento, evento o estación? ¿Se regenera? ¿El radar la encuentra?
+el agua desaparece, por ahora se agota por el extractor (creo que ya esta implementado) no se regenera, el radar encuentra todo, es la unica forma de explorar por ahora. podrian haber eventos que agoren el agua pero no pensar en eso.
 23. Si el agua depende del condensador, quedarse sin energía puede matar por sed: ¿se acepta o hace falta un fallback?
+esta es una de las formas en que quedarse sin energia puede matar, y esta bien asi.
 24. ¿La batería es un módulo, una capacidad del hábitat o una mecánica de carga? ¿Qué la diferencia del almacén, que hoy da +40 a todos los caps? ¿`storage` deja de dar energía?
+la bateria es el equivalente al almacen para la energia, el almacen deja de aumentar el cap de energia, a medida que creemos modulos especializados (por ejemplo tanques y asi) podriamos ir quitando capacidades al almacen, por ahora solo las baterias, pero se puede tener en cuenta para modificar el almacen en el futuro.
 25. ¿La batería se desbloquea desde el inicio o sigue detrás de `bateria`/`solar_ii`? Si es necesaria para sobrevivir, no puede ser backlog T2.
+la bateria sigue detras de una investigacion, el modulo habitacional tiene una capacidad de carga de entrada y para todo lo demas antes de la investigacion queda producir lo que se consume 
 26. ¿La batería almacena el excedente diurno (sol 6-18) para la noche o solo amplía el cap? ¿Cambia el balance de solar?
+la bateria solo aumenta el cap, el almacenamiento del excedente esta contemplado en la funcionalidad actual sin consideraciones especiales.
 
 **UI y documentación**
 
 27. ¿La barra superior queda con 4 vitales y mineral/componentes pasan a "modo recursos"? ¿Dónde se ven chatarra, bosque, cristal y biodiésel?
+en modo recursos aparecen todos los recursos. si en la barra superior caben los nombres, los vitales se omiten del modo recursos, si en la barra superior quedan solo los simbolos, modo recursos los incluye para que el usuario pueda ver los nombres de esos recursos en algun lugar (y no depender de ayudas)
 28. ¿"Modo recursos" es un modo nuevo, una pantalla o un panel? ¿Pausa? ¿Muestra nombres, iconos, caps y fuentes/usos?
+es un modo que ya existe (el que permite ver los subterraneos, el de la tecla X (c en teclado))
 29. ¿Menú de construcción con pestañas: qué pasa con categorías vacías (Defensa) y con módulos bloqueados? ¿Se ocultan o se muestran en gris?
+las categorias vacias se ocultan, si tienen cosas que no estan disponibles esas si se muestran en gris.
 30. ¿Panel del módulo solo producción: qué se muestra en módulos que solo consumen (laboratorio, radar, lámpara) y dónde queda el consumo de agua/energía/mineral?
+en los que solo consumen se muestran datos sobre su consumo. y para todos una breve descripcion de lo que hace el modulo y cuando fue construido (asi incluso los mas basicos tendran algo que mostrar)
 31. ¿Ayuda contextual/menú de ayuda: qué contiene y cuándo se abre?
+en lo posible evitaremos tener ayuda y que el juego sea autoexplicativo o que tenga yo como jugador algun modo de descubrir para que sirve cada cosa aunque sea experimentado.
 32. ¿Los docs canónicos se actualizan con estas decisiones ahora o después del playtest? (No desde este doc.)
+cuando yo lo diga explicitamente.
 
 ### Impacto técnico (para dimensionar, no implementado)
 
