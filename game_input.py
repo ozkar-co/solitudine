@@ -16,6 +16,10 @@ from vision import set_module_clear
 from world import ModuleState, World
 
 
+PAUSE_CREDITS = 1
+PAUSE_OPTION_COUNT = 2
+
+
 @dataclass
 class FrameInputResult:
     layer: MapLayer
@@ -55,18 +59,46 @@ def handle_frame_input(
             sim.start_research(world)
         return result
 
-    if inp.was_pressed(frame, "SELECT") and build.mode == BuildMode.NONE and not sim.user_paused:
+    if sim.user_paused:
+        if sim.credits_open:
+            if (
+                inp.was_pressed(frame, "A")
+                or inp.was_pressed(frame, "B")
+                or inp.was_pressed(frame, "START")
+            ):
+                sim.credits_open = False
+            return result
+        if inp.was_pressed(frame, "START") or inp.was_pressed(frame, "B"):
+            sim.user_paused = False
+            sim.pause_index = 0
+            return result
+        if inp.was_pressed(frame, "DPAD_UP") or inp.was_pressed(frame, LJOY_UP):
+            sim.pause_index = (sim.pause_index - 1) % PAUSE_OPTION_COUNT
+        elif inp.was_pressed(frame, "DPAD_DOWN") or inp.was_pressed(frame, LJOY_DOWN):
+            sim.pause_index = (sim.pause_index + 1) % PAUSE_OPTION_COUNT
+        elif inp.was_pressed(frame, "A"):
+            if sim.pause_index == PAUSE_CREDITS:
+                sim.credits_open = True
+            else:
+                sim.user_paused = False
+                sim.pause_index = 0
+        return result
+
+    if inp.was_pressed(frame, "SELECT") and build.mode == BuildMode.NONE:
         sim.research.open = True
         return result
 
     if inp.was_pressed(frame, "START"):
-        sim.user_paused = not sim.user_paused
-    elif inp.was_pressed(frame, "Y"):
-        if not sim.user_paused:
-            if build.mode == BuildMode.NONE:
-                build.enter_menu()
-            elif build.mode == BuildMode.PLACE:
-                build.back_to_menu()
+        sim.user_paused = True
+        sim.pause_index = 0
+        sim.credits_open = False
+        return result
+
+    if inp.was_pressed(frame, "Y"):
+        if build.mode == BuildMode.NONE:
+            build.enter_menu()
+        elif build.mode == BuildMode.PLACE:
+            build.back_to_menu()
     elif inp.was_pressed(frame, "B"):
         if build.mode in (BuildMode.MENU, BuildMode.PLACE):
             build.cancel_build()

@@ -23,6 +23,8 @@ class Simulation:
     research: ResearchState = field(default_factory=ResearchState)
     paused: bool = False
     user_paused: bool = False
+    pause_index: int = 0
+    credits_open: bool = False
     game_over: bool = False
     death_cause: str = ""
     power_factor: float = 1.0
@@ -79,4 +81,6 @@ class Simulation:
         self.death_cause = cause
         self.paused = True
         self.user_paused = False
+        self.pause_index = 0
+        self.credits_open = False
         self.build.cancel_build()

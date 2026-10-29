@@ -29,6 +29,7 @@ from ui import (
     MapLayer,
     draw_bottom_bar,
     draw_build_menu_modal,
+    draw_credits_modal,
     draw_dev_debug,
     draw_game_over,
     draw_map,
@@ -190,7 +191,6 @@ def run(dev: bool = False, handheld: bool = False) -> int:
         )
         sim.paused = policy.pause_time
 
-        pause_modal = not sim.game_over and sim.user_paused
         was_paused = sim.user_paused
 
         input_result = handle_frame_input(
@@ -209,6 +209,7 @@ def run(dev: bool = False, handheld: bool = False) -> int:
             continue
         layer = input_result.layer
         select_x, select_y = input_result.select_x, input_result.select_y
+        pause_modal = not sim.game_over and sim.user_paused
 
         if not was_paused and sim.user_paused:
             save_now()
@@ -302,10 +303,13 @@ def run(dev: bool = False, handheld: bool = False) -> int:
             draw_game_over(screen, font, font_sm, sim)
         elif sim.research.open:
             draw_tech_screen(screen, font, font_sm, sim, world)
+        elif pause_modal:
+            if sim.credits_open:
+                draw_credits_modal(screen, font, font_sm)
+            else:
+                draw_pause_modal(screen, font, font_sm, sim)
         elif build.mode == BuildMode.MENU:
             draw_build_menu_modal(screen, font, font_sm, sim, world)
-        elif pause_modal:
-            draw_pause_modal(screen, font, font_sm)
 
         pygame.display.flip()
         clock.tick(FPS)

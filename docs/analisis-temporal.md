@@ -13,6 +13,7 @@
 - Un extractor/mina con depósito agotado ya **no consume energía**.
 - Guardado: `VERSION` 3; los guardados v1/v2 con tasas positivas se convierten a netas negativas al cargar.
 - Tests nuevos: días netos y extractor agotado sin consumo.
+- **Menú de pausa** con Continuar / Créditos y modal de créditos (ozkr, DeepSeek, Retro Diffusion, JuanDi, Neozound y VT323).
 
 ---
 
@@ -61,12 +62,13 @@ Núcleo estable objetivo: 2 solares + 2 extractores + 1 invernadero + 1 laborato
 Prioridad alta:
 
 - **Pausa del menú de construcción y del modo colocar** (implementado): el tiempo ya no corre mientras el jugador lee o elige un tile. La partida no arranca pausada. Falta un indicador visible de “PAUSA” en esos modos.
+- **Menú de pausa con créditos** (implementado): Continuar y Créditos; Créditos abre un modal con ozkr (creador/director; diseño, programación y producción), DeepSeek (programación auxiliar), Retro Diffusion (diseño auxiliar de sprites con Genkit, rd-tile / rd-plus), JuanDi (alpha testing y colaboración creativa) y Neozound (composición y diseño sonoro). Incluye la tipografía VT323 (SIL OFL 1.1).
 - **Hacer visible el modo.** No hay badge persistente de MODO, no se marca el tile seleccionado y el cursor siempre es igual. A cambia de significado según el modo.
 - **Estado real del módulo** (implementado en parte): falta que la UI explique mejor el motivo y las acciones disponibles.
 - **Iconos sin leyenda.** No hay forma de saber qué representa cada icono. Opciones: menú de ayuda; que el “modo recursos” muestre la lista de recursos con icono y nombre; nombres también en fichas y paneles.
 - **Barra superior solo con recursos vitales.** Mostrar solo O2, agua, comida y energía; mineral y componentes pasan a un modo/panel secundario. La barra no puede crecer sin límite.
 - **Menú de construcción con pestañas.** Las categorías deben ser pestañas; los módulos no disponibles se muestran en gris con el motivo, no se ocultan.
-- **Panel del módulo: solo producción.** Al analizar un módulo, mostrar solo la producción (así cada flujo entra con el nombre del recurso), no el detalle de todos los flujos.
+- **Panel del módulo: producción/consumo relevante.** Mostrar la producción en módulos productores y el consumo en los que solo consumen; los mixtos muestran ambas cosas. Nada de flujos nominales que no importan.
 - **Cancelar obra / demoler.** Un clic malo cuesta 8-10 Cmp y 1.5-2 días para siempre. Cancelar obra debería reembolsar; demoler debería existir desde el inicio con reembolso parcial, no detrás de “reciclaje”.
 - **Cable vs módulo.** El cable es trazo continuo y el módulo es de a uno. No se comunica. El cable queda en modo colocar; el módulo sale solo. No hay preview de la cadena ni coste acumulado. B sale pero no borra. Un módulo puede decir “válida” sin conexión y quedarse esperando sin construirse.
 - **Capa X** no funciona en modo colocar; la capa no cambia el preview. Para buscar un depósito hay que salir, cambiar capa y volver a entrar.
@@ -305,9 +307,9 @@ cuando yo lo diga explicitamente.
 
 ## Segunda relectura (2026-10-29)
 
-Las 32 respuestas alcanzan para fijar la dirección y reescribir el plan, pero **no para implementar sin más decisiones**. Lo que sigue separa lo cerrado de los huecos que pueden romper la implementación.
+Las 32 respuestas y las 23 respuestas inline permiten cerrar la estructura y reescribir el plan. Lo que sigue registra el estado que se fue cerrando; el “Cierre del análisis”, al final, resume el resultado.
 
-Para reescribir el plan no hace falta cerrar los 23 puntos: alcanza con seis decisiones estructurales: (1) estándar de recursos/costes; (2) tecnología y economía de chatarra/reciclador/demolición; (3) conexión y rol de la trampa de peces; (4) batería/almacén y carga; (5) agua/radar; (6) arquitectura de información de la UI. Los números finos pueden quedar para el playtest.
+Para reescribir el plan no hacía falta cerrar los 23 puntos: alcanzaba con seis decisiones estructurales: (1) estándar de recursos/costes; (2) tecnología y economía de chatarra/reciclador/demolición; (3) conexión y rol de la trampa de peces; (4) batería/almacén y carga; (5) agua/radar; (6) arquitectura de información de la UI. Los números finos quedan para el plan/playtest.
 
 ### Estado de claridad
 
@@ -327,10 +329,12 @@ Para reescribir el plan no hace falta cerrar los 23 puntos: alcanza con seis dec
 | Bosques/cristales | Base; visibles desde el inicio aunque no sean obtenibles; bosques renovables, cristales subterráneos finitos; usos sin diseñar | Falta diseño |
 | Biodiésel | Recurso producido; compite con otros consumos; se controla apagando módulos | Falta productor y consumidor |
 | Multi-material | Todo se paga al inicio; componentes es la base; las pestañas dan espacio para mostrar costes | Falta tabla y política de reembolso |
-| UI | Barra con 4 vitales; modo recursos (X/C) con nombres; pestañas; panel de producción/consumo + descripción/fecha; evitar ayuda | Casi; faltan layout, Defensa y panel mixto |
+| UI | Barra con 4 vitales; modo recursos (X/C) con nombres; pestañas; panel de producción/consumo + descripción/fecha; menú de pausa con Continuar/Créditos; evitar ayuda | Casi; faltan layout, Defensa y panel mixto |
 | Docs | Se actualizan solo cuando el usuario lo pida explícitamente | Claro |
 
 ### Huecos que pueden romper la implementación
+
+> Detectados antes de las respuestas inline. El “Cierre del análisis”, al final, los resuelve y deja solo tuning pendiente.
 
 1. **Fórmula de chatarra.** La respuesta 9 es difícil de verificar sin un ejemplo. Con la economía actual, 6 Cmp equivalen a 9 mineral (fabricador: 6 mineral → 4 Cmp). Demoler devuelve 0,6-0,9 de ese equivalente: 5,4-8,1 chatarra. Si el reciclador convierte 1:1, se recuperan 5,4-8,1 mineral; si el ratio es menor, menos. Hay que fijar el ratio, el rango y un ejemplo cerrado, o el loop económico queda indefinido.
 2. **Tecnología del reciclador y demolición.** El catálogo tiene `reciclaje` como T2 detrás de `fabricacion_ii` y le asigna desbloquear la demolición con ~50%. Las respuestas dicen que la demolición existe desde el inicio (o al menos que destruir un módulo produce ruina/chatarra) y que el reciclador requiere una tecnología. Hay que decidir si `reciclaje` es la tecnología del reciclador, qué desbloquea exactamente y en qué tier queda. Si es T2, la chatarra se acumula desde el día 0 sin poder procesarse durante mucho tiempo.
@@ -427,7 +431,7 @@ el plan se reescribe, tal y como te habia dicho cuando yo lo diga explicitamente
 
 El orden cambia respecto de la primera pasada: no se implementa chatarra antes de cerrar el estándar de recursos/costes, y no se agregan bosques/cristales/biodiésel hasta tener usos concretos.
 
-1. **Ahora: UI/balance actual y playtest.** Arreglar lo que rompe: barra con 4 vitales (nombres si caben), modo recursos con todos los nombres, pestañas, ocultar categorías vacías, gris para no disponibles, panel con producción/consumo + descripción/fecha, indicador de pausa, visibilidad de modo, hints y acentos. Ajustar el balance actual (margen inicial, Cmp, O2 residual, agua del invernadero, condensador/radar) y validarlo en PC y R36S. No agregar contenido nuevo.
+1. **Ahora: UI/balance actual y playtest.** Arreglar lo que rompe: barra con 4 vitales (nombres si caben), modo recursos con todos los nombres, pestañas, ocultar categorías vacías, gris para no disponibles, panel con producción/consumo + descripción/fecha, menú de pausa con Continuar/Créditos, indicador de pausa, visibilidad de modo, hints y acentos. Ajustar el balance actual (margen inicial, Cmp, O2 residual, agua del invernadero, condensador/radar) y validarlo en PC y R36S. No agregar contenido nuevo.
 2. **Cerrar el análisis estructural.** Resolver las decisiones que bloquean el plan: estándar de recursos/costes; tecnología y fórmula de chatarra/reciclador/demolición; conexión de la trampa de peces; batería/almacén y carga; agua/radar; arquitectura de información de la UI. Los números finos pueden quedar para playtest.
 3. **Reescribir el plan (cuando lo pidas).** En la misma pasada, si lo pides, actualizar catálogo (recursos, módulos y tecnologías con estado) y diseño (UI, controles, recursos). No tocar docs canónicos antes.
 4. **Fundación técnica.** Estándar de recursos (`resource_defs` o equivalente), costes multi-material, obra en curso, reembolsos y save v4. Es lo que habilita el resto.
@@ -437,3 +441,38 @@ El orden cambia respecto de la primera pasada: no se implementa chatarra antes d
 8. **Agua RNG + radar.** Depósito garantizado + aleatorios, coste/rol del radar, interacción con trampa y extractor, avisos.
 9. **Bosques/cristales/biodiésel.** Recién con usos concretos. Si se quieren visibles desde el inicio, agregarlos como scenery inerte en el paso 8 y activar la extracción en este paso.
 10. **Expansión, eventos y contenido nuevo.** Último, según la respuesta 9.
+
+---
+
+## Cierre del análisis (2026-10-29)
+
+Con las respuestas a las 23 preguntas, las seis decisiones estructurales quedan cerradas. Los huecos de la segunda relectura se resuelven así:
+
+- **Chatarra/reciclador:** ratio 0,9; demolición 0,6-0,9; el cable devuelve componentes íntegros (caso especial); recogida instantánea y sin coste; cap propio menor que el resto, ampliado por almacén.
+- **Tecnología:** demolición desde el día 0 con confirmación; un solo tier actual; el árbol se irá armando y el motor debe soportarlo. El reciclador requiere una tecnología a definir en ese árbol.
+- **Trazas:** aleatorias y guardadas; sin protección anti save-scum; recuperan materiales perdidos (cristales, madera, chatarra, componentes), con probabilidades a definir.
+- **Ruinas:** 1 tile; 2 garantizadas; guardadas; solo en zonas abiertas sin agua/mineral/árboles/cristales; bloquean todo, incluidos cables.
+- **Demoler:** crea una ruina del tamaño del módulo (hoy 1×1); la recogida es instantánea y no consume nada.
+- **Trampa de peces:** el cable puede ir sobre agua; es un módulo aparte; al secarse el agua queda inútil para siempre y se puede demoler para recuperar chatarra.
+- **Biodiésel:** módulo futuro, sin definir; queda en backlog.
+- **Multi-material:** tabla antes de implementar; todo se paga al inicio; la comida usada puede matar; por ahora muerte directa, sin gracia.
+- **Competencia:** reparto igualitario, sin prioridades; cada módulo gasta según disponibilidad; empate al azar.
+- **Energía:** el cap del hábitat es un cap; la batería queda en T2; el almacén da +40 a todo lo que no tenga reservorio especializado; los tanques especializados son futuro.
+- **Agua:** igual que hoy; el tile vuelve a suelo; extractor y trampa quedan inútiles.
+- **Bosques/cristales:** no se añaden aún; se definen al llegar a esa etapa; bloquearán construcción.
+- **UI:** los nombres en la barra se deciden probando; Defensa se oculta hasta implementarse; los módulos mixtos muestran producción y consumo; los hints se mantienen y solo se quita el menú de ayuda.
+- **Plan:** se reescribe por etapas jugables cuando lo pidas.
+
+Queda como tuning, no como arquitectura: tabla exacta de costes multi-material, cap de chatarra, probabilidades de trazas, coste/consumo del radar, números de la trampa, tiempo de regrowth, etc. **El análisis puede cerrarse; el plan puede reescribirse cuando lo pidas.**
+
+### Créditos (implementado)
+
+- Menú de pausa: **Continuar** y **Créditos**. En pausa, LJOY/DPAD elige, A confirma y START o B continúa. En créditos, A/B/START vuelve al menú de pausa.
+- El modal de créditos contiene:
+  - **ozkr** — creador y director; diseño de juego, programación y producción.
+  - **DeepSeek** — programación auxiliar.
+  - **Retro Diffusion** — diseño auxiliar de sprites (Genkit, modelos rd-tile / rd-plus).
+  - **JuanDi** — alpha testing y colaboración creativa.
+  - **Neozound** — composición musical y diseño sonoro.
+  - **VT323** — tipografía (SIL OFL 1.1).
+- El juego permanece pausado con el menú o el modal abiertos.

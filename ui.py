@@ -34,6 +34,7 @@ __all__ = [
     "MapLayer",
     "draw_bottom_bar",
     "draw_build_menu_modal",
+    "draw_credits_modal",
     "draw_dev_debug",
     "draw_game_over",
     "draw_map",
@@ -205,16 +206,39 @@ def draw_pause_modal(
     surf: pygame.Surface,
     font: pygame.font.Font,
     font_sm: pygame.font.Font,
+    sim: Simulation,
 ) -> None:
-    draw_map_modal(
-        surf,
-        font,
-        font_sm,
-        [
-            ModalLine(t("pause.title"), COL_TEXT, large=True),
-            ModalLine(t("pause.hint"), COL_DIM),
-        ],
-    )
+    options = (t("pause.menu_continue"), t("pause.menu_credits"))
+    lines = [ModalLine(t("pause.title"), COL_TEXT, large=True)]
+    for index, label in enumerate(options):
+        selected = index == sim.pause_index
+        prefix = ">" if selected else " "
+        lines.append(ModalLine(f"{prefix} {label}", COL_TEXT if selected else COL_DIM))
+    lines.append(ModalLine(t("pause.hint_menu"), COL_DIM))
+    draw_map_modal(surf, font, font_sm, lines, dim_map=True)
+
+
+def draw_credits_modal(
+    surf: pygame.Surface,
+    font: pygame.font.Font,
+    font_sm: pygame.font.Font,
+) -> None:
+    lines = [
+        ModalLine(t("credits.title"), COL_TEXT, large=True),
+        ModalLine(t("credits.ozkr_name"), COL_WARN),
+        ModalLine(t("credits.ozkr_roles"), COL_DIM),
+        ModalLine(t("credits.deepseek_name"), COL_WARN),
+        ModalLine(t("credits.deepseek_roles"), COL_DIM),
+        ModalLine(t("credits.retro_name"), COL_WARN),
+        ModalLine(t("credits.retro_roles"), COL_DIM),
+        ModalLine(t("credits.juandi_name"), COL_WARN),
+        ModalLine(t("credits.juandi_roles"), COL_DIM),
+        ModalLine(t("credits.neozound_name"), COL_WARN),
+        ModalLine(t("credits.neozound_roles"), COL_DIM),
+        ModalLine(t("credits.font"), COL_DIM),
+        ModalLine(t("credits.hint"), COL_DIM),
+    ]
+    draw_map_modal(surf, font, font_sm, lines, dim_map=True)
 
 
 def draw_game_over(

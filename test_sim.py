@@ -299,5 +299,52 @@ class LampTests(unittest.TestCase):
         self.assertIn((HABITAT_X, HABITAT_Y, 8), light_sources(world, connected))
 
 
+class PauseMenuTests(unittest.TestCase):
+    def _press(self, sim: Simulation, world, *keys: str) -> None:
+        frame = FrameInput(held=frozenset(), pressed=frozenset(keys), released=frozenset())
+        handle_frame_input(
+            frame,
+            Input(False),
+            sim,
+            world,
+            layer=MapLayer.TERRAIN,
+            cursor_x=0,
+            cursor_y=0,
+            select_x=None,
+            select_y=None,
+        )
+
+    def test_pause_menu_opens_credits(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+
+        self._press(sim, world, "START")
+        self.assertTrue(sim.user_paused)
+
+        self._press(sim, world, "DPAD_DOWN")
+        self.assertEqual(sim.pause_index, 1)
+
+        self._press(sim, world, "A")
+        self.assertTrue(sim.credits_open)
+        self.assertTrue(sim.user_paused)
+
+        self._press(sim, world, "B")
+        self.assertFalse(sim.credits_open)
+        self.assertTrue(sim.user_paused)
+
+        self._press(sim, world, "START")
+        self.assertFalse(sim.user_paused)
+        self.assertEqual(sim.pause_index, 0)
+
+    def test_pause_menu_continue(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+
+        self._press(sim, world, "START")
+        self._press(sim, world, "A")
+        self.assertFalse(sim.user_paused)
+        self.assertEqual(sim.pause_index, 0)
+
+
 if __name__ == "__main__":
     unittest.main()
