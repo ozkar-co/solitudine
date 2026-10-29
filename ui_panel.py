@@ -41,7 +41,6 @@ from ui_theme import (
     COL_WARN,
     alert_color,
     format_amount,
-    format_days,
     panel_rect,
 )
 from world import Deposit, ModuleState, Tile, World
@@ -471,31 +470,20 @@ def _draw_resource_panel(
 
     nc = network_caps(world, get_connected(world))
     resources = (
-        ("o2", ResourceId.O2, sim.resources.o2, nc.o2, True),
-        ("water", ResourceId.WATER, sim.resources.water, nc.water, True),
-        ("food", ResourceId.FOOD, sim.resources.food, nc.food, True),
-        ("power", ResourceId.POWER, sim.resources.power, nc.power, True),
-        ("mineral", None, sim.stock.mineral, nc.mineral, False),
-        ("components", None, sim.stock.components, nc.components, False),
+        ("o2", ResourceId.O2, sim.resources.o2, nc.o2),
+        ("water", ResourceId.WATER, sim.resources.water, nc.water),
+        ("food", ResourceId.FOOD, sim.resources.food, nc.food),
+        ("power", ResourceId.POWER, sim.resources.power, nc.power),
+        ("mineral", None, sim.stock.mineral, nc.mineral),
+        ("components", None, sim.stock.components, nc.components),
     )
-    for icon_name, resource, amount, cap, vital in resources:
+    for icon_name, resource, amount, cap in resources:
         level = sim.resources.alert_level(resource) if resource is not None else None
         color = alert_color(level) if level is not None else COL_DIM
         surf.blit(ui_assets.icon(icon_name), (rect.x + 8, y))
         text = f"{t(f'resource.{icon_name}')} {format_amount(amount)}/{format_amount(cap)}"
         _panel_line(surf, font_sm, rect.x + 28, y, text, color)
         y += 18
-        if vital and resource is not None:
-            days = sim.resources.days_left(resource)
-            _panel_line(
-                surf,
-                font_sm,
-                rect.x + 28,
-                y,
-                format_days(days),
-                alert_color(level) if level is not None else COL_DIM,
-            )
-            y += 16
 
     _panel_line(surf, font_sm, rect.x + 8, rect.bottom - 24, t("panel.resources_hint"), COL_DIM)
 

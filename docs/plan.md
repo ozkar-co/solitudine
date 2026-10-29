@@ -91,9 +91,9 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 ### UI
 
 - Barra superior solo con los cuatro vitales, con nombres; si no caben, se decide en playtest.
-- Modo recursos: seis recursos con cantidad/cap y días de los vitales; sin gasto diario. A inspecciona y vuelve al terreno.
+- Modo recursos: seis recursos con cantidad/cap; sin gasto diario ni días. A inspecciona y vuelve al terreno.
 - Panel del hábitat: solo consumo diario por vital y alertas; las cantidades/caps viven en modo recursos.
-- Menú de construcción por pestañas; categorías vacías ocultas; no disponibles en gris; coste y faltante visibles. Recursos con iconos y sin cap de componentes; el coste muestra icono y cantidad del recurso entre paréntesis; modal de altura fija con controles en pie separado; categoría seleccionada resaltada y entre `< >`.
+- Menú de construcción por pestañas; categorías vacías ocultas; no disponibles en gris; coste, faltante y descripción visibles. Recursos con iconos y sin cap de componentes; el coste muestra icono y cantidad del recurso entre paréntesis; modal de altura fija con controles en pie separado; categoría seleccionada resaltada y entre `< >`.
 - Panel de módulo: estado, descripción, producción/consumo con nombres y día de construcción. Los módulos mixtos muestran ambas cosas.
 - Acciones especiales: cada módulo declara `special_action`; con el módulo inspeccionado, A ejecuta la acción y el panel muestra “Pulsa A para {acción}”. SELECT queda libre. Laboratorio: A otra vez abre Tecnología.
 - Badge de modo/pausa y celda seleccionada. X cambia capa también en modo colocar. Los estados son concisos, sin paréntesis explicativos.

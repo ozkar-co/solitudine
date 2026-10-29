@@ -27,8 +27,6 @@
   "panel.module": "Módulo: {name}",
   "panel.status": "Estado: {status}",
   "panel.cable": "Cable de conexión",
-  "panel.resource_cap": "{name}: {value}/{cap} ({days}d)",
-  "panel.material_cap": "{name}: {value}/{cap}",
   "panel.buffer": "Buffer: {value}/{cap}",
   "panel.patch_reserve": "Reserva 3x3: {value}",
   "panel.deposit_amount": "Cantidad: {value}",

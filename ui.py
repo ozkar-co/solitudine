@@ -17,8 +17,8 @@ from simulation import Simulation
 from tech_defs import tech_def, tech_for_module
 from ui_map import MapLayer, draw_map
 from ui_modals import (
+    BUILD_MODAL_HEIGHT,
     MODAL_FOOTER_GAP,
-    MODAL_HEIGHT,
     MODAL_PAD_X,
     MODAL_PAD_Y,
     ModalLine,
@@ -191,6 +191,12 @@ def _build_kind_label(kind: BuildKind) -> str:
     }[kind]
 
 
+def _build_kind_desc(kind: BuildKind) -> str:
+    if kind == BuildKind.CABLE:
+        return t("module_desc.cable")
+    return t(f"module_desc.{module_kind_for(kind).value}")
+
+
 def _resource_modal_lines(sim: Simulation) -> list[ModalLine]:
     resources = (
         ("o2", sim.resources.o2, ResourceId.O2),
@@ -265,13 +271,14 @@ def draw_build_menu_modal(
         if suffix:
             items.append(("", suffix, color))
         lines.append(ModalLine(items=tuple(items), item_gap=0))
+        lines.append(ModalLine(_build_kind_desc(kind), COL_DIM))
     draw_map_modal(
         surf,
         font,
         font_sm,
         lines,
         dim_map=True,
-        fixed_height=MODAL_HEIGHT,
+        fixed_height=BUILD_MODAL_HEIGHT,
         footer=[ModalLine(t("build.hint_menu"), COL_DIM)],
     )
 
