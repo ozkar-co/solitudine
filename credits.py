@@ -51,27 +51,10 @@ CREDITS_SECTIONS: tuple[tuple[str, tuple[CreditEntry, ...]], ...] = (
 CREDITS_VISIBLE_LINES = 14
 CREDITS_SCROLL_STEP = 3
 
-KONAMI_SEQUENCE = ("UP", "UP", "DOWN", "DOWN", "LEFT", "RIGHT", "LEFT", "RIGHT")
+KONAMI_SEQUENCE = "UUDDLRLR"
 
 CREDITS_LINE_COUNT = sum(1 + len(entries) * 2 for _section, entries in CREDITS_SECTIONS)
 
 
 def max_credits_scroll() -> int:
     return max(0, CREDITS_LINE_COUNT - CREDITS_VISIBLE_LINES)
-
-
-def advance_konami(progress: int, action: str | None) -> tuple[int, bool]:
-    """Avanza la secuencia y devuelve (progreso, completada)."""
-    if action is None:
-        return progress, False
-    if progress >= len(KONAMI_SEQUENCE):
-        progress = 0
-    if action == KONAMI_SEQUENCE[progress]:
-        progress += 1
-    elif action == KONAMI_SEQUENCE[0]:
-        progress = 1
-    else:
-        progress = 0
-    if progress >= len(KONAMI_SEQUENCE):
-        return 0, True
-    return progress, False

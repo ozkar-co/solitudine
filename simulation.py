@@ -26,7 +26,7 @@ class Simulation:
     pause_index: int = 0
     credits_open: bool = False
     credits_scroll: int = 0
-    credits_konami: int = 0
+    credits_konami: str = ""
     easter_egg_open: bool = False
     game_over: bool = False
     death_cause: str = ""
@@ -87,6 +87,6 @@ class Simulation:
         self.pause_index = 0
         self.credits_open = False
         self.credits_scroll = 0
-        self.credits_konami = 0
+        self.credits_konami = ""
         self.easter_egg_open = False
         self.build.cancel_build()

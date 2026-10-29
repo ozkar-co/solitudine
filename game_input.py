@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from construction import BuildController, BuildKind, BuildMode
-from credits import CREDITS_SCROLL_STEP, advance_konami, max_credits_scroll
+from credits import CREDITS_SCROLL_STEP, KONAMI_SEQUENCE, max_credits_scroll
 from gamepad import LJOY_DOWN, LJOY_LEFT, LJOY_RIGHT, LJOY_UP
 from input_state import FrameInput, Input
 from module_defs import module_active
@@ -74,7 +74,7 @@ def handle_frame_input(
             ):
                 sim.credits_open = False
                 sim.credits_scroll = 0
-                sim.credits_konami = 0
+                sim.credits_konami = ""
             else:
                 action = None
                 if inp.was_pressed(frame, "DPAD_UP") or inp.was_pressed(frame, LJOY_UP):
@@ -86,22 +86,20 @@ def handle_frame_input(
                 elif inp.was_pressed(frame, "DPAD_RIGHT") or inp.was_pressed(frame, LJOY_RIGHT):
                     action = "RIGHT"
                 if action is not None:
-                    sim.credits_konami, unlocked = advance_konami(sim.credits_konami, action)
-                    if unlocked:
-                        sim.easter_egg_open = True
-                        sim.credits_scroll = 0
-                        return result
                     if action == "UP":
                         sim.credits_scroll = max(0, sim.credits_scroll - CREDITS_SCROLL_STEP)
                     elif action == "DOWN":
                         sim.credits_scroll = min(max_credits_scroll(), sim.credits_scroll + CREDITS_SCROLL_STEP)
+                    sim.credits_konami = (sim.credits_konami + action[0])[-len(KONAMI_SEQUENCE):]
+                    if sim.credits_konami == KONAMI_SEQUENCE:
+                        sim.easter_egg_open = True
             return result
         if inp.was_pressed(frame, "START") or inp.was_pressed(frame, "B"):
             sim.user_paused = False
             sim.pause_index = 0
             sim.credits_open = False
             sim.credits_scroll = 0
-            sim.credits_konami = 0
+            sim.credits_konami = ""
             sim.easter_egg_open = False
             return result
         if inp.was_pressed(frame, "DPAD_UP") or inp.was_pressed(frame, LJOY_UP):
@@ -112,7 +110,7 @@ def handle_frame_input(
             if sim.pause_index == PAUSE_CREDITS:
                 sim.credits_open = True
                 sim.credits_scroll = 0
-                sim.credits_konami = 0
+                sim.credits_konami = ""
             else:
                 sim.user_paused = False
                 sim.pause_index = 0
@@ -127,7 +125,7 @@ def handle_frame_input(
         sim.pause_index = 0
         sim.credits_open = False
         sim.credits_scroll = 0
-        sim.credits_konami = 0
+        sim.credits_konami = ""
         sim.easter_egg_open = False
         return result
 
