@@ -12,7 +12,7 @@
 - El **menú de construcción** y el **modo colocar** pausan el tiempo. La partida no arranca pausada.
 - Un extractor/mina con depósito agotado ya **no consume energía**.
 - Guardado: `VERSION` 3; los guardados v1/v2 con tasas positivas se convierten a netas negativas al cargar.
-- Tests nuevos: días netos, extractor agotado sin consumo, menú de pausa/créditos y scroll.
+- Tests nuevos: días netos, extractor agotado sin consumo, menú de pausa/créditos, scroll y easter egg.
 - **Menú de pausa** con Continuar / Créditos y modal de créditos con scroll (equipo, apoyo, agradecimientos y licencias).
 
 ---
@@ -475,3 +475,4 @@ Queda como tuning, no como arquitectura: tabla exacta de costes multi-material, 
   - **Licencias:** Python (PSF License), pygame-ce (LGPL), VT323 (SIL OFL 1.1).
 - El juego permanece pausado con el menú o el modal abiertos.
 - Para sumar colaboradores alcanza con agregar entradas en `credits.py` y sus claves en `locales/es.json`; el scroll se recalcula solo.
+- **Easter egg sin pistas:** en Créditos, ↑ ↑ ↓ ↓ ← → ← → abre `assets/credits/gatos.png` a pantalla completa; cualquier tecla vuelve a Créditos. La imagen es 640×480, pixelada desde 320×240 y reducida a 32 colores.

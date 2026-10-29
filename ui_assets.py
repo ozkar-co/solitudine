@@ -35,6 +35,7 @@ _tile_cache: dict[tuple[Tile, int, int], pygame.Surface] = {}
 _module_cache: dict[tuple[ModuleKind, int], pygame.Surface] = {}
 _font_sm: pygame.font.Font | None = None
 _font_lg: pygame.font.Font | None = None
+_easter_egg: pygame.Surface | None = None
 
 
 def _load_image(path: Path) -> pygame.Surface:
@@ -45,7 +46,9 @@ def _load_image(path: Path) -> pygame.Surface:
 
 def load() -> None:
     """Carga todos los assets. Debe llamarse después de create_display()."""
-    global _font_sm, _font_lg
+    global _font_sm, _font_lg, _easter_egg
+
+    _easter_egg = None
 
     for tile, name in TILE_FILES.items():
         paths = sorted((ASSETS_DIR / "tiles").glob(f"{name}_*.png"))
@@ -64,6 +67,13 @@ def load() -> None:
         raise FileNotFoundError(f"Falta la fuente: {font_path}")
     _font_sm = pygame.font.Font(font_path, 16)
     _font_lg = pygame.font.Font(font_path, 24)
+
+    egg_path = ASSETS_DIR / "credits" / "gatos.png"
+    _easter_egg = _load_image(egg_path) if egg_path.exists() else None
+
+
+def easter_egg() -> pygame.Surface | None:
+    return _easter_egg
 
 
 def font_sm() -> pygame.font.Font:

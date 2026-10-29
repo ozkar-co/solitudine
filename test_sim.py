@@ -351,6 +351,33 @@ class PauseMenuTests(unittest.TestCase):
         self.assertFalse(sim.user_paused)
         self.assertEqual(sim.pause_index, 0)
 
+    def test_credits_konami_opens_cat_photo(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+
+        self._press(sim, world, "START")
+        self._press(sim, world, "DPAD_DOWN")
+        self._press(sim, world, "A")
+        self.assertTrue(sim.credits_open)
+
+        for key in (
+            "DPAD_UP",
+            "DPAD_UP",
+            "DPAD_DOWN",
+            "DPAD_DOWN",
+            "DPAD_LEFT",
+            "DPAD_RIGHT",
+            "DPAD_LEFT",
+            "DPAD_RIGHT",
+        ):
+            self._press(sim, world, key)
+
+        self.assertTrue(sim.easter_egg_open)
+
+        self._press(sim, world, "A")
+        self.assertFalse(sim.easter_egg_open)
+        self.assertTrue(sim.credits_open)
+
 
 if __name__ == "__main__":
     unittest.main()

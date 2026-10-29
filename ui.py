@@ -36,6 +36,7 @@ __all__ = [
     "draw_bottom_bar",
     "draw_build_menu_modal",
     "draw_credits_modal",
+    "draw_easter_egg",
     "draw_dev_debug",
     "draw_game_over",
     "draw_map",
@@ -273,6 +274,15 @@ def draw_credits_modal(
         thumb_h = max(8, int(track_h * CREDITS_VISIBLE_LINES / len(content)))
         thumb_y = track_top + int((track_h - thumb_h) * scroll / max_scroll)
         pygame.draw.rect(surf, COL_TEXT, (track_x, thumb_y, 2, thumb_h))
+
+
+def draw_easter_egg(surf: pygame.Surface) -> None:
+    image = ui_assets.easter_egg()
+    if image is None:
+        return
+    if image.get_size() != surf.get_size():
+        image = pygame.transform.scale(image, surf.get_size())
+    surf.blit(image, (0, 0))
 
 
 def draw_game_over(

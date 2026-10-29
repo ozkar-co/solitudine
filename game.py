@@ -30,6 +30,7 @@ from ui import (
     draw_bottom_bar,
     draw_build_menu_modal,
     draw_credits_modal,
+    draw_easter_egg,
     draw_dev_debug,
     draw_game_over,
     draw_map,
@@ -310,6 +311,9 @@ def run(dev: bool = False, handheld: bool = False) -> int:
                 draw_pause_modal(screen, font, font_sm, sim)
         elif build.mode == BuildMode.MENU:
             draw_build_menu_modal(screen, font, font_sm, sim, world)
+
+        if sim.easter_egg_open:
+            draw_easter_egg(screen)
 
         pygame.display.flip()
         clock.tick(FPS)

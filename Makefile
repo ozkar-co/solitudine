@@ -40,7 +40,7 @@ dist:
 	mkdir -p dist/solitudine/runtime dist/solitudine/locales dist/solitudine/assets
 	cp $(filter-out test_%.py,$(wildcard *.py)) dist/solitudine/
 	cp locales/*.json dist/solitudine/locales/
-	cp -r assets/tiles assets/modules assets/icons assets/fonts dist/solitudine/assets/
+	cp -r assets/tiles assets/modules assets/icons assets/fonts assets/credits dist/solitudine/assets/
 	cp port/Solitudine.sh dist/Solitudine.sh
 	chmod +x dist/Solitudine.sh
 	cp $(RUNTIME) dist/solitudine/runtime/
