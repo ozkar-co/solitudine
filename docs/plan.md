@@ -23,6 +23,7 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
   - Menú de pausa con Continuar/Créditos; créditos con scroll y easter egg.
   - **Correcciones de playtest (2026-10-29):** hábitat solo con consumo y alertas; recursos sin gasto diario y A vuelve a inspección; construcción con iconos, sin cap de componentes, modal de altura fija con controles al pie y categoría `< >`; estados sin paréntesis.
   - **Tecnología y muerte (2026-10-29):** A otra vez sobre el laboratorio inspeccionado abre Tecnología; SELECT queda libre. La muerte guarda el estado de game over y al reabrir se mantiene.
+  - **Arranque (2026-10-29):** splash de texto best-effort en el lanzador antes del runtime; splash con pygame antes de cargar assets, guardado y mundo; joystick e inicialización pesada diferidos.
 - Guardado `VERSION` 3; `built_day`, `game_over` y `death_cause` son campos opcionales compatibles con saves viejos. 29 tests de regresión.
 
 ## Ahora: playtest (en curso)
@@ -150,6 +151,7 @@ El playtest manda. Cualquier cambio se refleja en `config.py` y en [catalogo.md]
 - Mejoras Mk II, alimañas ambientales, tower defense, botín, inventario y variantes de muerte.
 - Desgaste, eventos climáticos, radio y finales.
 - UI: 9-slice, autotile, animaciones y overview solo si el contenido lo pide.
+- Splash pre-pygame nativo (framebuffer/CFW) solo si se valida en R36S; el splash actual es pygame temprano.
 - UI de construcción: preview de cadena/coste acumulado, B borra cable y feedback de módulo esperando conexión.
 - Fichas de construcción/tecnología con efectos numéricos y requisitos; pantalla de Tecnología por ramas/tier.
 - Log de eventos (construcción, bloqueo, investigación, reserva crítica) y “cargar último día” en game over.

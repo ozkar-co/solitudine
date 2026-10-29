@@ -37,6 +37,7 @@ from ui import (
     draw_mode_badge,
     draw_panel,
     draw_pause_modal,
+    draw_splash,
     draw_top_bar,
     map_rect,
     module_debug_lines,
@@ -102,14 +103,15 @@ def run(dev: bool = False, handheld: bool = False) -> int:
         setup_dev_env()
 
     load("es")
-    pygame.init()
-    pygame.joystick.init()
+    pygame.display.init()
+    pygame.font.init()
 
     screen = create_display(handheld)
     if dev_mode:
         setup_dev_display()
 
     pygame.display.set_caption(t("game.title"))
+    draw_splash(screen, t("game.title"), t("splash.loading"))
     clock = pygame.time.Clock()
     ui_assets.load()
     font = ui_assets.font_lg()
@@ -129,6 +131,7 @@ def run(dev: bool = False, handheld: bool = False) -> int:
     gen_ms = (time.perf_counter() - t0) * 1000.0
 
     camera = Camera(float(HABITAT_X), float(HABITAT_Y))
+    pygame.joystick.init()
     inp = Input(dev_mode)
     inp.open_joysticks()
 

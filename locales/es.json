@@ -1,6 +1,7 @@
 {
   "game.title": "SOLITUDINE",
   "planet.code": "NEP-325",
+  "splash.loading": "Cargando...",
   "tile.ground": "Suelo",
   "tile.water": "Agua",
   "tile.rock": "Roca",

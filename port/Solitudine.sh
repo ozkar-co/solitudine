@@ -1,6 +1,24 @@
 #!/bin/bash
 # Lanzador PortMaster — copiar a roms/ports/Solitudine.sh
 
+# Splash de texto best-effort: no depende de pygame y aparece antes del runtime.
+# Si el CFW mantiene EmulationStation en pantalla puede no ser visible.
+show_text_splash() {
+  local msg="$1"
+  local tty
+  local shown=0
+  for tty in /dev/tty1 /dev/tty0 /dev/console; do
+    if [ -w "$tty" ]; then
+      printf '\033[2J\033[H\n\n\n        SOLITUDINE\n\n        %s\n' "$msg" > "$tty" 2>/dev/null && shown=1 || true
+    fi
+  done
+  if [ "$shown" -eq 0 ]; then
+    printf '\033[2J\033[H\n\n\n        SOLITUDINE\n\n        %s\n' "$msg" 2>/dev/null || true
+  fi
+}
+
+show_text_splash "loading..."
+
 RUNTIME="pygame-ce_2.5.6_python_3.12.8"
 RUNTIME_FILE="${RUNTIME}.squashfs"
 
@@ -41,6 +59,7 @@ if [[ "$PM_CAN_MOUNT" != "N" ]]; then
   $ESUDO umount "$PYGAME_DIR" 2>/dev/null || true
 fi
 
+show_text_splash "loading..."
 $ESUDO mount "$GAMEDIR/runtime/$RUNTIME_FILE" "$PYGAME_DIR"
 
 export SDL_GAMECONTROLLERCONFIG="$sdl_controllerconfig"
@@ -57,6 +76,7 @@ export PYTHONHOME="$PYGAME_DIR"
 export PYTHONPATH="$PYTHONHOME/lib/python3.12"
 export PYTHONPYCACHEPREFIX="$GAMEDIR/.pycache"
 
+show_text_splash "loading..."
 "$PYGAME_DIR/bin/python" "$GAMEDIR/main.py" --handheld
 
 if [[ "$PM_CAN_MOUNT" != "N" ]]; then

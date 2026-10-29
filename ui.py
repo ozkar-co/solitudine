@@ -50,11 +50,32 @@ __all__ = [
     "draw_mode_badge",
     "draw_panel",
     "draw_pause_modal",
+    "draw_splash",
     "module_debug_lines",
     "draw_top_bar",
     "map_rect",
     "panel_rect",
 ]
+
+
+def draw_splash(surf: pygame.Surface, title: str, subtitle: str) -> None:
+    """Pantalla mínima sin assets para cubrir la carga inicial."""
+    w, h = surf.get_size()
+    surf.fill((6, 10, 8))
+    box = pygame.Rect(0, 0, min(w - 64, 360), 140)
+    box.center = (w // 2, h // 2)
+    pygame.draw.rect(surf, COL_PANEL, box)
+    pygame.draw.rect(surf, COL_BORDER, box, 2)
+
+    font = pygame.font.Font(None, 48)
+    font_sm = pygame.font.Font(None, 24)
+    title_s = font.render(title, False, COL_TEXT)
+    sub_s = font_sm.render(subtitle, False, COL_DIM)
+    surf.blit(title_s, (w // 2 - title_s.get_width() // 2, box.y + 28))
+    pygame.draw.line(surf, COL_DIM, (box.x + 24, box.y + 80), (box.right - 24, box.y + 80))
+    surf.blit(sub_s, (w // 2 - sub_s.get_width() // 2, box.y + 96))
+    pygame.display.flip()
+    pygame.event.pump()
 
 
 def draw_top_bar(
