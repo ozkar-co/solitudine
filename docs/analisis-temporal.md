@@ -164,7 +164,9 @@ la energia necesita bateria, el cap inical asume ser la bateria del modulo habit
 luego de estabilizar la superivencia, expancion, investigacion, eventos aleatorios, nuevos modulos, nuevos recursos, pero no pensamos en eso hasta tener bien afinado lo actual
 
 
-## Reanálisis contra catálogo, diseño y plan (2026-10-29)
+## Primera relectura (2026-10-29) — superada por la segunda
+
+> Esta pasada se hizo antes de las respuestas a las 32 preguntas. La “Segunda relectura”, al final del documento, la reemplaza.
 
 Las respuestas cierran la dirección, pero no el orden. El choque principal es que `plan.md` pide **un slice a la vez** y prohíbe recursos nuevos hasta completar la matriz de 2 fuentes/2 usos, mientras que las respuestas 1, 4 y 6 agregan chatarra, bosques, cristales, biodiésel y construcciones multi-material. La respuesta 9 dice que eso va después de afinar lo actual. Interpretación de trabajo (a confirmar): **diseñar ahora, implementar después del playtest**, salvo que se decida lo contrario.
 
@@ -289,7 +291,7 @@ cuando yo lo diga explicitamente.
 | Agua RNG | Worldgen, garantía de inicio, radar y dependencia energía/condensador |
 | Pestañas/modo recursos | UI, input, pausa e i18n |
 
-### Próximo orden sugerido (revisado)
+### Próximo orden sugerido (primera pasada, superado)
 
 1. Playtest de 4B/4C y cerrar la UI ya identificada (barra con 4 vitales, nombres/iconos, pestañas, indicador de pausa, estado del módulo). No agregar recursos todavía.
 2. Decidir la taxonomía de recursos y si la regla 2 fuentes/2 usos se mantiene. Recién entonces actualizar `plan.md` y `catalogo.md`.
@@ -298,3 +300,117 @@ cuando yo lo diga explicitamente.
 5. Resolver batería vs almacén y el modelo de energía; después agua RNG y radar.
 6. Recién después: bosques, cristales, biodiésel, trampa de peces, construcciones multi-material y recursos parametrizables.
 7. Al final, expansión, eventos y contenido nuevo (respuesta 9).
+
+---
+
+## Segunda relectura (2026-10-29)
+
+Las 32 respuestas alcanzan para fijar la dirección y reescribir el plan, pero **no para implementar sin más decisiones**. Lo que sigue separa lo cerrado de los huecos que pueden romper la implementación.
+
+Para reescribir el plan no hace falta cerrar los 23 puntos: alcanza con seis decisiones estructurales: (1) estándar de recursos/costes; (2) tecnología y economía de chatarra/reciclador/demolición; (3) conexión y rol de la trampa de peces; (4) batería/almacén y carga; (5) agua/radar; (6) arquitectura de información de la UI. Los números finos pueden quedar para el playtest.
+
+### Estado de claridad
+
+| Tema | Decisión | Estado |
+|------|----------|--------|
+| Orden inmediato | UI/balance primero; el plan se reescribe después de cerrar este análisis; los docs canónicos se actualizan cuando el usuario lo diga | Claro |
+| Regla de recursos | 2 fuentes/2 usos es una heurística, no una regla estricta; se aceptan excepciones si valen la pena | Claro |
+| Catálogo | Todo lo diseñado entra según su estado: implementado con definición, si no `backlog` | Claro; falta sección de recursos |
+| Chatarra | Recurso de red, visible en modo recursos; se recoge de ruinas desde el día 0; monto variable por ruina | Casi; faltan cap y números |
+| Ruinas | Pocas garantizadas + procedurales; bloquean construcción; el radar revela todo | Casi; faltan placement y guardado |
+| Reciclador | Requiere tecnología; barato (2-3 Cmp propuesto, 0,5 día, 1 E/d y 0,5 agua/d asumidos); chatarra→mineral; trazas raras; registra procesado/producido; investigación 5 chatarra + 2 Cmp + 1 mineral | Casi; faltan tecnología, trazas y ratio |
+| Demolición/cancelación | Demoler devuelve 0,6-0,9 del equivalente mineral; cancelar devuelve el progreso con cap 0,9 | Falta fórmula y ejemplo |
+| Comida | Recurrente; se gasta en biodiésel y en fabricar trampas; costes multi-material | Claro; falta biodiésel |
+| Trampa de peces | 1-2 Cmp, sobre agua, conectada a la red, 1-2 comida/noche, se detiene si el agua se agota; la de defensa es posterior | Casi; falta conexión en agua y números |
+| Agua | Garantizada + RNG, finita, sin regeneración; el radar es la única exploración; quedarse sin energía puede matar por sed | Claro; faltan tamaños y radar |
+| Energía | Batería = cap de energía; el almacén deja de dar energía; la batería solo aumenta cap; requiere investigación; el hábitat tiene el cap inicial | Casi; falta “carga de entrada” y tecnología |
+| Bosques/cristales | Base; visibles desde el inicio aunque no sean obtenibles; bosques renovables, cristales subterráneos finitos; usos sin diseñar | Falta diseño |
+| Biodiésel | Recurso producido; compite con otros consumos; se controla apagando módulos | Falta productor y consumidor |
+| Multi-material | Todo se paga al inicio; componentes es la base; las pestañas dan espacio para mostrar costes | Falta tabla y política de reembolso |
+| UI | Barra con 4 vitales; modo recursos (X/C) con nombres; pestañas; panel de producción/consumo + descripción/fecha; evitar ayuda | Casi; faltan layout, Defensa y panel mixto |
+| Docs | Se actualizan solo cuando el usuario lo pida explícitamente | Claro |
+
+### Huecos que pueden romper la implementación
+
+1. **Fórmula de chatarra.** La respuesta 9 es difícil de verificar sin un ejemplo. Con la economía actual, 6 Cmp equivalen a 9 mineral (fabricador: 6 mineral → 4 Cmp). Demoler devuelve 0,6-0,9 de ese equivalente: 5,4-8,1 chatarra. Si el reciclador convierte 1:1, se recuperan 5,4-8,1 mineral; si el ratio es menor, menos. Hay que fijar el ratio, el rango y un ejemplo cerrado, o el loop económico queda indefinido.
+2. **Tecnología del reciclador y demolición.** El catálogo tiene `reciclaje` como T2 detrás de `fabricacion_ii` y le asigna desbloquear la demolición con ~50%. Las respuestas dicen que la demolición existe desde el inicio (o al menos que destruir un módulo produce ruina/chatarra) y que el reciclador requiere una tecnología. Hay que decidir si `reciclaje` es la tecnología del reciclador, qué desbloquea exactamente y en qué tier queda. Si es T2, la chatarra se acumula desde el día 0 sin poder procesarse durante mucho tiempo.
+3. **Trazas del reciclador.** “Trazas muy bajas de otros materiales” no dice cuáles, con qué probabilidad ni en qué cantidad. Es el primer componente gacha: hay que definir tabla, RNG determinista o no, protección contra save-scum y cómo se muestra en la info del módulo.
+4. **Chatarra en la red.** Entra a la red y se muestra entre los recursos, pero falta cap, si el almacén le da +40, si usa buffer, qué pasa al llenarse y cómo entra en el save. Si se llena, la recogida de ruinas se desperdicia sin aviso.
+5. **Ruinas.** No está claro si ocupan uno o varios tiles, si bloquean cables además de construcción, cómo se guarda el monto variable, si demoler crea una ruina que hay que recoger o da chatarra directa, y si las ruinas garantizadas pueden caer sobre depósitos iniciales o el camino del cable.
+6. **Trampa de peces y cable en agua.** El cable actual solo se coloca en suelo. La trampa va “sobre agua” y debe estar conectada: hay que definir si se conecta desde la orilla, si el cable puede cruzar agua o si es inalámbrica. Además, ¿ocupa el tile de agua y bloquea al extractor? ¿Qué pasa con la trampa cuando el agua se agota?
+7. **Costes multi-material y reembolsos.** Falta la tabla de qué módulos usan mineral/chatarra/comida además de componentes, cómo se muestra la falta de cada material, qué se devuelve al cancelar/demoler (¿chatarra de todo o solo de componentes?), cómo se guarda una obra en curso y si la comida usada en construcción puede matar de inanición.
+8. **Energía.** “El módulo habitacional tiene una capacidad de carga de entrada” puede significar un cap o un límite de energía por día; el código actual no tiene límite de carga. También falta el tier/prerequisito de la batería y confirmar que el almacén sigue dando +40 a todos los recursos menos energía, incluidos chatarra/biodiésel/madera/cristal.
+9. **Biodiésel.** No hay productor ni consumidor definido. ¿Qué módulo lo produce, con qué insumos, en qué ratio y qué lo consume? ¿Es un stock normal o un tanque aparte?
+10. **Bosques y cristales.** Los usos son “módulos que aún no inventamos”; no se pueden agregar al catálogo con números. Además, “varios meses” de regrowth necesita una escala concreta (días de juego), y hay que decidir si se agregan como scenery inerte ahora o solo cuando exista al menos un uso.
+11. **UI.** Quedan abiertos: nombres vs símbolos en la barra, comportamiento y pausa del modo recursos, si Defensa se oculta o se muestra en gris, qué muestra el panel de un módulo mixto (invernadero) y si “evitar ayuda” elimina también los hints contextuales.
+12. **Reescritura del plan.** El usuario dijo que el plan puede reescribirse completo. Falta decidir la estructura objetivo y si se actualizan plan/catálogo/diseño en ese orden o en paralelo (siempre cuando lo pida explícitamente).
+
+### Preguntas nuevas
+
+**Números y fórmulas**
+
+1. ¿Confirmas este ejemplo? 6 Cmp = 9 mineral; demoler devuelve 5,4-8,1 chatarra; con ratio 1:1 se recuperan 5,4-8,1 mineral. ¿Qué ratio chatarra→mineral y qué velocidad de procesamiento (chatarra/día) usamos?
+2. ¿La cancelación de obra devuelve chatarra de todos los materiales o solo del equivalente a componentes? ¿Cómo se calcula con costes multi-material?
+3. ¿El reciclador usa la tecnología `reciclaje` del catálogo o una nueva? ¿Qué tier/prerequisito tiene? ¿`reciclaje` sigue desbloqueando demolición o la demolición ya está desde el día 0?
+4. ¿Qué trazas produce el reciclador (materiales, probabilidades, cantidades)? ¿Se guardan en el save? ¿Se puede save-scum?
+5. ¿La chatarra tiene cap propio? ¿El almacén le da +40? ¿Qué pasa si se llena?
+6. ¿Cuántas ruinas garantizadas hay, de qué tamaño y dónde? ¿Pueden bloquear depósitos iniciales o el cable? ¿Se guardan?
+7. ¿Demoler crea una ruina que hay que recoger o da chatarra directa? ¿La ruina ocupa uno o varios tiles? ¿Bloquea cables o solo construcción? ¿La recogida es instantánea o tarda/consume energía?
+
+**Comida, trampas y construcción**
+
+8. ¿La trampa de peces se conecta por cable desde la orilla, el cable puede ir sobre agua, o es inalámbrica? ¿Comparte tile con el extractor? ¿Qué pasa cuando el agua se agota?
+9. ¿Qué módulo produce biodiésel, con qué insumos y qué consume? ¿Es storage normal o tanque?
+10. ¿Qué costes multi-material tienen los módulos actuales? ¿Se define una tabla antes de implementar? ¿La comida usada en construcción puede matar?
+11. ¿Qué pasa si dos módulos compiten por agua/comida/mineral? ¿El hábitat tiene prioridad o el jugador apaga módulos? ¿Se muestra el conflicto?
+
+**Energía y agua**
+
+12. ¿La “capacidad de carga de entrada” del hábitat es un cap o un límite de energía por día? ¿La batería sigue en T2 tras `solar_ii`? ¿Cuánto cap da y cuánto cuesta?
+13. ¿El almacén sigue dando +40 a todos los recursos menos energía, incluidos chatarra/biodiésel/madera/cristal? ¿Los tanques especializados son ahora o futuro?
+14. ¿Cuánto dura el depósito de agua garantizado y cuántos depósitos RNG hay? ¿El radar debe abaratarse para que la exploración sea viable?
+15. ¿La desaparición del agua cambia el tile (vuelve a suelo) o solo el depósito? ¿Qué pasa con la trampa de peces y el extractor?
+
+**Bosques, cristales y contenido**
+
+16. ¿Los bosques y cristales se agregan como scenery inerte ahora o esperan a tener al menos un uso? ¿Cómo se muestran como “no obtenibles” sin ayuda?
+17. ¿Cuánto tardan los bosques en regrow (días/meses) y cómo se representa el brote? ¿Bloquea construcción?
+18. ¿Los cristales se ven en modo recursos antes de tener el extractor? ¿Qué módulo los extrae y qué placement usa?
+
+**UI y plan**
+
+19. ¿La barra superior muestra nombres o solo iconos? Si muestra nombres, ¿modo recursos omite los vitales? ¿Se pausa el modo recursos?
+20. ¿La pestaña Defensa se oculta hasta combate o se muestra en gris con torreta/trampa? ¿Qué categoría tiene la trampa de peces?
+21. ¿El panel de un módulo mixto (invernadero) muestra producción y consumo, o solo producción? ¿Dónde queda el consumo?
+22. ¿“Evitar ayuda” elimina los hints contextuales actuales o solo el menú de ayuda? ¿Cómo se enseña R1/B/X?
+23. ¿El plan se reescribe completo antes de tocar catálogo/diseño, o se actualizan en paralelo? ¿Qué estructura tendrá?
+
+### Impacto técnico actualizado
+
+| Decisión | Impacto |
+|----------|---------|
+| Chatarra + cap | `Stockpile`/caps, save, modo recursos y almacén |
+| Ruinas | Worldgen con seed, datos por tile, save, bloqueo de construcción, radar |
+| Reciclador | `module_defs`, tecnología, trazas, estadísticas por módulo, save |
+| Demolición/cancelación | Acción, fórmula de retorno, multi-material, save |
+| Multi-material | `ModuleDef.cost`/`TechDef.cost` de `float` a mapa; UI de construcción, obra en curso, save v4 |
+| Trampa de peces | `module_defs`, placement sobre agua, red/cable, producción nocturna |
+| Batería/almacén | `network_caps`, bonus de almacén por recurso, tecnología, balance |
+| Agua RNG/radar | Worldgen, depósito garantizado, coste/consumo del radar, avisos |
+| Bosques/cristales/biodiésel | Definiciones de recursos, worldgen, módulos, tecnologías, UI |
+| Modo recursos/pestañas/panel | UI, input, i18n |
+
+### Nuevo orden sugerido
+
+El orden cambia respecto de la primera pasada: no se implementa chatarra antes de cerrar el estándar de recursos/costes, y no se agregan bosques/cristales/biodiésel hasta tener usos concretos.
+
+1. **Ahora: UI/balance actual y playtest.** Arreglar lo que rompe: barra con 4 vitales (nombres si caben), modo recursos con todos los nombres, pestañas, ocultar categorías vacías, gris para no disponibles, panel con producción/consumo + descripción/fecha, indicador de pausa, visibilidad de modo, hints y acentos. Ajustar el balance actual (margen inicial, Cmp, O2 residual, agua del invernadero, condensador/radar) y validarlo en PC y R36S. No agregar contenido nuevo.
+2. **Cerrar el análisis estructural.** Resolver las decisiones que bloquean el plan: estándar de recursos/costes; tecnología y fórmula de chatarra/reciclador/demolición; conexión de la trampa de peces; batería/almacén y carga; agua/radar; arquitectura de información de la UI. Los números finos pueden quedar para playtest.
+3. **Reescribir el plan (cuando lo pidas).** En la misma pasada, si lo pides, actualizar catálogo (recursos, módulos y tecnologías con estado) y diseño (UI, controles, recursos). No tocar docs canónicos antes.
+4. **Fundación técnica.** Estándar de recursos (`resource_defs` o equivalente), costes multi-material, obra en curso, reembolsos y save v4. Es lo que habilita el resto.
+5. **Chatarra/reciclador/demolición.** Primer slice de contenido nuevo; probar el loop económico completo.
+6. **Trampa de peces + comida.** Segunda fuente de comida, producción nocturna y placement sobre agua.
+7. **Batería/almacén + energía.** Separar caps, definir tecnología y semántica de carga; rebalancear.
+8. **Agua RNG + radar.** Depósito garantizado + aleatorios, coste/rol del radar, interacción con trampa y extractor, avisos.
+9. **Bosques/cristales/biodiésel.** Recién con usos concretos. Si se quieren visibles desde el inicio, agregarlos como scenery inerte en el paso 8 y activar la extracción en este paso.
+10. **Expansión, eventos y contenido nuevo.** Último, según la respuesta 9.
