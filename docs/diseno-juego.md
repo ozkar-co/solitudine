@@ -59,6 +59,7 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 | Mover cursor | Flechas / WASD | L-stick / DPAD |
 | Mover cámara | Arrastrar con botón medio / right stick | R-stick |
 | Seleccionar tile | A / Enter | A |
+| Acción especial del módulo (Tecnología en laboratorio) | A otra vez sobre el módulo | A otra vez sobre el módulo |
 | Construir | Y | Y |
 | Cambiar capa | X | X |
 | Cancelar | B / Esc | B |
@@ -66,7 +67,6 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 | Zoom | L1/L2 (teclas Q/E o [/]) | L1/L2 |
 | Apagar/encender | R1 | R1 |
 | Minimapa | R2 | R2 |
-| Tecnología | SELECT | SELECT |
 | Pausa / créditos | START, luego menú | START, luego menú |
 | Salir | SELECT+START | SELECT+START |
 
@@ -74,7 +74,7 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 
 - 640×480, grilla de 16 px, fuente VT323 y sprites propios.
 - Barra superior: O₂, agua, comida y energía, con nombre y `x/y`.
-- Modo recursos (X): los seis recursos con nombre, cap, tendencia y días de los vitales.
+- Modo recursos (X): los seis recursos con nombre, cantidad/cap y días de los vitales.
 - Panel lateral: estado, descripción, producción/consumo, buffer, reserva y día de construcción.
 - Minimapa con región explorada, módulos, cables y viewport.
 - Menú de construcción por pestañas (Energía, Extracción, Soporte, Logística, Ciencia); categorías vacías ocultas, no disponibles en gris.

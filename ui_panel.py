@@ -413,8 +413,16 @@ def _draw_module_inspection(
     if mod.built_day > 0:
         _panel_line(surf, font_sm, x, y, t("panel.built", day=mod.built_day), COL_DIM)
         y += 16
-    if mod.kind == ModuleKind.LABORATORY:
-        _panel_line(surf, font_sm, x, y, t("panel.lab_hint"), COL_WARN)
+    action = module_def(mod.kind).special_action
+    if action is not None:
+        _panel_line(
+            surf,
+            font_sm,
+            x,
+            y,
+            t("panel.action_hint", action=t(f"action.{action}")),
+            COL_WARN,
+        )
         y += 16
     return y
 

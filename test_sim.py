@@ -273,6 +273,40 @@ class BuildInputTests(unittest.TestCase):
         )
         self.assertTrue(sim.research.open)
 
+    def test_select_is_free(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        frame = FrameInput(frozenset({"SELECT"}), frozenset({"SELECT"}), frozenset())
+
+        result = handle_frame_input(
+            frame,
+            Input(dev_mode=False),
+            sim,
+            world,
+            layer=MapLayer.TERRAIN,
+            cursor_x=HABITAT_X,
+            cursor_y=HABITAT_Y,
+            select_x=None,
+            select_y=None,
+        )
+        self.assertFalse(sim.research.open)
+        self.assertFalse(sim.user_paused)
+        self.assertIsNone(result.select_x)
+
+        sim.research.open = True
+        handle_frame_input(
+            frame,
+            Input(dev_mode=False),
+            sim,
+            world,
+            layer=MapLayer.TERRAIN,
+            cursor_x=HABITAT_X,
+            cursor_y=HABITAT_Y,
+            select_x=None,
+            select_y=None,
+        )
+        self.assertTrue(sim.research.open)
+
 
 class SaveTests(unittest.TestCase):
     def test_roundtrip(self) -> None:

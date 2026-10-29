@@ -93,7 +93,7 @@ Valores actuales de playtest. Cualquier ajuste se refleja en `config.py` y en es
 ## Investigación y UI
 
 - El laboratorio se construye desde el inicio.
-- SELECT abre la pantalla de Tecnología: ramas, lista de nodos, coste, progreso, prerrequisito y bloqueo.
+- Con el laboratorio inspeccionado, A otra vez abre la pantalla de Tecnología; SELECT queda libre. Incluye ramas, lista de nodos, coste, progreso, prerrequisito y bloqueo.
 - A investiga el nodo seleccionado; B cierra. Sin pestañas vacías.
 - El menú de construcción usa pestañas por categoría; las categorías vacías se ocultan y las piezas bloqueadas/no pagables se muestran en gris con su motivo.
 - Guardar: tecnologías desbloqueadas, tier por módulo, investigación activa, progreso y día de construcción de cada módulo.

@@ -22,8 +22,8 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
   - Badges de modo/pausa (`RECURSOS`, `CONSTRUIR`, `COLOCAR`, `PAUSA`), tile seleccionado marcado y X disponible en modo colocar.
   - Menú de pausa con Continuar/Créditos; créditos con scroll y easter egg.
   - **Correcciones de playtest (2026-10-29):** hábitat solo con consumo y alertas; recursos sin gasto diario y A vuelve a inspección; construcción con iconos, sin cap de componentes, modal de altura fija con controles al pie y categoría `< >`; estados sin paréntesis.
-  - **Tecnología y muerte (2026-10-29):** SELECT o A otra vez sobre el laboratorio inspeccionado abre Tecnología; la muerte guarda el estado de game over y al reabrir se mantiene.
-- Guardado `VERSION` 3; `built_day`, `game_over` y `death_cause` son campos opcionales compatibles con saves viejos. 28 tests de regresión.
+  - **Tecnología y muerte (2026-10-29):** A otra vez sobre el laboratorio inspeccionado abre Tecnología; SELECT queda libre. La muerte guarda el estado de game over y al reabrir se mantiene.
+- Guardado `VERSION` 3; `built_day`, `game_over` y `death_cause` son campos opcionales compatibles con saves viejos. 29 tests de regresión.
 
 ## Ahora: playtest (en curso)
 
@@ -95,7 +95,7 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 - Panel del hábitat: solo consumo diario por vital y alertas; las cantidades/caps viven en modo recursos.
 - Menú de construcción por pestañas; categorías vacías ocultas; no disponibles en gris; coste y faltante visibles. Recursos con iconos y sin cap de componentes; modal de altura fija con controles en pie separado; categoría seleccionada resaltada y entre `< >`.
 - Panel de módulo: estado, descripción, producción/consumo con nombres y día de construcción. Los módulos mixtos muestran ambas cosas.
-- Tecnología: SELECT abre la pantalla; con el laboratorio inspeccionado, A otra vez también la abre. El panel del laboratorio muestra el atajo.
+- Acciones especiales: cada módulo declara `special_action`; con el módulo inspeccionado, A ejecuta la acción y el panel muestra “Pulsa A para {acción}”. SELECT queda libre. Laboratorio: A otra vez abre Tecnología.
 - Badge de modo/pausa y tile seleccionado. X cambia capa también en modo colocar. Los estados son concisos, sin paréntesis explicativos.
 - Sin menú de ayuda dedicado: la UI debe ser autoexplicativa; se mantienen los hints contextuales.
 - Créditos en pausa con scroll y easter egg sin pistas.

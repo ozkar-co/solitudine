@@ -98,6 +98,7 @@ class ModuleDef:
     storage_cap_bonus: float = 0.0
     always_online: bool = False
     light_radius: int = 0
+    special_action: str | None = None
 
 
 MODULE_DEFS: dict[ModuleKind, ModuleDef] = {
@@ -187,6 +188,7 @@ MODULE_DEFS: dict[ModuleKind, ModuleDef] = {
         nominal=ResourceFlow(power=-LABORATORY_POWER_DAILY),
         cost=COST_LABORATORY,
         build_days=BUILD_DAYS_LABORATORY,
+        special_action="research",
     ),
     ModuleKind.ELECTROLYZER: ModuleDef(
         kind=ModuleKind.ELECTROLYZER,

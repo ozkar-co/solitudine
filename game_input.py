@@ -8,7 +8,7 @@ from construction import BuildController, BuildKind, BuildMode, kind_cost
 from credits import CREDITS_SCROLL_STEP, KONAMI_SEQUENCE, max_credits_scroll
 from gamepad import LJOY_DOWN, LJOY_LEFT, LJOY_RIGHT, LJOY_UP
 from input_state import FrameInput, Input
-from module_defs import module_active
+from module_defs import module_active, module_def
 from module_kind import ModuleKind
 from network import get_connected
 from simulation import Simulation
@@ -55,7 +55,7 @@ def handle_frame_input(
         return result
 
     if sim.research.open:
-        if inp.was_pressed(frame, "B") or inp.was_pressed(frame, "SELECT"):
+        if inp.was_pressed(frame, "B"):
             sim.research.open = False
         elif inp.was_pressed(frame, "DPAD_UP") or inp.was_pressed(frame, LJOY_UP):
             sim.research.select(-1)
@@ -114,11 +114,6 @@ def handle_frame_input(
             else:
                 sim.user_paused = False
                 sim.pause_index = 0
-        return result
-
-    if inp.was_pressed(frame, "SELECT") and build.mode == BuildMode.NONE:
-        sim.research.open = True
-        sim.paused = True
         return result
 
     if inp.was_pressed(frame, "START"):
@@ -187,13 +182,11 @@ def handle_frame_input(
             else:
                 mod = world.module_at(cursor_x, cursor_y)
                 already_selected = select_x == cursor_x and select_y == cursor_y
-                if (
-                    mod is not None
-                    and mod.kind == ModuleKind.LABORATORY
-                    and already_selected
-                ):
-                    sim.research.open = True
-                    sim.paused = True
+                action = module_def(mod.kind).special_action if mod is not None else None
+                if already_selected and action is not None:
+                    if action == "research":
+                        sim.research.open = True
+                        sim.paused = True
                 else:
                     result.select_x, result.select_y = cursor_x, cursor_y
 
