@@ -103,4 +103,4 @@ Valores actuales de playtest. Cualquier ajuste se refleja en `config.py` y en es
 - Con el laboratorio activo e inspeccionado, A otra vez abre la pantalla de Tecnología; SELECT queda libre. Incluye ramas, lista de nodos, coste, progreso, prerrequisito y bloqueo.
 - A investiga el nodo seleccionado; B cierra. Sin pestañas vacías.
 - El menú de construcción usa pestañas por categoría; las categorías vacías se ocultan y las piezas bloqueadas/no pagables se muestran en gris; las bloqueadas dicen “Investigar”. Cada módulo muestra descripción y flujo produce/consume.
-- Guardar: tecnologías desbloqueadas, tier por módulo, investigación activa, progreso, día de construcción y coste pagado (`cost_paid`) de cada obra.
+- Guardar: tecnologías desbloqueadas, tier por módulo, investigación activa, progreso, día de construcción, coste pagado (`cost_paid`) de cada obra, ruinas y contadores de reciclaje.

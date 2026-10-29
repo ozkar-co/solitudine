@@ -26,6 +26,7 @@ Los perfiles solo permiten override de `seed`. No hay `negative_prompt` en RD+; 
 | `assets/tiles/water_00.png` | `source/terrain/water.png` | (2,1) índice 6 | alien planet water, dark teal liquid with gentle ripples, seamless top-down terrain | 1102 |
 | `assets/tiles/rock_00.png` | `source/terrain/rock.png` | (2,1) índice 6 | alien planet rock, grey stone with cracks and patches of moss, seamless top-down terrain | 1103 |
 | `assets/tiles/rock_01.png` | `source/terrain/rock.png` | (0,3) índice 12 | ídem | 1103 |
+| `assets/tiles/ruin_00.png` | placeholder procedural | — | ruina de chatarra, piedras rotas y óxido, 16×16 | — |
 
 La hoja RD Tile es 4 columnas × 5 filas de tiles de 16×16. Los índices no usados quedan como transiciones para un autotile futuro.
 
@@ -45,6 +46,7 @@ La hoja RD Tile es 4 columnas × 5 filas de tiles de 16×16. Los índices no usa
 | `assets/modules/laboratory.png` | `source/modules/laboratory.png` | laboratory module, compact science lab, domed glass, dark metal, cyan lights, top-down | 1215 |
 | `assets/modules/electrolyzer.png` | `source/modules/electrolyzer.png` | electrolysis machine, water tank and electrodes, dark metal, cyan bubbles, top-down | 1216 |
 | `assets/modules/condenser.png` | `source/modules/condenser.png` | atmospheric condenser, coils and fan, dark metal, blue, top-down | 1217 |
+| `assets/modules/recycler.png` | placeholder procedural | reciclador industrial, caja metálica y símbolo verde de reciclaje, 16×16 | — |
 
 ### Iconos
 
@@ -56,12 +58,15 @@ La hoja RD Tile es 4 columnas × 5 filas de tiles de 16×16. Los índices no usa
 | `assets/icons/power.png` | `source/icons/power.png` | lightning bolt icon, yellow, simple silhouette | 1304 |
 | `assets/icons/components.png` | `source/icons/components.png` | gear icon, steel and green, simple silhouette | 1305 |
 | `assets/icons/mineral.png` | `source/icons/mineral.png` | mineral ore chunk icon, brown and grey, simple silhouette | 1306 |
+| `assets/icons/scrap.png` | placeholder procedural | pila de chatarra, gris y marrón, 16×16 | — |
 | `assets/icons/biomass.png` | `source/icons/biomass.png` | green algae biomass icon, simple silhouette | 1307 |
 | `assets/icons/chitin.png` | `source/icons/chitin.png` | chitin plate icon, amber, simple silhouette | 1308 |
 | `assets/icons/alloy.png` | `source/icons/alloy.png` | metal alloy ingot icon, steel, simple silhouette | 1309 |
 | `assets/icons/core.png` | `source/icons/core.png` | glowing crystal core icon, cyan, simple silhouette | 1310 |
 
 Los finales de módulos e iconos son **16×16**: se bajan desde el PNG 32×32 con `pygame.transform.scale` (nearest). El source 32 se conserva para editar.
+
+> `recycler.png`, `scrap.png` y `ruin_00.png` son placeholders procedurales de la fase pre-alfa; se regenerarán con Genkit y se actualizarán seed/prompt en esta tabla.
 
 ### Créditos / easter egg
 

@@ -16,7 +16,7 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 - **4C:** electrolizador y condensador; O₂ y agua tienen dos fuentes.
 - **UI/balance (2026-10-29):**
   - Barra superior con O₂, agua, comida y energía, nombre y `x/y`; mineral/componentes fuera de la barra.
-  - Modo recursos (X/C) con los seis recursos, nombre, cap, tendencia y días de los vitales.
+  - Modo recursos (X/C) con los siete recursos, nombre, cap, tendencia y días de los vitales.
   - Menú de construcción con pestañas por categoría, navegación izquierda/derecha, categorías vacías filtradas, bloqueados/no pagables en gris y faltantes por recurso.
   - Panel de módulo con estado real, descripción, producción/consumo con nombre de recurso y día de construcción; buffer, reserva y progreso.
   - Badges de modo/pausa (`RECURSOS`, `CONSTRUIR`, `COLOCAR`, `PAUSA`), celda seleccionada marcada y X disponible en modo colocar.
@@ -146,7 +146,7 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 
 > 2 fuentes / 2 usos es deseable, no obligatorio. No se agrega un recurso sin un problema que resuelva y al menos una fuente y un uso definidos.
 
-## Números actuales (playtest)
+## Números actuales
 
 | Parámetro | Valor |
 |-----------|-------|
