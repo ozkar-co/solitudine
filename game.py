@@ -84,8 +84,14 @@ def _step_cursor_axis(
     return value, acc
 
 
-def wait_for_start(screen: pygame.Surface, inp: Input, title: str) -> bool:
+def wait_for_start(
+    screen: pygame.Surface,
+    display: pygame.Surface,
+    inp: Input,
+    title: str,
+) -> bool:
     draw_splash(screen, title, t("splash.start"))
+    present(screen, display)
     while True:
         start_pressed = False
         for event in pygame.event.get():
@@ -107,18 +113,26 @@ def wait_for_start(screen: pygame.Surface, inp: Input, title: str) -> bool:
         pygame.time.wait(16)
 
 
-def create_display(handheld: bool) -> pygame.Surface:
+def create_display(handheld: bool, scale: int = 1) -> pygame.Surface:
+    size = (SCREEN_W * scale, SCREEN_H * scale)
     if handheld:
         for flags in (pygame.SCALED | pygame.NOFRAME, pygame.SCALED, 0):
             try:
                 return pygame.display.set_mode((SCREEN_W, SCREEN_H), flags)
             except pygame.error:
                 pass
-    return pygame.display.set_mode((SCREEN_W, SCREEN_H))
+    return pygame.display.set_mode(size)
 
 
-def run(dev: bool = False, handheld: bool = False) -> int:
+def present(screen: pygame.Surface, display: pygame.Surface) -> None:
+    if screen is not display:
+        pygame.transform.scale(screen, display.get_size(), display)
+    pygame.display.flip()
+
+
+def run(dev: bool = False, handheld: bool = False, scale: int = 1) -> int:
     dev_mode = dev and not handheld
+    render_scale = 2 if dev_mode and scale == 2 else 1
 
     if dev_mode:
         from dev_input import DEV_KEYMAP, setup_dev_display, setup_dev_env
@@ -129,12 +143,18 @@ def run(dev: bool = False, handheld: bool = False) -> int:
     pygame.display.init()
     pygame.font.init()
 
-    screen = create_display(handheld)
+    display = create_display(handheld, render_scale)
+    screen = (
+        display
+        if render_scale == 1
+        else pygame.Surface((SCREEN_W, SCREEN_H)).convert()
+    )
     if dev_mode:
         setup_dev_display()
 
     pygame.display.set_caption(t("game.title"))
     draw_splash(screen, t("game.title"), t("splash.loading"))
+    present(screen, display)
     clock = pygame.time.Clock()
     ui_assets.load()
     font = ui_assets.font_lg()
@@ -187,7 +207,7 @@ def run(dev: bool = False, handheld: bool = False) -> int:
         layer = MapLayer.TERRAIN
         cursor_acc_x, cursor_acc_y = 0.0, 0.0
 
-    if not wait_for_start(screen, inp, t("game.title")):
+    if not wait_for_start(screen, display, inp, t("game.title")):
         save_now()
         pygame.quit()
         return 0
@@ -359,5 +379,5 @@ def run(dev: bool = False, handheld: bool = False) -> int:
         if sim.easter_egg_open:
             draw_easter_egg(screen)
 
-        pygame.display.flip()
+        present(screen, display)
         clock.tick(FPS)

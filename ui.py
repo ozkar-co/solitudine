@@ -74,7 +74,6 @@ def draw_splash(surf: pygame.Surface, title: str, subtitle: str) -> None:
     surf.blit(title_s, (w // 2 - title_s.get_width() // 2, box.y + 28))
     pygame.draw.line(surf, COL_DIM, (box.x + 24, box.y + 80), (box.right - 24, box.y + 80))
     surf.blit(sub_s, (w // 2 - sub_s.get_width() // 2, box.y + 96))
-    pygame.display.flip()
     pygame.event.pump()
 
 

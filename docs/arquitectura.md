@@ -41,11 +41,13 @@ main.py → game.run()
 
 El lanzador intenta un splash de texto en `tty1`/`tty0`/`console` antes de montar el runtime; es best-effort y puede no verse si el CFW mantiene EmulationStation en pantalla. El splash gráfico usa pygame en cuanto hay display, se mantiene hasta terminar la carga y espera START. Un splash gráfico previo requeriría un helper nativo/framebuffer y validación por dispositivo.
 
+En PC, `--dev --2x` mantiene el render interno en 640×480 y escala la ventana a 1280×960 con `present()` (`pygame.transform.scale`). La consola sigue a 1x.
+
 ## Archivos
 
 | Archivo | Responsabilidad |
 |---------|-----------------|
-| `main.py` | Entrada; `--dev`, `--handheld`. |
+| `main.py` | Entrada; `--dev`, `--handheld`, `--2x`. |
 | `game.py` | Bucle, cámara, HUD, pausa, game over y auto-save. |
 | `simulation.py` | Reloj, día, pausa, muerte y estado global. |
 | `config.py` | Balance numérico y layout. |

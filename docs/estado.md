@@ -28,6 +28,7 @@ El juego es jugable en PC y en R36S. La UI (grilla de 16 px, sprites, zoom, mini
 make config                        # venv + wheelhouse
 make test                          # tests de regresión
 .venv/bin/python main.py --dev     # PC, teclado como mando
+.venv/bin/python main.py --dev --2x  # PC, ventana 2x para depurar
 make dist                          # paquete PortMaster
 ```
 

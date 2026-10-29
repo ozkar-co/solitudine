@@ -382,10 +382,11 @@ class StartupTests(unittest.TestCase):
         inp = FakeInput()
         with (
             patch.object(game, "draw_splash"),
+            patch.object(game, "present"),
             patch.object(game.pygame.event, "get", return_value=[]),
             patch.object(game.pygame.time, "wait"),
         ):
-            self.assertTrue(game.wait_for_start(None, inp, "SOLITUDINE"))
+            self.assertTrue(game.wait_for_start(None, None, inp, "SOLITUDINE"))
         self.assertEqual(inp.polls, 3)
 
 

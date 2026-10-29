@@ -7,8 +7,9 @@ Gestión y supervivencia en un planeta hostil: controlas la red de módulos y lo
     make config
     make test
     .venv/bin/python main.py --dev
+    .venv/bin/python main.py --dev --2x
 
-`--dev` hace que el teclado emule el mando. Controles y teclas en [docs/diseno-juego.md](docs/diseno-juego.md).
+`--dev` hace que el teclado emule el mando. `--2x` (solo PC con `--dev`) escala la ventana a 1280×960 para depurar. Controles y teclas en [docs/diseno-juego.md](docs/diseno-juego.md).
 
 ## Consola (PortMaster / R36S)
 
