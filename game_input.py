@@ -89,6 +89,7 @@ def handle_frame_input(
                     sim.credits_konami, unlocked = advance_konami(sim.credits_konami, action)
                     if unlocked:
                         sim.easter_egg_open = True
+                        sim.credits_scroll = 0
                         return result
                     if action == "UP":
                         sim.credits_scroll = max(0, sim.credits_scroll - CREDITS_SCROLL_STEP)
