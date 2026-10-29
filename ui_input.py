@@ -24,5 +24,7 @@ def input_policy(
     if game_over or user_paused or tech_open:
         return InputPolicy(block_cursor=True, block_camera_pan=True, pause_time=True)
     if build.mode == BuildMode.MENU:
-        return InputPolicy(block_cursor=True, block_camera_pan=True, pause_time=False)
+        return InputPolicy(block_cursor=True, block_camera_pan=True, pause_time=True)
+    if build.mode == BuildMode.PLACE:
+        return InputPolicy(pause_time=True)
     return InputPolicy()

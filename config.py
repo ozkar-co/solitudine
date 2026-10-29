@@ -67,6 +67,10 @@ ALERT_CRITICAL_DAYS = 1.0
 # Por debajo de esto el recurso vital se considera agotado (coherente con HUD a 1 decimal)
 VITAL_EMPTY_THRESHOLD = 0.05
 
+# Tendencia de recursos para HUD: media móvil (días) y umbral de "estable"
+RESOURCE_RATE_TAU_DAYS = 1.0
+RESOURCE_RATE_EPSILON = 0.05
+
 # Equipaje del astronauta — primeros módulos + margen para cablear y probar
 INITIAL_COMPONENTS = 42.0
 

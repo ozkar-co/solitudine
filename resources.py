@@ -12,6 +12,8 @@ from config import (
     HABITAT_O2_START,
     HABITAT_POWER_START,
     HABITAT_WATER_START,
+    RESOURCE_RATE_EPSILON,
+    RESOURCE_RATE_TAU_DAYS,
     VITAL_EMPTY_THRESHOLD,
 )
 from module_defs import habitat_daily_consumption
@@ -43,6 +45,7 @@ class ResourcePool:
     power: float
     water: float
     food: float
+    # Cambio neto por día: positivo = sube, negativo = baja.
     o2_daily: float = 0.0
     power_daily: float = 0.0
     water_daily: float = 0.0
@@ -56,10 +59,10 @@ class ResourcePool:
             power=HABITAT_POWER_START,
             water=HABITAT_WATER_START,
             food=HABITAT_FOOD_START,
-            o2_daily=vital.o2,
-            power_daily=vital.power,
-            water_daily=vital.water,
-            food_daily=vital.food,
+            o2_daily=-vital.o2,
+            power_daily=-vital.power,
+            water_daily=-vital.water,
+            food_daily=-vital.food,
         )
 
     def amount(self, resource: ResourceId) -> float:
@@ -71,6 +74,7 @@ class ResourcePool:
         }[resource]
 
     def daily_use(self, resource: ResourceId) -> float:
+        """Cambio neto por día (positivo sube, negativo baja)."""
         return {
             ResourceId.O2: self.o2_daily,
             ResourceId.POWER: self.power_daily,
@@ -79,13 +83,31 @@ class ResourcePool:
         }[resource]
 
     def days_left(self, resource: ResourceId) -> float:
-        daily = self.daily_use(resource)
-        if daily <= 0:
+        net = self.daily_use(resource)
+        if net >= -RESOURCE_RATE_EPSILON:
             return float("inf")
-        return self.amount(resource) / daily
+        return self.amount(resource) / -net
+
+    def update_net_rates(
+        self,
+        before: tuple[float, float, float, float],
+        after: tuple[float, float, float, float],
+        dt_days: float,
+    ) -> None:
+        """Actualiza la tendencia real (EMA) desde los deltas del último tick."""
+        if dt_days <= 0.0:
+            return
+        fields = ("o2_daily", "power_daily", "water_daily", "food_daily")
+        alpha = min(1.0, dt_days / RESOURCE_RATE_TAU_DAYS)
+        for rate_field, old_amount, new_amount in zip(fields, before, after):
+            instant = (new_amount - old_amount) / dt_days
+            old_rate = getattr(self, rate_field)
+            setattr(self, rate_field, old_rate + (instant - old_rate) * alpha)
 
     def alert_level(self, resource: ResourceId) -> AlertLevel:
         days = self.days_left(resource)
+        if days == float("inf"):
+            return AlertLevel.OK
         if days < ALERT_CRITICAL_DAYS:
             return AlertLevel.CRITICAL
         if days < ALERT_WARNING_DAYS:

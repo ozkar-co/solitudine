@@ -36,6 +36,7 @@ from ui import (
     draw_pause_modal,
     draw_top_bar,
     map_rect,
+    module_debug_lines,
 )
 from ui_input import input_policy
 from ui_minimap import draw_minimap
@@ -269,7 +270,7 @@ def run(dev: bool = False, handheld: bool = False) -> int:
             cursor_y=cursor_y,
             visible=minimap_on,
         )
-        draw_top_bar(screen, font, font_sm, sim)
+        draw_top_bar(screen, font, font_sm, sim, world)
         draw_panel(
             screen, font, font_sm, world, sim, select_x, select_y, layer,
             cursor_x=cursor_x, cursor_y=cursor_y,
@@ -279,6 +280,11 @@ def run(dev: bool = False, handheld: bool = False) -> int:
 
         draw_bottom_bar(screen, font_sm, help_text)
         if dev_mode:
+            debug_lines = None
+            if select_x is not None and select_y is not None:
+                selected_mod = world.module_at(select_x, select_y)
+                if selected_mod is not None:
+                    debug_lines = module_debug_lines(sim, world, selected_mod)
             draw_dev_debug(
                 screen,
                 font_sm,
@@ -289,6 +295,7 @@ def run(dev: bool = False, handheld: bool = False) -> int:
                 held=frame.held,
                 keymap=DEV_KEYMAP,
                 zoom_px=camera.tile_px,
+                debug_lines=debug_lines,
             )
 
         if sim.game_over:
@@ -296,7 +303,7 @@ def run(dev: bool = False, handheld: bool = False) -> int:
         elif sim.research.open:
             draw_tech_screen(screen, font, font_sm, sim, world)
         elif build.mode == BuildMode.MENU:
-            draw_build_menu_modal(screen, font, font_sm, sim)
+            draw_build_menu_modal(screen, font, font_sm, sim, world)
         elif pause_modal:
             draw_pause_modal(screen, font, font_sm)
 

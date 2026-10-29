@@ -181,6 +181,8 @@ def collect_power_jobs(ctx: TickContext) -> list[PowerJob]:
 
 def _job_extractor(ctx: TickContext, mod: Module) -> PowerJob | None:
     rate = module_def(ModuleKind.EXTRACTOR).nominal
+    if not ctx.world.patch_has_deposit(mod.x, mod.y, Deposit.WATER):
+        return None
     space = _output_space(mod, ctx.resources.water, ctx.caps.water)
     if space <= 0:
         return None
@@ -202,6 +204,8 @@ def _job_extractor(ctx: TickContext, mod: Module) -> PowerJob | None:
 
 def _job_mine(ctx: TickContext, mod: Module) -> PowerJob | None:
     rate = module_def(ModuleKind.MINE).nominal
+    if not ctx.world.patch_has_deposit(mod.x, mod.y, Deposit.MINERAL):
+        return None
     space = _output_space(mod, ctx.stock.mineral, ctx.caps.mineral)
     if space <= 0:
         return None

@@ -14,11 +14,12 @@ from module_defs import buffer_cap, module_active
 from module_kind import ModuleKind
 from module_power import module_energy_daily
 from network import get_connected, invalidate_network_cache
+from resources import AlertLevel, ResourceId, ResourcePool
 from savegame import delete_save, load_game, save_game
 from simulation import Simulation
 from vision import on_module_built
 from ui_night import light_sources
-from world import Module, ModuleState, generate_world
+from world import Deposit, Module, ModuleState, Tile, generate_world
 
 
 def add_module(world, kind: ModuleKind, dx: int, *, enabled: bool = True) -> Module:
@@ -40,6 +41,42 @@ def add_module(world, kind: ModuleKind, dx: int, *, enabled: bool = True) -> Mod
 def run(sim: Simulation, world, seconds: float) -> None:
     for _ in range(int(seconds * 60)):
         sim.update(1 / 60, world)
+
+
+class ResourceRateTests(unittest.TestCase):
+    def test_days_left_uses_net_rate(self) -> None:
+        pool = ResourcePool.initial()
+        pool.water = 60.0
+        pool.water_daily = -2.0
+        self.assertAlmostEqual(pool.days_left(ResourceId.WATER), 30.0)
+        self.assertEqual(pool.alert_level(ResourceId.WATER), AlertLevel.OK)
+
+        pool.water_daily = 2.0
+        self.assertEqual(pool.days_left(ResourceId.WATER), float("inf"))
+        self.assertEqual(pool.alert_level(ResourceId.WATER), AlertLevel.OK)
+
+        pool.water = 1.0
+        pool.water_daily = -2.0
+        self.assertEqual(pool.alert_level(ResourceId.WATER), AlertLevel.CRITICAL)
+
+
+class DepletedExtractorTests(unittest.TestCase):
+    def test_depleted_extractor_does_not_consume_power(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        sim.day_progress = 0.5
+        for dy in range(-1, 2):
+            for dx in range(-1, 2):
+                i = world.idx(HABITAT_X + 1 + dx, HABITAT_Y + dy)
+                world.deposit_amounts[i] = 0.0
+                world.deposits[i] = Deposit.NONE
+                if Tile(world.tiles[i]) == Tile.WATER:
+                    world.tiles[i] = Tile.GROUND
+        add_module(world, ModuleKind.EXTRACTOR, 1)
+
+        before = sim.resources.power
+        run(sim, world, 1.0)
+        self.assertAlmostEqual(before - sim.resources.power, 8.0 / 48.0, places=4)
 
 
 class EnabledTests(unittest.TestCase):

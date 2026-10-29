@@ -9,12 +9,14 @@ from config import SCREEN_W
 from ui_layout import bottom_bar_rect, top_bar_rect
 from construction import BUILD_CATEGORIES, BuildKind, BuildMode, kind_cost, kind_locked, module_kind_for
 from i18n import t
+from logistics import network_caps
+from network import get_connected
 from resources import AlertLevel, ResourceId
 from simulation import Simulation
 from tech_defs import tech_def, tech_for_module
 from ui_map import MapLayer, draw_map
 from ui_modals import ModalLine, draw_map_modal
-from ui_panel import draw_panel
+from ui_panel import draw_panel, module_debug_lines
 from ui_theme import (
     COL_BORDER,
     COL_CRITICAL,
@@ -37,6 +39,7 @@ __all__ = [
     "draw_map",
     "draw_panel",
     "draw_pause_modal",
+    "module_debug_lines",
     "draw_top_bar",
     "map_rect",
     "panel_rect",
@@ -48,6 +51,7 @@ def draw_top_bar(
     font: pygame.font.Font,
     font_sm: pygame.font.Font,
     sim: Simulation,
+    world,
 ) -> None:
     rect = top_bar_rect()
     pygame.draw.rect(surf, COL_PANEL, rect)
@@ -65,25 +69,32 @@ def draw_top_bar(
     day_s = font_sm.render(day, False, COL_DIM)
     surf.blit(day_s, (SCREEN_W - 8 - day_s.get_width(), 1))
 
+    nc = network_caps(world, get_connected(world))
     x = 8
     vitals = (
-        ("hud.o2", "o2", ResourceId.O2),
-        ("hud.water", "water", ResourceId.WATER),
-        ("hud.food", "food", ResourceId.FOOD),
-        ("hud.power", "power", ResourceId.POWER),
+        ("o2", sim.resources.o2, nc.o2, ResourceId.O2),
+        ("water", sim.resources.water, nc.water, ResourceId.WATER),
+        ("food", sim.resources.food, nc.food, ResourceId.FOOD),
+        ("power", sim.resources.power, nc.power, ResourceId.POWER),
     )
-    for key, icon_name, resource in vitals:
-        text = t(key, value=format_amount(sim.resources.amount(resource)))
+    for icon_name, amount, cap, resource in vitals:
+        text = f"{format_amount(amount)}/{format_amount(cap)}"
         level = sim.resources.alert_level(resource)
         stats_s = font_sm.render(text, False, alert_color(level))
         surf.blit(ui_assets.icon(icon_name), (x, 17))
         surf.blit(stats_s, (x + 20, 17))
-        x += 20 + stats_s.get_width() + 16
+        x += 20 + stats_s.get_width() + 8
 
-    if worst != AlertLevel.OK:
-        alert_key = "alert.critical" if worst == AlertLevel.CRITICAL else "alert.warning"
-        alert_s = font_sm.render(t(alert_key), False, alert_color(worst))
-        surf.blit(alert_s, (SCREEN_W - 8 - alert_s.get_width(), 17))
+    materials = (
+        ("mineral", sim.stock.mineral, nc.mineral),
+        ("components", sim.stock.components, nc.components),
+    )
+    for icon_name, amount, cap in materials:
+        text = f"{format_amount(amount)}/{format_amount(cap)}"
+        stats_s = font_sm.render(text, False, COL_DIM)
+        surf.blit(ui_assets.icon(icon_name), (x, 17))
+        surf.blit(stats_s, (x + 20, 17))
+        x += 20 + stats_s.get_width() + 8
 
 
 def draw_bottom_bar(surf: pygame.Surface, font_sm: pygame.font.Font, text: str) -> None:
@@ -104,6 +115,7 @@ def draw_dev_debug(
     held: frozenset[str],
     keymap: str,
     zoom_px: int,
+    debug_lines: list[str] | None = None,
 ) -> None:
     from gamepad import format_actions
 
@@ -116,6 +128,13 @@ def draw_dev_debug(
     for line in lines:
         surf.blit(font_sm.render(line, False, (120, 180, 255)), (rect.x + 4, y))
         y += 18
+    if debug_lines:
+        y += 4
+        surf.blit(font_sm.render("DEBUG módulo (nominal)", False, (120, 180, 255)), (rect.x + 4, y))
+        y += 16
+        for line in debug_lines:
+            surf.blit(font_sm.render(line, False, (90, 140, 200)), (rect.x + 4, y))
+            y += 16
     y += 4
     for line in keymap.splitlines():
         surf.blit(font_sm.render(line, False, (90, 140, 200)), (rect.x + 4, y))
@@ -144,14 +163,23 @@ def draw_build_menu_modal(
     font: pygame.font.Font,
     font_sm: pygame.font.Font,
     sim: Simulation,
+    world,
 ) -> None:
     build = sim.build
     if build.mode != BuildMode.MENU:
         return
 
+    nc = network_caps(world, get_connected(world))
     lines: list[ModalLine] = [
         ModalLine(t("build.title"), COL_TEXT, large=True),
-        ModalLine(t("build.components", value=format_amount(sim.stock.components)), COL_DIM),
+        ModalLine(
+            t(
+                "build.components",
+                value=format_amount(sim.stock.components),
+                cap=format_amount(nc.components),
+            ),
+            COL_DIM,
+        ),
     ]
     idx = 0
     for category_key, kinds in BUILD_CATEGORIES:

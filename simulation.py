@@ -25,6 +25,7 @@ class Simulation:
     user_paused: bool = False
     game_over: bool = False
     death_cause: str = ""
+    power_factor: float = 1.0
 
     @property
     def hour(self) -> int:
@@ -43,7 +44,21 @@ class Simulation:
             while self.day_progress >= 1.0:
                 self.day_progress -= 1.0
                 self.day += 1
+            before = (
+                self.resources.o2,
+                self.resources.power,
+                self.resources.water,
+                self.resources.food,
+            )
             factor = apply_modules_dt(world, self, dt, SECONDS_PER_DAY, self._hour_float())
+            self.power_factor = factor
+            after = (
+                self.resources.o2,
+                self.resources.power,
+                self.resources.water,
+                self.resources.food,
+            )
+            self.resources.update_net_rates(before, after, dt_days)
             labs = active_labs(world)
             if self.research.active is not None and labs:
                 self.research.advance(dt_days * factor * labs)

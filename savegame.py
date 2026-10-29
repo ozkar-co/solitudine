@@ -17,7 +17,7 @@ from simulation import Simulation
 from world import Module, ModuleState, World, generate_world
 
 SAVE_PATH = Path(__file__).resolve().parent / "save.json"
-VERSION = 2
+VERSION = 3
 
 
 def _pack(data: bytes) -> str:
@@ -92,7 +92,8 @@ def load_game(path: Path = SAVE_PATH) -> tuple[World, Simulation] | None:
     if not path.exists():
         return None
     data = json.loads(path.read_text(encoding="utf-8"))
-    if data.get("version") not in (1, VERSION):
+    version = data.get("version")
+    if version not in (1, 2, VERSION):
         raise ValueError("Versión de guardado incompatible")
 
     wd = data["world"]
@@ -151,10 +152,17 @@ def load_game(path: Path = SAVE_PATH) -> tuple[World, Simulation] | None:
     world.invalidate_network_cache()
 
     sd = data["sim"]
+    resources = dict(sd["resources"])
+    if version < 3:
+        # En v1/v2 los campos diarios eran consumo bruto (positivo).
+        for key in ("o2_daily", "power_daily", "water_daily", "food_daily"):
+            value = float(resources.get(key, 0.0))
+            if value > 0.0:
+                resources[key] = -value
     sim = Simulation(
         day=sd["day"],
         day_progress=sd["day_progress"],
-        resources=ResourcePool(**sd["resources"]),
+        resources=ResourcePool(**resources),
         stock=Stockpile(**sd["stock"]),
     )
     rd = sd.get("research", {})

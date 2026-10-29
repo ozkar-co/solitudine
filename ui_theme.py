@@ -50,6 +50,8 @@ def format_amount(value: float) -> str:
 
 
 def format_days(days: float) -> str:
+    if days == float("inf"):
+        return "est."
     if days >= 100:
-        return "99+"
-    return f"{days:.1f}"
+        return "99+d"
+    return f"{days:.1f}d"
