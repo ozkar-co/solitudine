@@ -40,6 +40,8 @@
 | `battery` | Batería | Energía | backlog | `bateria` | Cap de energía; el almacén deja de dar cap de energía |
 | `turret` / `trap` | Torreta / Trampa de defensa | Defensa | backlog | — | Combate |
 
+El cable forma una **red logística única**: conecta módulos de cualquier tipo, sin redes separadas. El almacén no se puede apagar.
+
 ## Números implementados (2026-10-29)
 
 | Módulo | Coste | Obra | Energía | Entrada | Salida |
@@ -93,7 +95,7 @@ Valores actuales de playtest. Cualquier ajuste se refleja en `config.py` y en es
 ## Investigación y UI
 
 - El laboratorio se construye desde el inicio.
-- Con el laboratorio inspeccionado, A otra vez abre la pantalla de Tecnología; SELECT queda libre. Incluye ramas, lista de nodos, coste, progreso, prerrequisito y bloqueo.
+- Con el laboratorio activo e inspeccionado, A otra vez abre la pantalla de Tecnología; SELECT queda libre. Incluye ramas, lista de nodos, coste, progreso, prerrequisito y bloqueo.
 - A investiga el nodo seleccionado; B cierra. Sin pestañas vacías.
-- El menú de construcción usa pestañas por categoría; las categorías vacías se ocultan y las piezas bloqueadas/no pagables se muestran en gris con su motivo.
+- El menú de construcción usa pestañas por categoría; las categorías vacías se ocultan y las piezas bloqueadas/no pagables se muestran en gris; las bloqueadas dicen “Investigar”. Cada módulo muestra descripción y flujo produce/consume.
 - Guardar: tecnologías desbloqueadas, tier por módulo, investigación activa, progreso y día de construcción de cada módulo.

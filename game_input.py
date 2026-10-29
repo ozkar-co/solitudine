@@ -9,7 +9,6 @@ from credits import CREDITS_SCROLL_STEP, KONAMI_SEQUENCE, max_credits_scroll
 from gamepad import LJOY_DOWN, LJOY_LEFT, LJOY_RIGHT, LJOY_UP
 from input_state import FrameInput, Input
 from module_defs import module_active, module_def
-from module_kind import ModuleKind
 from network import get_connected
 from simulation import Simulation
 from ui import MapLayer
@@ -165,7 +164,7 @@ def handle_frame_input(
             mod = world.module_at(select_x, select_y)
             if (
                 mod is not None
-                and mod.kind != ModuleKind.HABITAT
+                and module_def(mod.kind).can_toggle
                 and mod.state in (ModuleState.ONLINE, ModuleState.OFFLINE)
             ):
                 mod.enabled = not mod.enabled
@@ -183,7 +182,15 @@ def handle_frame_input(
                 mod = world.module_at(cursor_x, cursor_y)
                 already_selected = select_x == cursor_x and select_y == cursor_y
                 action = module_def(mod.kind).special_action if mod is not None else None
-                if already_selected and action is not None:
+                connected = (
+                    (mod.x, mod.y) in get_connected(world) if mod is not None else False
+                )
+                if (
+                    already_selected
+                    and mod is not None
+                    and action is not None
+                    and module_active(mod, connected)
+                ):
                     if action == "research":
                         sim.research.open = True
                         sim.paused = True

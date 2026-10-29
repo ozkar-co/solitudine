@@ -11,10 +11,10 @@ from construction import BUILD_CATEGORIES, BuildKind, BuildMode, kind_cost, kind
 from credits import CREDITS_SECTIONS, CREDITS_VISIBLE_LINES
 from i18n import t
 from logistics import network_caps
+from module_defs import module_def
 from network import get_connected
 from resources import AlertLevel, ResourceId
 from simulation import Simulation
-from tech_defs import tech_def, tech_for_module
 from ui_map import MapLayer, draw_map
 from ui_modals import (
     BUILD_MODAL_HEIGHT,
@@ -218,6 +218,52 @@ def _build_kind_desc(kind: BuildKind) -> str:
     return t(f"module_desc.{module_kind_for(kind).value}")
 
 
+_BUILD_FLOW_FIELDS = (
+    ("o2", "o2"),
+    ("water", "water"),
+    ("food", "food"),
+    ("power", "power"),
+    ("mineral", "mineral"),
+    ("components", "components"),
+)
+
+
+def _build_effect_line(
+    kind: BuildKind,
+    production_color: tuple[int, int, int],
+) -> ModalLine:
+    if kind == BuildKind.CABLE:
+        return ModalLine(t("build.no_flow"), COL_DIM)
+    defn = module_def(module_kind_for(kind))
+    if kind == BuildKind.STORAGE:
+        return ModalLine(
+            t("build.cap_bonus", value=format_amount(defn.storage_cap_bonus)),
+            COL_DIM,
+        )
+
+    flow = defn.nominal
+    producers: list[tuple[str, str, tuple[int, int, int]]] = []
+    consumers: list[tuple[str, str, tuple[int, int, int]]] = []
+    for field, icon in _BUILD_FLOW_FIELDS:
+        value = getattr(flow, field)
+        if value > 0.0:
+            producers.append((icon, f"+{value:.1f}", production_color))
+        elif value < 0.0:
+            consumers.append((icon, f"{value:.1f}", COL_DIM))
+    if not producers and not consumers:
+        return ModalLine(t("build.no_flow"), COL_DIM)
+
+    items = []
+    if producers:
+        items.append(("", f"{t('build.produces')} ", COL_DIM))
+        items.extend(producers)
+    if consumers:
+        prefix = "  " if producers else ""
+        items.append(("", f"{prefix}{t('build.consumes')} ", COL_DIM))
+        items.extend(consumers)
+    return ModalLine(items=tuple(items), item_gap=8)
+
+
 def _resource_modal_lines(sim: Simulation) -> list[ModalLine]:
     resources = (
         ("o2", sim.resources.o2, ResourceId.O2),
@@ -275,9 +321,7 @@ def draw_build_menu_modal(
         affordable = sim.stock.can_afford(cost)
         suffix = ""
         if locked:
-            tech_id = tech_for_module(module_kind_for(kind))
-            if tech_id is not None:
-                suffix = f"  {t('build.locked', tech=t(tech_def(tech_id).name_key))}"
+            suffix = f"  {t('build.locked')}"
         elif not affordable:
             suffix = f"  {t('build.missing', value=format_amount(cost - sim.stock.components))}"
         unavailable = locked or not affordable
@@ -293,14 +337,17 @@ def draw_build_menu_modal(
             items.append(("", suffix, color))
         lines.append(ModalLine(items=tuple(items), item_gap=0))
         lines.append(ModalLine(_build_kind_desc(kind), COL_DIM))
+        lines.append(_build_effect_line(kind, COL_DIM if unavailable else COL_TEXT))
     draw_map_modal(
         surf,
         font,
         font_sm,
         lines,
         dim_map=True,
+        min_width=608,
         fixed_height=BUILD_MODAL_HEIGHT,
         footer=[ModalLine(t("build.hint_menu"), COL_DIM)],
+        wide=True,
     )
 
 

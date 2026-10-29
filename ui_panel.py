@@ -22,7 +22,13 @@ from construction import (
 from daylight import darkness
 from i18n import t
 from logistics import network_caps
-from module_defs import ModuleContext, ModuleKind, effective_flow, module_def
+from module_defs import (
+    ModuleContext,
+    ModuleKind,
+    effective_flow,
+    module_active,
+    module_def,
+)
 from module_flow import module_flow_lines
 from module_power import format_energy_daily, module_energy_daily
 from network import get_connected
@@ -95,7 +101,7 @@ def _output_space(pool: float, cap: float, mod=None) -> float:
 
 
 def _module_status_key(mod, sim: Simulation, world: World, caps) -> str:
-    if not mod.enabled:
+    if module_def(mod.kind).can_toggle and not mod.enabled:
         return "status.disabled"
     if mod.state == ModuleState.WAITING:
         return "status.waiting"
@@ -413,7 +419,7 @@ def _draw_module_inspection(
         _panel_line(surf, font_sm, x, y, t("panel.built", day=mod.built_day), COL_DIM)
         y += 16
     action = module_def(mod.kind).special_action
-    if action is not None:
+    if action is not None and module_active(mod, ctx.connected):
         _panel_line(
             surf,
             font_sm,
@@ -536,6 +542,16 @@ def draw_panel(
 
     if (sel_x, sel_y) in world.cables:
         _panel_line(surf, font_sm, rect.x + 8, y, t("panel.cable"))
+        y += 16
+        _panel_wrapped(
+            surf,
+            font_sm,
+            rect.x + 8,
+            y,
+            t("module_desc.cable"),
+            rect.w - 16,
+            COL_DIM,
+        )
         return
 
     mod = world.module_at(sel_x, sel_y)

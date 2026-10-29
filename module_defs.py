@@ -97,6 +97,7 @@ class ModuleDef:
     solar_producer: bool = False
     storage_cap_bonus: float = 0.0
     always_online: bool = False
+    can_toggle: bool = True
     light_radius: int = 0
     special_action: str | None = None
 
@@ -111,6 +112,7 @@ MODULE_DEFS: dict[ModuleKind, ModuleDef] = {
             food=-HABITAT_FOOD_DAILY,
         ),
         always_online=True,
+        can_toggle=False,
         light_radius=HABITAT_LIGHT_RADIUS,
     ),
     ModuleKind.SOLAR: ModuleDef(
@@ -175,6 +177,7 @@ MODULE_DEFS: dict[ModuleKind, ModuleDef] = {
         cost=COST_STORAGE,
         build_days=BUILD_DAYS_STORAGE,
         storage_cap_bonus=STORAGE_NETWORK_BONUS,
+        can_toggle=False,
     ),
     ModuleKind.LAMP: ModuleDef(
         kind=ModuleKind.LAMP,
@@ -242,7 +245,8 @@ def module_active(mod: Module, connected: bool) -> bool:
     defn = MODULE_DEFS[mod.kind]
     if defn.always_online:
         return True
-    return mod.enabled and mod.state == ModuleState.ONLINE and connected
+    enabled = mod.enabled if defn.can_toggle else True
+    return enabled and mod.state == ModuleState.ONLINE and connected
 
 
 def buffer_cap(kind: ModuleKind) -> float:

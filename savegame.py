@@ -11,6 +11,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from materials import Stockpile
+from module_defs import module_def
 from module_kind import ModuleKind
 from resources import ResourcePool
 from simulation import Simulation
@@ -150,6 +151,8 @@ def load_game(path: Path = SAVE_PATH) -> tuple[World, Simulation] | None:
             clear_active=raw["clear_active"],
             built_day=raw.get("built_day", 0),
         )
+        if not module_def(mod.kind).can_toggle:
+            mod.enabled = True
         world.modules.append(mod)
         world.module_cells[(mod.x, mod.y)] = mod
     world.cables = {(x, y) for x, y in wd["cables"]}

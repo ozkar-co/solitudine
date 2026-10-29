@@ -25,6 +25,7 @@ from ui_theme import (
     DEPOSIT_OVERLAY_ALPHA,
     map_rect,
 )
+from module_defs import module_def
 from world import Deposit, ModuleState, Tile, World
 
 
@@ -81,7 +82,7 @@ def _draw_module(surf: pygame.Surface, tile_rect: pygame.Rect, mod) -> None:
     else:
         surf.blit(sprite, tile_rect.topleft)
 
-    if not mod.enabled:
+    if module_def(mod.kind).can_toggle and not mod.enabled:
         surf.blit(_disabled_overlay(tile_rect.w), tile_rect.topleft)
         pygame.draw.rect(surf, COL_DIM, tile_rect, 1)
 

@@ -13,7 +13,7 @@ MODAL_PAD_X = 16
 MODAL_PAD_Y = 12
 MODAL_DIM_ALPHA = 100
 MODAL_HEIGHT = 256
-BUILD_MODAL_HEIGHT = 288
+BUILD_MODAL_HEIGHT = 360
 MODAL_FOOTER_GAP = 8
 MODAL_ITEM_GAP = 12
 MODAL_ICON_GAP = 4
@@ -107,6 +107,7 @@ def draw_map_modal(
     min_width: int = 0,
     fixed_height: int = 0,
     footer: list[ModalLine] | None = None,
+    wide: bool = False,
 ) -> pygame.Rect:
     """Dibuja un recuadro centrado en el mapa. Una sola implementación para todos los modales."""
     footer = footer or []
@@ -114,10 +115,11 @@ def draw_map_modal(
         return pygame.Rect(0, 0, 0, 0)
 
     mrect = map_rect()
+    bounds = pygame.Rect(0, 0, *surf.get_size()) if wide else mrect
     if dim_map:
-        overlay = pygame.Surface((mrect.w, mrect.h), pygame.SRCALPHA)
+        overlay = pygame.Surface((bounds.w, bounds.h), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, MODAL_DIM_ALPHA))
-        surf.blit(overlay, (mrect.x, mrect.y))
+        surf.blit(overlay, (bounds.x, bounds.y))
 
     pad_x, pad_y = MODAL_PAD_X, MODAL_PAD_Y
     rendered = [(line, _render_line(line, font, font_sm)) for line in lines]
@@ -142,7 +144,7 @@ def draw_map_modal(
         h += footer_h
 
     box = pygame.Rect(0, 0, w, h)
-    box.center = (mrect.centerx, mrect.centery)
+    box.center = (bounds.centerx, bounds.centery)
     pygame.draw.rect(surf, COL_PANEL, box)
     pygame.draw.rect(surf, COL_BORDER, box, 2)
 

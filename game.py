@@ -315,7 +315,14 @@ def run(dev: bool = False, handheld: bool = False) -> int:
             cursor_x=cursor_x, cursor_y=cursor_y,
         )
 
-        help_text = context_help(sim, build, select_x=select_x, layer=layer)
+        help_text = context_help(
+            sim,
+            build,
+            select_x=select_x,
+            select_y=select_y,
+            world=world,
+            layer=layer,
+        )
 
         draw_bottom_bar(screen, font_sm, help_text)
         if dev_mode:

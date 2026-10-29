@@ -34,7 +34,8 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 ## Red y logística
 
 - Los módulos producen a buffers locales; la red tiene capacidad limitada.
-- El almacén amplía la capacidad de la red.
+- Los cables forman una **red logística única**: conectan módulos de cualquier tipo, sin redes separadas.
+- El almacén amplía la capacidad de la red y no se puede apagar.
 - Planificado: el almacén deja de dar cap de energía y la batería pasa a ser el reservorio de energía; los tanques especializados quedan para más adelante.
 - La energía se reparte proporcionalmente si falta; un módulo sin energía produce menos.
 - Los productores se detienen al llenar su buffer o la red.
@@ -65,7 +66,7 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 | Cancelar | B / Esc | B |
 | Cambiar categoría (menú de construcción) | Izquierda/Derecha | DPAD / L-stick |
 | Zoom | L1/L2 (teclas Q/E o [/]) | L1/L2 |
-| Apagar/encender | R1 | R1 |
+| Apagar/encender (excepto hábitat/almacén) | R1 | R1 |
 | Minimapa | R2 | R2 |
 | Iniciar partida (pantalla de carga) | START | START |
 | Pausa / créditos | START, luego menú | START, luego menú |
@@ -78,7 +79,7 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 - Modo recursos (X): los seis recursos con nombre y cantidad/cap.
 - Panel lateral: estado, descripción, producción/consumo, buffer, reserva y día de construcción.
 - Minimapa con región explorada, módulos, cables y viewport.
-- Menú de construcción por pestañas (Energía, Extracción, Soporte, Logística, Ciencia); categorías vacías ocultas, no disponibles en gris. Recursos disponibles con iconos, y cada módulo muestra coste con icono/cantidad y descripción.
+- Menú de construcción por pestañas (Energía, Extracción, Soporte, Logística, Ciencia); categorías vacías ocultas, no disponibles en gris con “Investigar”. Recursos con iconos; cada módulo muestra coste con icono/cantidad, descripción y flujo produce/consume.
 - Badges de modo/pausa y celda seleccionada; X cambia capa también en modo colocar.
 - Consola de tecnología: una pantalla simple, sin pestañas vacías.
 - Menú de pausa con Continuar/Créditos; créditos con scroll y easter egg.

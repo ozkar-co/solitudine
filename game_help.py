@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from construction import BuildController, BuildMode
 from i18n import t
+from module_defs import module_def
 from simulation import Simulation
 from ui_map import MapLayer
+from world import World
 
 
 def context_help(
@@ -13,6 +15,8 @@ def context_help(
     build: BuildController,
     *,
     select_x: int | None,
+    select_y: int | None = None,
+    world: World | None = None,
     layer: MapLayer,
 ) -> str:
     if sim.game_over:
@@ -30,5 +34,9 @@ def context_help(
     if layer == MapLayer.RESOURCES:
         return t("help.resources")
     if select_x is not None:
+        if select_y is not None and world is not None:
+            mod = world.module_at(select_x, select_y)
+            if mod is not None and not module_def(mod.kind).can_toggle:
+                return t("help.selected_fixed")
         return t("help.selected")
     return t("help.default")

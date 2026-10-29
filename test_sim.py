@@ -103,12 +103,13 @@ class EnabledTests(unittest.TestCase):
         run(sim, world, 2.0)
         self.assertEqual(sim.stock.components, before)
 
-    def test_disabled_storage_loses_cap(self) -> None:
+    def test_storage_cannot_be_disabled(self) -> None:
         world = generate_world()
         storage = add_module(world, ModuleKind.STORAGE, 1)
         active_cap = network_caps(world).components
         storage.enabled = False
-        self.assertLess(network_caps(world).components, active_cap)
+        self.assertTrue(module_active(storage, True))
+        self.assertEqual(network_caps(world).components, active_cap)
 
     def test_habitat_stays_active(self) -> None:
         world = generate_world()
@@ -274,6 +275,58 @@ class BuildInputTests(unittest.TestCase):
             select_y=first.select_y,
         )
         self.assertTrue(sim.research.open)
+
+    def test_r1_does_not_toggle_storage(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        storage = add_module(world, ModuleKind.STORAGE, 1)
+        frame = FrameInput(frozenset({"R1"}), frozenset({"R1"}), frozenset())
+
+        handle_frame_input(
+            frame,
+            Input(dev_mode=False),
+            sim,
+            world,
+            layer=MapLayer.TERRAIN,
+            cursor_x=storage.x,
+            cursor_y=storage.y,
+            select_x=storage.x,
+            select_y=storage.y,
+        )
+        self.assertTrue(storage.enabled)
+
+    def test_a_again_on_building_lab_does_not_open_research(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        lab = add_module(world, ModuleKind.LABORATORY, 1)
+        lab.state = ModuleState.BUILDING
+        frame = FrameInput(frozenset({"A"}), frozenset({"A"}), frozenset())
+
+        first = handle_frame_input(
+            frame,
+            Input(dev_mode=False),
+            sim,
+            world,
+            layer=MapLayer.TERRAIN,
+            cursor_x=lab.x,
+            cursor_y=lab.y,
+            select_x=None,
+            select_y=None,
+        )
+        self.assertEqual((first.select_x, first.select_y), (lab.x, lab.y))
+
+        handle_frame_input(
+            frame,
+            Input(dev_mode=False),
+            sim,
+            world,
+            layer=MapLayer.TERRAIN,
+            cursor_x=lab.x,
+            cursor_y=lab.y,
+            select_x=first.select_x,
+            select_y=first.select_y,
+        )
+        self.assertFalse(sim.research.open)
 
     def test_select_is_free(self) -> None:
         world = generate_world()
