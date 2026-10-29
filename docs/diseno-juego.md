@@ -77,7 +77,7 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 - Modo recursos (X): los seis recursos con nombre, cantidad/cap y días de los vitales.
 - Panel lateral: estado, descripción, producción/consumo, buffer, reserva y día de construcción.
 - Minimapa con región explorada, módulos, cables y viewport.
-- Menú de construcción por pestañas (Energía, Extracción, Soporte, Logística, Ciencia); categorías vacías ocultas, no disponibles en gris.
+- Menú de construcción por pestañas (Energía, Extracción, Soporte, Logística, Ciencia); categorías vacías ocultas, no disponibles en gris. Recursos disponibles con iconos y cada coste con icono y cantidad del recurso.
 - Badges de modo/pausa y tile seleccionado; X cambia capa también en modo colocar.
 - Consola de tecnología: una pantalla simple, sin pestañas vacías.
 - Menú de pausa con Continuar/Créditos; créditos con scroll y easter egg.

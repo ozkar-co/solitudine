@@ -68,7 +68,6 @@
   "build.storage": "Almacén",
   "build.components": "Componentes: {value}/{cap}",
   "build.cost": "Coste: {value}",
-  "build.selected_cost": "Coste seleccionado: {value}",
   "build.time": "Tiempo: {days}d",
   "build.hint_menu": "LJOY/DPAD=elige  <> = categoría  A=colocar  B=cancelar",
   "build.hint_place": "A=confirmar X=capa Y=menú B=cancelar",

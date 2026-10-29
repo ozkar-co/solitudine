@@ -246,26 +246,25 @@ def draw_build_menu_modal(
         cost = kind_cost(kind)
         locked = kind_locked(kind, sim.research.unlocked)
         affordable = sim.stock.can_afford(cost)
-        text = f"{prefix} {_build_kind_label(kind)} ({format_amount(cost)})"
+        suffix = ""
         if locked:
             tech_id = tech_for_module(module_kind_for(kind))
             if tech_id is not None:
-                text += f"  {t('build.locked', tech=t(tech_def(tech_id).name_key))}"
+                suffix = f"  {t('build.locked', tech=t(tech_def(tech_id).name_key))}"
         elif not affordable:
-            text += f"  {t('build.missing', value=format_amount(cost - sim.stock.components))}"
+            suffix = f"  {t('build.missing', value=format_amount(cost - sim.stock.components))}"
         unavailable = locked or not affordable
         if unavailable:
             color = COL_WARN if selected else COL_DIM
         else:
             color = COL_TEXT
-        lines.append(ModalLine(text, color))
-    lines.append(
-        ModalLine(
-            t("build.selected_cost", value=format_amount(kind_cost(build.selected))),
-            COL_DIM,
-            icon="components",
-        )
-    )
+        items = [
+            ("", f"{prefix} {_build_kind_label(kind)} ( ", color),
+            ("components", f"{format_amount(cost)})", color),
+        ]
+        if suffix:
+            items.append(("", suffix, color))
+        lines.append(ModalLine(items=tuple(items), item_gap=0))
     draw_map_modal(
         surf,
         font,

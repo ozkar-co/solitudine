@@ -29,27 +29,35 @@ class ModalLine:
     large: bool = False
     icon: str | None = None
     items: tuple[ModalItem, ...] = ()
+    item_gap: int = MODAL_ITEM_GAP
     segments: tuple[ModalSegment, ...] = ()
 
 
-def _render_items(items: tuple[ModalItem, ...], font_sm: pygame.font.Font) -> pygame.Surface:
+def _render_items(
+    items: tuple[ModalItem, ...],
+    font_sm: pygame.font.Font,
+    gap: int,
+) -> pygame.Surface:
     pieces: list[pygame.Surface] = []
     for icon_name, text, color in items:
-        icon = ui_assets.icon(icon_name)
         label = font_sm.render(text, False, color)
+        if not icon_name:
+            pieces.append(label)
+            continue
+        icon = ui_assets.icon(icon_name)
         h = max(icon.get_height(), label.get_height())
         piece = pygame.Surface((icon.get_width() + MODAL_ICON_GAP + label.get_width(), h), pygame.SRCALPHA)
         piece.blit(icon, (0, (h - icon.get_height()) // 2))
         piece.blit(label, (icon.get_width() + MODAL_ICON_GAP, (h - label.get_height()) // 2))
         pieces.append(piece)
 
-    width = sum(piece.get_width() for piece in pieces) + MODAL_ITEM_GAP * (len(pieces) - 1)
+    width = sum(piece.get_width() for piece in pieces) + gap * (len(pieces) - 1)
     height = max(piece.get_height() for piece in pieces)
     row = pygame.Surface((width, height), pygame.SRCALPHA)
     x = 0
     for piece in pieces:
         row.blit(piece, (x, (height - piece.get_height()) // 2))
-        x += piece.get_width() + MODAL_ITEM_GAP
+        x += piece.get_width() + gap
     return row
 
 
@@ -67,7 +75,7 @@ def _render_segments(segments: tuple[ModalSegment, ...], font_sm: pygame.font.Fo
 
 def _render_line(line: ModalLine, font: pygame.font.Font, font_sm: pygame.font.Font) -> pygame.Surface:
     if line.items:
-        return _render_items(line.items, font_sm)
+        return _render_items(line.items, font_sm, line.item_gap)
     if line.segments:
         return _render_segments(line.segments, font_sm)
 
