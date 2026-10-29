@@ -34,10 +34,12 @@ main.py → game.run()
   ├─ create_display + splash (pygame, sin assets)
   ├─ ui_assets.load
   ├─ savegame.load_game / generate_world
-  └─ pygame.joystick.init + primer frame
+  ├─ pygame.joystick.init
+  ├─ splash "Pulsa START" + espera
+  └─ primer frame
 ```
 
-El lanzador intenta un splash de texto en `tty1`/`tty0`/`console` antes de montar el runtime; es best-effort y puede no verse si el CFW mantiene EmulationStation en pantalla. El splash gráfico usa pygame en cuanto hay display. Un splash gráfico previo requeriría un helper nativo/framebuffer y validación por dispositivo.
+El lanzador intenta un splash de texto en `tty1`/`tty0`/`console` antes de montar el runtime; es best-effort y puede no verse si el CFW mantiene EmulationStation en pantalla. El splash gráfico usa pygame en cuanto hay display, se mantiene hasta terminar la carga y espera START. Un splash gráfico previo requeriría un helper nativo/framebuffer y validación por dispositivo.
 
 ## Archivos
 

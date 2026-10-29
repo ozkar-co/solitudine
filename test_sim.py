@@ -6,7 +6,9 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
+import game
 from config import HABITAT_X, HABITAT_Y
 from construction import BuildController, BuildKind, BuildMode, kind_locked
 from credits import CREDITS_SCROLL_STEP
@@ -306,6 +308,32 @@ class BuildInputTests(unittest.TestCase):
             select_y=None,
         )
         self.assertTrue(sim.research.open)
+
+
+class StartupTests(unittest.TestCase):
+    def test_wait_for_start_requires_start(self) -> None:
+        class FakeInput:
+            def __init__(self) -> None:
+                self.polls = 0
+                self.events = []
+
+            def process_event(self, event) -> None:
+                self.events.append(event)
+
+            def poll(self) -> FrameInput:
+                self.polls += 1
+                if self.polls < 3:
+                    return FrameInput(frozenset(), frozenset(), frozenset())
+                return FrameInput(frozenset({"START"}), frozenset({"START"}), frozenset())
+
+        inp = FakeInput()
+        with (
+            patch.object(game, "draw_splash"),
+            patch.object(game.pygame.event, "get", return_value=[]),
+            patch.object(game.pygame.time, "wait"),
+        ):
+            self.assertTrue(game.wait_for_start(None, inp, "SOLITUDINE"))
+        self.assertEqual(inp.polls, 3)
 
 
 class SaveTests(unittest.TestCase):

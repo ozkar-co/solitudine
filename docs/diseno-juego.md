@@ -67,6 +67,7 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 | Zoom | L1/L2 (teclas Q/E o [/]) | L1/L2 |
 | Apagar/encender | R1 | R1 |
 | Minimapa | R2 | R2 |
+| Iniciar partida (pantalla de carga) | START | START |
 | Pausa / créditos | START, luego menú | START, luego menú |
 | Salir | SELECT+START | SELECT+START |
 

@@ -19,7 +19,7 @@ from config import (
 from construction import BuildMode
 from game_help import context_help
 from game_input import handle_frame_input
-from gamepad import LJOY_DOWN, LJOY_LEFT, LJOY_RIGHT, LJOY_UP
+from gamepad import BUTTONS, LJOY_DOWN, LJOY_LEFT, LJOY_RIGHT, LJOY_UP
 from i18n import load, t
 from input_state import Input
 from simulation import Simulation
@@ -82,6 +82,29 @@ def _step_cursor_axis(
     else:
         acc = 0.0
     return value, acc
+
+
+def wait_for_start(screen: pygame.Surface, inp: Input, title: str) -> bool:
+    draw_splash(screen, title, t("splash.start"))
+    while True:
+        start_pressed = False
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return False
+            if (
+                event.type == pygame.JOYBUTTONDOWN
+                and BUTTONS.get(event.button) == "START"
+            ):
+                start_pressed = True
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                start_pressed = True
+            inp.process_event(event)
+        frame = inp.poll()
+        if Input.quit_held(frame):
+            return False
+        if start_pressed or "START" in frame.pressed:
+            return True
+        pygame.time.wait(16)
 
 
 def create_display(handheld: bool) -> pygame.Surface:
@@ -163,6 +186,11 @@ def run(dev: bool = False, handheld: bool = False) -> int:
         select_x, select_y = None, None
         layer = MapLayer.TERRAIN
         cursor_acc_x, cursor_acc_y = 0.0, 0.0
+
+    if not wait_for_start(screen, inp, t("game.title")):
+        save_now()
+        pygame.quit()
+        return 0
 
     while True:
         frame_start = time.perf_counter()

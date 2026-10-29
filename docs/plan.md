@@ -23,8 +23,8 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
   - Menú de pausa con Continuar/Créditos; créditos con scroll y easter egg.
   - **Correcciones de playtest (2026-10-29):** hábitat solo con consumo y alertas; recursos sin gasto diario y A vuelve a inspección; construcción con iconos, sin cap de componentes, modal de altura fija con controles al pie y categoría `< >`; estados sin paréntesis.
   - **Tecnología y muerte (2026-10-29):** A otra vez sobre el laboratorio inspeccionado abre Tecnología; SELECT queda libre. La muerte guarda el estado de game over y al reabrir se mantiene.
-  - **Arranque (2026-10-29):** splash de texto best-effort en el lanzador antes del runtime; splash con pygame antes de cargar assets, guardado y mundo; joystick e inicialización pesada diferidos.
-- Guardado `VERSION` 3; `built_day`, `game_over` y `death_cause` son campos opcionales compatibles con saves viejos. 29 tests de regresión.
+  - **Arranque (2026-10-29):** splash de texto best-effort en el lanzador antes del runtime; splash con pygame que se mantiene durante assets/guardado/mundo; joystick e inicialización pesada diferidos; al terminar pide START.
+- Guardado `VERSION` 3; `built_day`, `game_over` y `death_cause` son campos opcionales compatibles con saves viejos. 30 tests de regresión.
 
 ## Ahora: playtest (en curso)
 
