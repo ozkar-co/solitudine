@@ -63,6 +63,10 @@ Prioridad alta:
 - **Pausa del menú de construcción y del modo colocar** (implementado): el tiempo ya no corre mientras el jugador lee o elige un tile. La partida no arranca pausada. Falta un indicador visible de “PAUSA” en esos modos.
 - **Hacer visible el modo.** No hay badge persistente de MODO, no se marca el tile seleccionado y el cursor siempre es igual. A cambia de significado según el modo.
 - **Estado real del módulo** (implementado en parte): falta que la UI explique mejor el motivo y las acciones disponibles.
+- **Iconos sin leyenda.** No hay forma de saber qué representa cada icono. Opciones: menú de ayuda; que el “modo recursos” muestre la lista de recursos con icono y nombre; nombres también en fichas y paneles.
+- **Barra superior solo con recursos vitales.** Mostrar solo O2, agua, comida y energía; mineral y componentes pasan a un modo/panel secundario. La barra no puede crecer sin límite.
+- **Menú de construcción con pestañas.** Las categorías deben ser pestañas; los módulos no disponibles se muestran en gris con el motivo, no se ocultan.
+- **Panel del módulo: solo producción.** Al analizar un módulo, mostrar solo la producción (así cada flujo entra con el nombre del recurso), no el detalle de todos los flujos.
 - **Cancelar obra / demoler.** Un clic malo cuesta 8-10 Cmp y 1.5-2 días para siempre. Cancelar obra debería reembolsar; demoler debería existir desde el inicio con reembolso parcial, no detrás de “reciclaje”.
 - **Cable vs módulo.** El cable es trazo continuo y el módulo es de a uno. No se comunica. El cable queda en modo colocar; el módulo sale solo. No hay preview de la cadena ni coste acumulado. B sale pero no borra. Un módulo puede decir “válida” sin conexión y quedarse esperando sin construirse.
 - **Capa X** no funciona en modo colocar; la capa no cambia el preview. Para buscar un depósito hay que salir, cambiar capa y volver a entrar.
@@ -73,8 +77,8 @@ Prioridad alta:
 Prioridad media:
 
 - Log/eventos: construcción terminada, módulo bloqueado, investigación completada, reserva crítica. Ayuda a entender la muerte.
-- Barra superior: ya muestra x/y de los seis recursos; falta validar legibilidad en R36S.
-- Menú de construcción: mostrar “faltan X Cmp” y marcar costes no pagables.
+- Barra superior: validar en R36S la legibilidad con solo los recursos vitales.
+- Menú de construcción: mostrar “faltan X Cmp” y marcar costes no pagables dentro de cada pestaña.
 - Pantalla de tecnología: mostrar ramas, tier y efecto del módulo; el listado plano no escala.
 - Guardado/reintento: ofrecer “cargar último día” en game over (el autoguardado ya existe).
 - Nombres/acentos consistentes (“Energia/Energía”, “Modulo/Módulo”).
@@ -140,14 +144,24 @@ Prioridad media:
 ## Preguntas abiertas
 
 1. ¿La chatarra es un recurso nuevo o una forma de componentes?
+la chatarra es un nuevo recurso que se puede convertir en mineral, se usará para algunas investigaciones tambien.
 2. ¿El reciclador reemplaza a la mina/fabricador o los complementa?
+el reciclador los complementa, es barato y convierte chatarra en mineral
 3. ¿El inicio con módulos destruidos es fijo o procedural?
+el inicio con chatarra al rededor es procedural
 4. ¿Los bosques y cristales son base o DLC?
+los bosques y cristales son base, pero su implementacion nos sirve para analizar como hacer parametrizable la creacion de recursos para un futuro dlc
 5. ¿El mapa sigue siendo 1024×1024 o se achica?
+le mapa sigue siendo como esta
 6. ¿La comida debe ser un problema recurrente o resolverse una vez?
+la comida puede ser recurrente, la comida se gastará luego en fabricar biodisel, como consumible en la fabricacion de trampas (tener en cuenta que las construcciones pueden requerir mas de un material)
 7. ¿El agua debe escasear para que el condensador tenga rol?
+el agua del mapa puede llegar a desaparecer o depender de rng, condensador es fuente alternativa
 8. ¿La energía necesita batería o alcanza con storage/caps?
+la energia necesita bateria, el cap inical asume ser la bateria del modulo habitacional
 9. ¿El objetivo del juego después de estabilizar O2 es expandirse, investigar o sobrevivir a eventos?
+luego de estabilizar la superivencia, expancion, investigacion, eventos aleatorios, nuevos modulos, nuevos recursos, pero no pensamos en eso hasta tener bien afinado lo actual
+
 
 ## Próximo orden sugerido
 

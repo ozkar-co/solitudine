@@ -62,8 +62,11 @@ def handle_frame_input(
     if inp.was_pressed(frame, "START"):
         sim.user_paused = not sim.user_paused
     elif inp.was_pressed(frame, "Y"):
-        if build.mode == BuildMode.NONE and not sim.user_paused:
-            build.enter_menu()
+        if not sim.user_paused:
+            if build.mode == BuildMode.NONE:
+                build.enter_menu()
+            elif build.mode == BuildMode.PLACE:
+                build.back_to_menu()
     elif inp.was_pressed(frame, "B"):
         if build.mode in (BuildMode.MENU, BuildMode.PLACE):
             build.cancel_build()

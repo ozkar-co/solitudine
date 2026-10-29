@@ -145,7 +145,10 @@ class BuildController:
         self.cable_chain.clear()
 
     def back_to_menu(self) -> None:
-        self.cancel_build()
+        if self.mode != BuildMode.PLACE:
+            return
+        self.mode = BuildMode.MENU
+        self.cable_chain.clear()
 
     def _tile_preview(self, world: World, x: int, y: int, kind: BuildKind) -> BuildPreview:
         if not world.in_bounds(x, y):
@@ -178,15 +181,12 @@ class BuildController:
             return tile_status
         if (x, y) in self.cable_chain:
             return BuildPreview.OCCUPIED
-        if self.cable_chain:
-            px, py = self.cable_chain[-1]
-            if abs(px - x) + abs(py - y) != 1:
-                return BuildPreview.CABLE_NOT_CHAIN
-            return BuildPreview.OK
         for dx, dy in ((0, -1), (0, 1), (-1, 0), (1, 0)):
             nx, ny = x + dx, y + dy
             if (nx, ny) in connected or (nx, ny) in self.cable_chain:
                 return BuildPreview.OK
+        if self.cable_chain:
+            return BuildPreview.CABLE_NOT_CHAIN
         return BuildPreview.NO_NETWORK
 
     def _can_extend_cable(self, world: World, x: int, y: int, connected: set[tuple[int, int]]) -> bool:

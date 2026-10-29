@@ -8,8 +8,11 @@ import unittest
 from pathlib import Path
 
 from config import HABITAT_X, HABITAT_Y
-from construction import BuildController, BuildKind, kind_locked
+from construction import BuildController, BuildKind, BuildMode, kind_locked
+from game_input import handle_frame_input
+from input_state import FrameInput, Input
 from logistics import network_caps
+from materials import Stockpile
 from module_defs import buffer_cap, module_active
 from module_kind import ModuleKind
 from module_power import module_energy_daily
@@ -18,6 +21,7 @@ from resources import AlertLevel, ResourceId, ResourcePool
 from savegame import delete_save, load_game, save_game
 from simulation import Simulation
 from vision import on_module_built
+from ui import MapLayer
 from ui_night import light_sources
 from world import Deposit, Module, ModuleState, Tile, generate_world
 
@@ -107,6 +111,53 @@ class EnabledTests(unittest.TestCase):
         habitat = world.module_at(HABITAT_X, HABITAT_Y)
         habitat.enabled = False
         self.assertTrue(module_active(habitat, True))
+
+
+class CableNetworkTests(unittest.TestCase):
+    def test_module_accepts_cables_on_all_four_sides(self) -> None:
+        world = generate_world()
+        stock = Stockpile(components=10.0)
+        build = BuildController()
+        sides = (
+            (HABITAT_X, HABITAT_Y - 1),
+            (HABITAT_X + 1, HABITAT_Y),
+            (HABITAT_X, HABITAT_Y + 1),
+            (HABITAT_X - 1, HABITAT_Y),
+        )
+        for x, y in sides:
+            i = world.idx(x, y)
+            world.tiles[i] = Tile.GROUND
+            world.explored[i] = 1
+
+        for x, y in sides:
+            self.assertTrue(build.try_place(world, stock, x, y), (x, y))
+            self.assertIn((x, y), get_connected(world))
+
+
+class BuildInputTests(unittest.TestCase):
+    def test_y_opens_menu_from_place_mode(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        sim.build.enter_menu()
+        sim.build.menu_down()
+        selected = sim.build.selected
+        sim.build.enter_place()
+
+        frame = FrameInput(frozenset({"Y"}), frozenset({"Y"}), frozenset())
+        handle_frame_input(
+            frame,
+            Input(dev_mode=False),
+            sim,
+            world,
+            layer=MapLayer.TERRAIN,
+            cursor_x=HABITAT_X,
+            cursor_y=HABITAT_Y,
+            select_x=None,
+            select_y=None,
+        )
+
+        self.assertEqual(sim.build.mode, BuildMode.MENU)
+        self.assertEqual(sim.build.selected, selected)
 
 
 class SaveTests(unittest.TestCase):
