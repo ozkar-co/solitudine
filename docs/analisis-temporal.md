@@ -350,40 +350,63 @@ Para reescribir el plan no hace falta cerrar los 23 puntos: alcanza con seis dec
 **Números y fórmulas**
 
 1. ¿Confirmas este ejemplo? 6 Cmp = 9 mineral; demoler devuelve 5,4-8,1 chatarra; con ratio 1:1 se recuperan 5,4-8,1 mineral. ¿Qué ratio chatarra→mineral y qué velocidad de procesamiento (chatarra/día) usamos?
+me parece perfecto, el ratio de chatarra que sea 0.9 solo para justificar el "proceso" y las trazas ocacionales. el unico que se destruye y devuelve los componentes integros es el cable (caso especial)
 2. ¿La cancelación de obra devuelve chatarra de todos los materiales o solo del equivalente a componentes? ¿Cómo se calcula con costes multi-material?
+solo el equivalente a componentes, por eso es un riesgo, los extra se pierden.
 3. ¿El reciclador usa la tecnología `reciclaje` del catálogo o una nueva? ¿Qué tier/prerequisito tiene? ¿`reciclaje` sigue desbloqueando demolición o la demolición ya está desde el día 0?
+la demolicion esta desde el dia 0, con confirmacion, por ahora solo tenemos un tier de tecnologias, a medida que pongamos mas vamos dandole forma al arbol, lo importante era saber que el arbol va a existir para que desde el principio el motor del juego lo soporte
 4. ¿Qué trazas produce el reciclador (materiales, probabilidades, cantidades)? ¿Se guardan en el save? ¿Se puede save-scum?
+se guardan en el save, hagamos que sean aleatorios y como estamos guardando al salir y tendremos auto saves regulares y no se sabe cuando saldran materiales y son pocas cantidades (no es fuente principal y es muy esporadico) no nos importa el save-scum
+pues aqui es donde se recuperan esos materiales que se perdieron al destruir los modulos, a veces sacará cristales, a veces sacará madera, a veces sacará mas chatarra, a veces sacará componentes, algunos serán mas probables otros menos probables.
 5. ¿La chatarra tiene cap propio? ¿El almacén le da +40? ¿Qué pasa si se llena?
+si, la chatarra tiene un cap similar incluso menor al de los demas recursos, y el almacen tambien lo amplifica.
 6. ¿Cuántas ruinas garantizadas hay, de qué tamaño y dónde? ¿Pueden bloquear depósitos iniciales o el cable? ¿Se guardan?
+las ruinas son de tamaño uno y solo se garantizan 2. se guardan, solo aparecen en zonas abiertas, sin agua ni minerales ni arboles, ni cristal, y bloquean la construccion de todo, incluidos cables.
 7. ¿Demoler crea una ruina que hay que recoger o da chatarra directa? ¿La ruina ocupa uno o varios tiles? ¿Bloquea cables o solo construcción? ¿La recogida es instantánea o tarda/consume energía?
+demoler crea una ruina que se debe recorrer del tamaño del modulo que habia, por ahora creo que todos son de 1x1 entonces es facil, la recogida es instantanea y no consume nada.
 
 **Comida, trampas y construcción**
 
 8. ¿La trampa de peces se conecta por cable desde la orilla, el cable puede ir sobre agua, o es inalámbrica? ¿Comparte tile con el extractor? ¿Qué pasa cuando el agua se agota?
+cable puede ir sobre agua, la trampa debe conectarse, la trampa es un modulo, no comparte tile, cuando el agua se agota deja de producir para siempre, queda ahi inutil, se puede destruir (igual que cualquier modulo) para volverlo ruinas y recuperar la chatarra.
 9. ¿Qué módulo produce biodiésel, con qué insumos y qué consume? ¿Es storage normal o tanque?
+será un modulo que aun no se ha definido, una especie de planta de procesamiento que requerira investigaciones, a definir en el futuro.
 10. ¿Qué costes multi-material tienen los módulos actuales? ¿Se define una tabla antes de implementar? ¿La comida usada en construcción puede matar?
+se define antes de implementar. la comida si se gasta en construccion si puede matar, quizas mas adelante se implemente un tiempo de gracia luego de que la comida (al igual que el agua y el oxigeno) llega a cero, pero por ahora la muerte es directa.
 11. ¿Qué pasa si dos módulos compiten por agua/comida/mineral? ¿El hábitat tiene prioridad o el jugador apaga módulos? ¿Se muestra el conflicto?
+si hay competencia se divide a partes iguales no hay prioridades, cada uno va gastando en la medida en que hay disponibilidad. si hay que decidir si uno u otro, al azar.
 
 **Energía y agua**
 
 12. ¿La “capacidad de carga de entrada” del hábitat es un cap o un límite de energía por día? ¿La batería sigue en T2 tras `solar_ii`? ¿Cuánto cap da y cuánto cuesta?
+es un cap, representa el funcionamiento actual, la bateria queda en t2
 13. ¿El almacén sigue dando +40 a todos los recursos menos energía, incluidos chatarra/biodiésel/madera/cristal? ¿Los tanques especializados son ahora o futuro?
+los tanque especializados son el futuro el almacen da +40 a todo lo que no tenga un reservorio especializado.
 14. ¿Cuánto dura el depósito de agua garantizado y cuántos depósitos RNG hay? ¿El radar debe abaratarse para que la exploración sea viable?
-15. ¿La desaparición del agua cambia el tile (vuelve a suelo) o solo el depósito? ¿Qué pasa con la trampa de peces y el extractor?
+el deposito de agua funciona tal cual como esta ya implementado, no hay qye cambiar nada aqui.
+15. ¿La desaparición del agua cambia el tile (vuelve a suelo) o solo el depósito? ¿Qué pasa con la trampa de peces y el extractor? vuelve a suelo, extractor y trampa quedan ahi, inutiles, recuerda KISS, mantenerlo simple, tal y como funciona actualmente con el extractor.
 
 **Bosques, cristales y contenido**
 
 16. ¿Los bosques y cristales se agregan como scenery inerte ahora o esperan a tener al menos un uso? ¿Cómo se muestran como “no obtenibles” sin ayuda?
+no se añade nada aun se define cuando lleguemos a esa etapa.
 17. ¿Cuánto tardan los bosques en regrow (días/meses) y cómo se representa el brote? ¿Bloquea construcción?
+los bosques y brotes bloquean la construccion, se define cuando llegue el momento de implementarlos.
 18. ¿Los cristales se ven en modo recursos antes de tener el extractor? ¿Qué módulo los extrae y qué placement usa?
+esto se define cuando llegue el momento, funcionan similar a los depositos subterraneos de minerales.
 
 **UI y plan**
 
 19. ¿La barra superior muestra nombres o solo iconos? Si muestra nombres, ¿modo recursos omite los vitales? ¿Se pausa el modo recursos?
+que muestre o no los nombres depende de probar y ver si caben junto a los iconos. y dependiendo de eso se toma la desicion.
 20. ¿La pestaña Defensa se oculta hasta combate o se muestra en gris con torreta/trampa? ¿Qué categoría tiene la trampa de peces?
+se oculta hasta que esto este implementado (osea desde el principio ni siquiera se menciona)
 21. ¿El panel de un módulo mixto (invernadero) muestra producción y consumo, o solo producción? ¿Dónde queda el consumo?
+los modulos mixtos muetras produccion y consumo, si alguno no cabe lo analizamos y decidimos para ese caso puntual.
 22. ¿“Evitar ayuda” elimina los hints contextuales actuales o solo el menú de ayuda? ¿Cómo se enseña R1/B/X?
+solo el menu de ayuda los hints actuales se mantienen, es no tener trabajo extra.
 23. ¿El plan se reescribe completo antes de tocar catálogo/diseño, o se actualizan en paralelo? ¿Qué estructura tendrá?
+el plan se reescribe, tal y como te habia dicho cuando yo lo diga explicitamente. tendra varias etapas q modo que cada una sea completamente jugable e introduzca cambios que esten relacionados.
 
 ### Impacto técnico actualizado
 
