@@ -8,21 +8,23 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+import demolition
 import game
 from config import HABITAT_X, HABITAT_Y
-from construction import BuildController, BuildKind, BuildMode, kind_locked
+from construction import BuildController, BuildKind, BuildMode, BuildPreview, kind_locked
 from credits import CREDITS_SCROLL_STEP
 from game_input import handle_frame_input
 from input_state import FrameInput, Input
 from logistics import network_caps
-from materials import Stockpile
 from module_defs import buffer_cap, module_active
 from module_kind import ModuleKind
 from module_power import module_energy_daily
 from network import get_connected, invalidate_network_cache
-from resources import AlertLevel, ResourceId, ResourcePool
+from research import ResearchState
+from resources import AlertLevel, Cost, ResourceId, ResourcePool
 from savegame import delete_save, load_game, save_game
 from simulation import Simulation
+from tech_defs import tech_def
 from vision import on_module_built
 from ui import MapLayer
 from ui_night import light_sources
@@ -43,6 +45,16 @@ def add_module(world, kind: ModuleKind, dx: int, *, enabled: bool = True) -> Mod
     on_module_built(world, mod)
     invalidate_network_cache(world)
     return mod
+
+
+def prepare_tile(world, x: int, y: int) -> None:
+    i = world.idx(x, y)
+    world.tiles[i] = Tile.GROUND
+    world.deposits[i] = Deposit.NONE
+    world.deposit_amounts[i] = 0.0
+    world.explored[i] = 1
+    world.visible[i] = 1
+    world.ruins.pop((x, y), None)
 
 
 def run(sim: Simulation, world, seconds: float) -> None:
@@ -91,25 +103,25 @@ class EnabledTests(unittest.TestCase):
         world = generate_world()
         sim = Simulation()
         sim.day_progress = 0.5
-        sim.stock.mineral = 100.0
+        sim.resources.mineral = 100.0
         fab = add_module(world, ModuleKind.FABRICATOR, 1)
-        before = sim.stock.components
+        before = sim.resources.components
 
         run(sim, world, 2.0)
-        self.assertGreater(sim.stock.components, before)
+        self.assertGreater(sim.resources.components, before)
 
         fab.enabled = False
-        before = sim.stock.components
+        before = sim.resources.components
         run(sim, world, 2.0)
-        self.assertEqual(sim.stock.components, before)
+        self.assertEqual(sim.resources.components, before)
 
     def test_storage_cannot_be_disabled(self) -> None:
         world = generate_world()
         storage = add_module(world, ModuleKind.STORAGE, 1)
-        active_cap = network_caps(world).components
+        active_cap = network_caps(world)[ResourceId.COMPONENTS]
         storage.enabled = False
         self.assertTrue(module_active(storage, True))
-        self.assertEqual(network_caps(world).components, active_cap)
+        self.assertEqual(network_caps(world)[ResourceId.COMPONENTS], active_cap)
 
     def test_habitat_stays_active(self) -> None:
         world = generate_world()
@@ -121,7 +133,7 @@ class EnabledTests(unittest.TestCase):
 class CableNetworkTests(unittest.TestCase):
     def test_module_accepts_cables_on_all_four_sides(self) -> None:
         world = generate_world()
-        stock = Stockpile(components=10.0)
+        stock = ResourcePool(components=10.0)
         build = BuildController()
         sides = (
             (HABITAT_X, HABITAT_Y - 1),
@@ -187,7 +199,7 @@ class BuildInputTests(unittest.TestCase):
     def test_unaffordable_build_item_does_not_enter_place(self) -> None:
         world = generate_world()
         sim = Simulation()
-        sim.stock.components = 0.0
+        sim.resources.components = 0.0
         sim.build.enter_menu()
 
         frame = FrameInput(frozenset({"A"}), frozenset({"A"}), frozenset())
@@ -396,9 +408,13 @@ class SaveTests(unittest.TestCase):
         sim = Simulation()
         sim.day = 2
         sim.day_progress = 0.42
-        sim.stock.components = 31.0
+        sim.resources.components = 31.0
+        sim.resources.scrap = 12.0
+        sim.stats.scrap_collected = 3.0
+        sim.stats.scrap_processed = 2.0
         fab = add_module(world, ModuleKind.FABRICATOR, 1, enabled=False)
         fab.built_day = 3
+        fab.cost_paid = Cost({"components": 5.0, "mineral": 2.0})
         lamp = add_module(world, ModuleKind.LAMP, 2)
         sim.resources.power = 33.0
         sim.research.unlocked = {"condensador"}
@@ -413,12 +429,18 @@ class SaveTests(unittest.TestCase):
             world2, sim2 = loaded
             self.assertEqual(sim2.day, 2)
             self.assertAlmostEqual(sim2.day_progress, 0.42)
-            self.assertEqual(sim2.stock.components, 31.0)
+            self.assertEqual(sim2.resources.components, 31.0)
+            self.assertEqual(sim2.resources.scrap, 12.0)
             self.assertEqual(sim2.resources.power, 33.0)
+            self.assertEqual(sim2.stats.scrap_collected, 3.0)
+            self.assertEqual(sim2.stats.scrap_processed, 2.0)
+            self.assertEqual(world2.ruins, world.ruins)
             mod = world2.module_at(fab.x, fab.y)
             self.assertIsNotNone(mod)
             self.assertFalse(mod.enabled)
             self.assertEqual(mod.built_day, 3)
+            self.assertEqual(mod.cost_paid.amounts[ResourceId.COMPONENTS], 5.0)
+            self.assertEqual(mod.cost_paid.amounts[ResourceId.MINERAL], 2.0)
             self.assertEqual(world2.module_at(lamp.x, lamp.y).kind, ModuleKind.LAMP)
             self.assertEqual(sim2.research.unlocked, {"condensador"})
             self.assertEqual(sim2.research.active, "electrolisis")
@@ -444,19 +466,17 @@ class SaveTests(unittest.TestCase):
             self.assertTrue(sim2.paused)
             self.assertEqual(sim2.death_cause, "death.o2")
 
-    def test_v1_loads_without_research(self) -> None:
+    def test_old_version_save_is_deleted(self) -> None:
         world = generate_world()
         sim = Simulation()
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "save.json"
             save_game(world, sim, path)
             data = json.loads(path.read_text(encoding="utf-8"))
-            data["version"] = 1
-            data["sim"].pop("research")
+            data["version"] = 3
             path.write_text(json.dumps(data), encoding="utf-8")
-            loaded = load_game(path)
-            self.assertIsNotNone(loaded)
-            self.assertEqual(loaded[1].research.unlocked, set())
+            self.assertIsNone(load_game(path))
+            self.assertFalse(path.exists())
 
 
 class ResearchTests(unittest.TestCase):
@@ -465,9 +485,9 @@ class ResearchTests(unittest.TestCase):
         sim = Simulation()
         sim.day_progress = 0.5
         lab = add_module(world, ModuleKind.LABORATORY, 1)
-        before = sim.stock.components
+        before = sim.resources.components
         self.assertTrue(sim.start_research(world))
-        self.assertEqual(sim.stock.components, before - 4.0)
+        self.assertEqual(sim.resources.components, before - 4.0)
         run(sim, world, 1.0)
         self.assertGreater(sim.research.progress, 0.0)
         lab.enabled = False
@@ -482,9 +502,9 @@ class ResearchTests(unittest.TestCase):
     def test_research_needs_lab(self) -> None:
         world = generate_world()
         sim = Simulation()
-        before = sim.stock.components
+        before = sim.resources.components
         self.assertFalse(sim.start_research(world))
-        self.assertEqual(sim.stock.components, before)
+        self.assertEqual(sim.resources.components, before)
 
     def test_tech_gating(self) -> None:
         self.assertTrue(kind_locked(BuildKind.ELECTROLYZER, set()))
@@ -651,6 +671,255 @@ class PauseMenuTests(unittest.TestCase):
         self._press(sim, world, "A")
         self.assertFalse(sim.easter_egg_open)
         self.assertTrue(sim.credits_open)
+
+
+class CostTests(unittest.TestCase):
+    def test_multi_cost_spend_is_atomic(self) -> None:
+        pool = ResourcePool(components=4.0, mineral=1.0)
+        cost = Cost({"components": 5.0, "mineral": 2.0})
+        self.assertFalse(cost.spend(pool))
+        self.assertEqual(pool.components, 4.0)
+        self.assertEqual(pool.mineral, 1.0)
+        self.assertEqual(cost.missing(pool)[ResourceId.COMPONENTS], 1.0)
+        self.assertEqual(cost.missing(pool)[ResourceId.MINERAL], 1.0)
+
+    def test_refund_respects_cap(self) -> None:
+        pool = ResourcePool()
+        cost = Cost({"components": 5.0})
+        caps = {resource: 10.0 for resource in ResourceId}
+        caps[ResourceId.COMPONENTS] = 3.0
+        refunded = cost.refund(pool, 1.0, caps)
+        self.assertEqual(pool.components, 3.0)
+        self.assertEqual(refunded.amounts[ResourceId.COMPONENTS], 3.0)
+
+
+class MultiCostBuildTests(unittest.TestCase):
+    def test_fabricator_spends_two_resources_and_records_paid(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        x, y = HABITAT_X + 1, HABITAT_Y
+        prepare_tile(world, x, y)
+        sim.resources.components = 10.0
+        sim.resources.mineral = 5.0
+        sim.build.selected = BuildKind.FABRICATOR
+
+        self.assertTrue(sim.build.try_place(world, sim.resources, x, y, set()))
+        self.assertEqual(sim.resources.components, 5.0)
+        self.assertEqual(sim.resources.mineral, 3.0)
+        mod = world.module_at(x, y)
+        self.assertIsNotNone(mod)
+        self.assertEqual(mod.cost_paid.amounts[ResourceId.COMPONENTS], 5.0)
+        self.assertEqual(mod.cost_paid.amounts[ResourceId.MINERAL], 2.0)
+
+
+class ScrapTests(unittest.TestCase):
+    def test_world_has_ruins_in_open_ground(self) -> None:
+        world = generate_world()
+        self.assertEqual(len(world.ruins), 26)
+        for (x, y), amount in world.ruins.items():
+            i = world.idx(x, y)
+            self.assertGreater(amount, 0.0)
+            self.assertEqual(Tile(world.tiles[i]), Tile.GROUND)
+            self.assertEqual(Deposit(world.deposits[i]), Deposit.NONE)
+            self.assertNotEqual((x, y), (HABITAT_X, HABITAT_Y))
+
+    def test_ruin_blocks_building_and_cables(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        x, y = next(iter(world.ruins))
+        world.explored[world.idx(x, y)] = 1
+        sim.build.selected = BuildKind.SOLAR
+        self.assertEqual(sim.build.preview(world, sim.resources, x, y), BuildPreview.RUIN)
+        sim.build.selected = BuildKind.CABLE
+        self.assertEqual(sim.build.preview(world, sim.resources, x, y), BuildPreview.RUIN)
+
+    def test_collect_ruin_with_a(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        x, y = next(iter(world.ruins))
+        amount = world.ruin_amount(x, y)
+        world.explored[world.idx(x, y)] = 1
+        frame = FrameInput(frozenset({"A"}), frozenset({"A"}), frozenset())
+        result = handle_frame_input(
+            frame,
+            Input(dev_mode=False),
+            sim,
+            world,
+            layer=MapLayer.TERRAIN,
+            cursor_x=x,
+            cursor_y=y,
+            select_x=None,
+            select_y=None,
+        )
+        self.assertAlmostEqual(sim.resources.scrap, min(amount, 30.0))
+        self.assertFalse(world.has_ruin(x, y))
+        self.assertAlmostEqual(sim.stats.scrap_collected, min(amount, 30.0))
+        self.assertTrue(result.save_requested)
+
+    def test_collect_respects_scrap_cap(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        x, y = next(iter(world.ruins))
+        amount = world.ruin_amount(x, y)
+        sim.resources.scrap = 29.0
+        frame = FrameInput(frozenset({"A"}), frozenset({"A"}), frozenset())
+        handle_frame_input(
+            frame,
+            Input(dev_mode=False),
+            sim,
+            world,
+            layer=MapLayer.TERRAIN,
+            cursor_x=x,
+            cursor_y=y,
+            select_x=None,
+            select_y=None,
+        )
+        self.assertAlmostEqual(sim.resources.scrap, 30.0)
+        self.assertTrue(world.has_ruin(x, y))
+        self.assertAlmostEqual(world.ruin_amount(x, y), amount - 1.0)
+
+
+class DemolitionTests(unittest.TestCase):
+    def test_demolish_module_creates_ruin(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        x, y = HABITAT_X + 1, HABITAT_Y
+        prepare_tile(world, x, y)
+        mod = add_module(world, ModuleKind.FABRICATOR, 1)
+        mod.cost_paid = Cost({"components": 5.0, "mineral": 2.0})
+        self.assertTrue(demolition.demolish(world, sim, x, y))
+        self.assertIsNone(world.module_at(x, y))
+        self.assertTrue(world.has_ruin(x, y))
+        mineral_value = 5.0 * 1.5 + 2.0
+        scrap = world.ruin_amount(x, y)
+        self.assertGreaterEqual(scrap, mineral_value * 0.6 - 1e-6)
+        self.assertLessEqual(scrap, mineral_value * 0.9 + 1e-6)
+
+    def test_cable_refunds_components(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        x, y = HABITAT_X + 1, HABITAT_Y
+        prepare_tile(world, x, y)
+        world.cables.add((x, y))
+        sim.resources.components = 0.0
+        self.assertTrue(demolition.demolish(world, sim, x, y))
+        self.assertNotIn((x, y), world.cables)
+        self.assertEqual(sim.resources.components, 1.0)
+
+    def test_cancel_site_returns_scrap_for_progress(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        x, y = HABITAT_X + 1, HABITAT_Y
+        prepare_tile(world, x, y)
+        mod = add_module(world, ModuleKind.FABRICATOR, 1)
+        mod.state = ModuleState.BUILDING
+        mod.build_progress = 0.5
+        mod.build_total = 1.0
+        mod.cost_paid = Cost({"components": 10.0, "mineral": 5.0})
+        self.assertTrue(demolition.demolish(world, sim, x, y))
+        self.assertAlmostEqual(sim.resources.scrap, 5.0)
+        self.assertFalse(world.has_ruin(x, y))
+
+    def test_cancel_site_caps_at_ninety_percent(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        x, y = HABITAT_X + 1, HABITAT_Y
+        prepare_tile(world, x, y)
+        mod = add_module(world, ModuleKind.FABRICATOR, 1)
+        mod.state = ModuleState.BUILDING
+        mod.build_progress = 1.0
+        mod.build_total = 1.0
+        mod.cost_paid = Cost({"components": 10.0})
+        self.assertTrue(demolition.demolish(world, sim, x, y))
+        self.assertAlmostEqual(sim.resources.scrap, 9.0)
+
+    def test_habitat_cannot_be_demolished(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        self.assertFalse(demolition.demolish(world, sim, HABITAT_X, HABITAT_Y))
+
+    def test_b_opens_confirmation_and_a_demolishes(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        x, y = HABITAT_X + 1, HABITAT_Y
+        prepare_tile(world, x, y)
+        mod = add_module(world, ModuleKind.FABRICATOR, 1)
+        mod.cost_paid = Cost({"components": 5.0, "mineral": 2.0})
+        inp = Input(dev_mode=False)
+
+        def press(key: str, select_x, select_y):
+            frame = FrameInput(frozenset({key}), frozenset({key}), frozenset())
+            return handle_frame_input(
+                frame,
+                inp,
+                sim,
+                world,
+                layer=MapLayer.TERRAIN,
+                cursor_x=x,
+                cursor_y=y,
+                select_x=select_x,
+                select_y=select_y,
+            )
+
+        selected = press("A", None, None)
+        self.assertEqual((selected.select_x, selected.select_y), (x, y))
+        press("B", selected.select_x, selected.select_y)
+        self.assertEqual(sim.demolish, (x, y))
+
+        confirmed = press("A", selected.select_x, selected.select_y)
+        self.assertIsNone(sim.demolish)
+        self.assertIsNone(world.module_at(x, y))
+        self.assertTrue(world.has_ruin(x, y))
+        self.assertTrue(confirmed.save_requested)
+
+
+class RecyclerTests(unittest.TestCase):
+    def test_tech_gating(self) -> None:
+        self.assertTrue(kind_locked(BuildKind.RECYCLER, set()))
+        self.assertFalse(kind_locked(BuildKind.RECYCLER, {"reciclaje"}))
+
+    def test_research_spends_scrap(self) -> None:
+        tech = tech_def("reciclaje")
+        pool = ResourcePool(components=2.0, mineral=1.0, scrap=5.0)
+        state = ResearchState()
+        self.assertTrue(state.start(tech, pool, True))
+        self.assertEqual(pool.scrap, 0.0)
+        self.assertEqual(pool.components, 0.0)
+        self.assertEqual(pool.mineral, 0.0)
+
+    def test_recycler_converts_scrap(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        x, y = HABITAT_X + 1, HABITAT_Y
+        prepare_tile(world, x, y)
+        add_module(world, ModuleKind.RECYCLER, 1)
+        sim.day_progress = 0.5
+        sim.resources.scrap = 10.0
+        sim.resources.water = 100.0
+        sim.resources.mineral = 0.0
+        sim.resources.components = 0.0
+        sim.resources.power = 100.0
+
+        run(sim, world, 1.0)
+        self.assertLess(sim.resources.scrap, 10.0)
+        self.assertGreater(sim.resources.mineral, 0.0)
+        self.assertGreater(sim.stats.scrap_processed, 0.0)
+
+    def test_recycler_stops_without_scrap(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        x, y = HABITAT_X + 1, HABITAT_Y
+        prepare_tile(world, x, y)
+        add_module(world, ModuleKind.RECYCLER, 1)
+        sim.day_progress = 0.5
+        sim.resources.scrap = 0.0
+        sim.resources.mineral = 0.0
+        sim.resources.water = 100.0
+        sim.resources.power = 100.0
+
+        run(sim, world, 1.0)
+        self.assertEqual(sim.resources.mineral, 0.0)
+        self.assertEqual(sim.stats.scrap_processed, 0.0)
 
 
 if __name__ == "__main__":

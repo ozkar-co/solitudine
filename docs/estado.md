@@ -12,16 +12,18 @@
 | 4C | **Hecho** — electrolizador y condensador |
 | UI/balance | **Hecho** — barra de 4 vitales, modo recursos, pestañas de construcción, panel de módulo, badges de modo/pausa, créditos y balance inicial de playtest |
 | Playtest | **Hecho** — PC y R36S; ajustes aplicados |
-| Fundación recursos/costes | **Siguiente** — pool único, costes multi-material, `cost_paid` y save v4 |
-| 5+ | **Backlog/planificado** — chatarra/reciclador, trampa de peces, batería, agua RNG/radar, bosques/cristales, eventos y combate |
+| Fundación recursos/costes | **Hecho** — pool único, `Cost` multi-material, `cost_paid` y save v4 |
+| Chatarra/reciclador/demolición | **Hecho** — ruinas, recogida, reciclador, demolición y cancelación |
+| Trampa de peces + comida | **Siguiente** — placement sobre agua, producción nocturna y parada al agotarse el agua |
+| 5+ | **Backlog/planificado** — batería, agua RNG/radar, bosques/cristales, eventos y combate |
 
-El juego es jugable en PC y en R36S. La UI (grilla de 16 px, sprites, zoom, minimapa, día/noche, lámpara) está estable.
+El juego es jugable en PC y en R36S. La UI (grilla de 16 px, sprites, zoom, minimapa, día/noche, lámpara) está estable. El loop de chatarra (ruinas → reciclador → mineral) y la demolición ya funcionan.
 
 ## Próximo trabajo
 
-1. **Fundación de recursos/costes:** pool único, `Cost` multi-material, `cost_paid` y save v4.
-2. **Chatarra/reciclador/demolición:** primer slice de contenido nuevo.
-3. Trampa de peces, batería, agua RNG/radar y bosques/cristales (ver [plan.md](plan.md)).
+1. **Trampa de peces + comida:** placement sobre agua, cable sobre agua y producción nocturna.
+2. **Batería/almacén + energía:** almacén sin cap de energía y batería con cap.
+3. Agua RNG/radar y bosques/cristales (ver [plan.md](plan.md)).
 
 ## Comandos
 
@@ -37,9 +39,10 @@ make dist                          # paquete PortMaster
 
 - Todo el código `.py` vive en la raíz; `main.py` es la única entrada.
 - `module_defs.py` es la fuente única de flujos, costes y `module_active()`.
-- Recursos y costes: pool único (`ResourcePool`) y `Cost` multi-material; `Stockpile` desaparece en el slice de fundación.
+- Recursos y costes: pool único (`ResourcePool`) y `Cost` multi-material; `Stockpile` ya no existe.
+- Chatarra: cap 30 (+40 por almacén), ruinas recogidas con A; demolición/cancelación con B y confirmación A.
 - La UI no muta la simulación; `game.py` orquesta.
-- Guardado JSON automático; `save.json` está ignorado por git. `VERSION` 3 actual; el slice de fundación sube a v4 con migración. `built_day` es opcional y compatible con saves viejos.
+- Guardado JSON automático; `save.json` está ignorado por git. `VERSION` 4, sin migración: los saves anteriores se borran al cargar. Se guardan recursos, stats, `cost_paid` y ruinas.
 - La luz es visual: el hábitat ilumina desde el inicio y la lámpara consume energía solo de noche, proporcional a la oscuridad.
 - Un módulo apagado no produce, no consume, no da visión, no suma cap de almacén y no emite luz.
 - Regla de recursos: 2 fuentes / 2 usos es una heurística, no una regla estricta. No se agrega un recurso sin un problema, una fuente y un uso definidos.

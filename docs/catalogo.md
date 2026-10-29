@@ -12,7 +12,7 @@
 | Energía | Panel solar, Batería* |
 | Extracción | Extractor de agua, Mina |
 | Soporte | Invernadero, Lámpara, Electrolizador, Condensador, Trampa de peces* |
-| Logística | Cable, Fabricador, Almacén, Reciclador* |
+| Logística | Cable, Fabricador, Almacén, Reciclador |
 | Ciencia | Radar, Laboratorio |
 | Defensa* | Torreta, Trampa de defensa |
 
@@ -36,7 +36,7 @@
 | `electrolyzer` | Electrolizador | Soporte | hecho | `electrolisis` | Agua + energía → O₂ |
 | `condenser` | Condensador | Soporte | hecho | `condensador` | Energía → agua |
 | `fish_trap` | Trampa de peces | Soporte | backlog | — | 1-2 comida/noche sobre agua; se detiene si el agua se agota |
-| `recycler` | Reciclador | Logística | backlog | `reciclaje` | Chatarra → mineral (ratio 0,9; trazas raras) |
+| `recycler` | Reciclador | Logística | hecho | `reciclaje` | Chatarra → mineral (ratio 0,9; 5% componentes) |
 | `battery` | Batería | Energía | backlog | `bateria` | Cap de energía; el almacén deja de dar cap de energía |
 | `turret` / `trap` | Torreta / Trampa de defensa | Defensa | backlog | — | Combate |
 
@@ -58,16 +58,17 @@ El cable forma una **red logística única**: conecta módulos de cualquier tipo
 | Laboratorio | 8 Cmp | 1,5 d | 3 E/d | — | Investigación |
 | Electrolizador | 6 Cmp | 1 d | 4 E/d | 6 agua/d | 8 O₂/d |
 | Condensador | 8 Cmp | 1,5 d | 6 E/d | — | 8 agua/d |
+| Reciclador | 3 Cmp | 0,5 d | 1 E/d | 4 chatarra/d · 0,5 agua/d | 3,6 mineral/d + 0,2 Cmp/d |
 
 Valores actuales de playtest. Cualquier ajuste se refleja en `config.py` y en esta tabla.
 
-> **Coste v4 en preparación:** el Fabricador es el primer módulo con coste multi-material (**5 Cmp + 2 mineral**). La mina sigue en componentes para no bloquear el arranque. Hasta implementar el slice de fundación, el código cobra 6 Cmp.
+> **Coste multi-material activo:** el Fabricador cuesta **5 Cmp + 2 mineral**; la mina sigue en componentes para no bloquear el arranque. La chatarra tiene cap 30 (+40 por almacén) y las ruinas dan 4-10 por tile.
 
 ## Tecnologías
 
 - Todas requieren un **Laboratorio** construido.
-- Un nodo a la vez; coste multi-material (`Cost`), tiempo en días; el laboratorio debe estar online, conectado y con energía. Las T1 actuales siguen costando 4 Cmp.
-- T1 cuesta 4 Cmp y 1,5 días; T2 base cuesta 10 Cmp y 3 días (propuesta). Una tecnología concreta puede tener coste multi-material (p. ej. `reciclaje`: 5 chatarra + 2 Cmp + 1 mineral).
+- Un nodo a la vez; coste multi-material (`Cost`), tiempo en días; el laboratorio debe estar online, conectado y con energía.
+- T1 cuesta 4 Cmp y 1,5 días; T2 base cuesta 10 Cmp y 3 días (propuesta). `reciclaje` es T1 provisional: 5 chatarra + 2 Cmp + 1 mineral y 2 días.
 - Las mejoras de módulos se aplican **automáticamente** a los módulos existentes; no se reconstruyen.
 - Una tecnología puede desbloquear un módulo, una acción (p. ej. reciclaje) o subir el tier de un módulo.
 - Varios laboratorios activos suman velocidad de investigación; cada uno consume energía.
@@ -81,10 +82,12 @@ Valores actuales de playtest. Cualquier ajuste se refleja en `config.py` y en es
 | `extraccion_ii` | Industria | 1 | Laboratorio | Extractor y Mina Mk II | backlog |
 | `fabricacion_ii` | Industria | 2 | `extraccion_ii` | Fabricador Mk II | backlog |
 | `almacenamiento_ii` | Industria | 2 | `extraccion_ii` | Almacén Mk II | backlog |
-| `reciclaje` | Industria | 2 | `fabricacion_ii` | Desbloquea `recycler`; la demolición ya existe desde el día 0 | backlog |
+| `reciclaje` | Industria | 1* | Laboratorio | Desbloquea `recycler`; la demolición ya existe desde el día 0 | hecho |
 | `solar_ii` | Energía | 1 | Laboratorio | Panel solar Mk II | backlog |
 | `radar_ii` | Ciencia | 2 | `solar_ii` | Radar Mk II | backlog |
 | `bateria` | Energía | 2 | `solar_ii` | Desbloquea `battery` (cap de energía) | backlog |
+
+`*` `reciclaje` queda en T1 hasta que exista el árbol T2; entonces se reubica en Industria con su prerrequisito.
 
 ## Reglas de upgrades
 

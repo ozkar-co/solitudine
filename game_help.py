@@ -5,6 +5,7 @@ from __future__ import annotations
 from construction import BuildController, BuildMode
 from i18n import t
 from module_defs import module_def
+from module_kind import ModuleKind
 from simulation import Simulation
 from ui_map import MapLayer
 from world import World
@@ -38,6 +39,8 @@ def context_help(
     if select_x is not None:
         if select_y is not None and world is not None:
             mod = world.module_at(select_x, select_y)
+            if mod is not None and mod.kind == ModuleKind.HABITAT:
+                return t("help.selected_habitat")
             if mod is not None and not module_def(mod.kind).can_toggle:
                 return t("help.selected_fixed")
             if world.has_ruin(select_x, select_y):

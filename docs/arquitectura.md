@@ -51,35 +51,37 @@ En PC, `--dev --2x` mantiene el render interno en 640×480 y escala la ventana a
 | `game.py` | Bucle, cámara, HUD, pausa, game over y auto-save. |
 | `simulation.py` | Reloj, día, pausa, muerte y estado global. |
 | `config.py` | Balance numérico y layout. |
-| `world.py` | Mapa, tiles, depósitos, módulos, cables y visión. |
-| `tech_defs.py` | 2 tecnologías del slice y mapeo módulo → tecnología. |
+| `world.py` | Mapa, tiles, depósitos, módulos, cables, ruinas y visión. |
+| `tech_defs.py` | Nodos de tecnología y mapeo módulo → tecnología. |
 | `research.py` | Investigación activa, progreso, desbloqueos y laboratorio. |
 | `module_kind.py` | Enum de módulos. |
 | `module_defs.py` | Registro de módulos, flujos, costes, `module_active()`. |
 | `module_tick.py` | Tick: producción, consumo, energía y lámpara. |
 | `module_flow.py` / `module_power.py` | Delegados finos del panel a `module_defs`. |
 | `logistics.py` | Caps de red, buffers y orquestación del tick. |
-| `resources.py` / `materials.py` | Reservas vitales / stock de construcción. |
-| `construction.py` | Menú por pestañas, preview, bloqueo por tecnología y colocación. |
+| `resources.py` | Registro de recursos, pool único, `Cost` multi-material, caps y alertas. |
+| `stats.py` | Contadores de chatarra procesada/reciclada. |
+| `construction.py` | Menú por pestañas, preview, `cost_paid`, bloqueo por tecnología y colocación. |
+| `demolition.py` | Demolición, cancelación de obra y conversión a ruina/chatarra. |
 | `network.py` | Conectividad BFS cacheada. |
 | `vision.py` | Niebla y visión incremental; respeta `enabled`. |
 | `daylight.py` | Curva de luz natural. |
 | `camera.py` | Cámara y zoom entero. |
-| `savegame.py` | Guardado JSON con arrays comprimidos. |
-| `game_input.py` | Acciones por frame, construcción, R1. |
+| `savegame.py` | Guardado JSON v4 con arrays comprimidos; sin migración. |
+| `game_input.py` | Acciones por frame, construcción, ruinas, demolición, R1. |
 | `input_state.py` / `gamepad.py` / `dev_input.py` | Entrada unificada. |
 | `i18n.py` / `locales/es.json` | Textos. |
 | `ui_layout.py` | Regiones 640×480. |
 | `ui_theme.py` | Colores y formatos. |
-| `ui_assets.py` | Sprites, iconos y fuente VT323. |
-| `ui_map.py` | Tiles, cables, módulos, preview y dithering. |
+| `ui_assets.py` | Sprites, iconos, ruina y fuente VT323. |
+| `ui_map.py` | Tiles, ruinas, cables, módulos, preview y dithering. |
 | `ui_minimap.py` | Minimapa cacheado. |
 | `ui_night.py` | Fuentes de luz visual y dithering por tile. |
-| `ui_panel.py` | Inspección y modo colocar. |
+| `ui_panel.py` | Inspección, ruinas, reciclador y modo colocar. |
 | `ui_tech.py` | Pantalla de Tecnología mínima. |
-| `ui_modals.py` | Modales (pausa, créditos, construcción, game over). |
+| `ui_modals.py` | Modales reutilizables (pausa, créditos, construcción, game over). |
 | `ui_input.py` / `game_help.py` | Política de input / texto contextual. |
-| `ui.py` | HUD, modales, badges de modo y fachada de mapa/panel. |
+| `ui.py` | HUD, modales (incluida demolición), badges de modo y fachada de mapa/panel. |
 | `credits.py` | Datos de créditos y secuencia Konami; sin lógica de UI. |
 | `test_sim.py` | Tests de regresión. |
 
@@ -93,21 +95,21 @@ En PC, `--dev --2x` mantiene el render interno en 640×480 y escala la ventana a
 
 ## Añadir un módulo
 
-1. `config.py`: constantes de coste, obra, flujos y radio de luz si aplica.
+1. `config.py`: coste como dict multi-material, obra, flujos y radio de luz si aplica.
 2. `module_kind.py`: valor en `ModuleKind`.
-3. `module_defs.py`: entrada en `MODULE_DEFS` y `BUILDABLE_KINDS`.
+3. `module_defs.py`: entrada en `MODULE_DEFS` y `BUILDABLE_KINDS` con `cost=Cost(...)`.
 4. `construction.py`: `BuildKind`, `BUILD_KINDS` y `BUILD_TO_MODULE`.
 5. `module_tick.py`: handler solo si el flujo no es trivial.
-6. `ui.py` / `ui_panel.py`: etiqueta del menú.
-7. `locales/es.json`: `build.*`, `module.*`.
-8. `assets/`: sprite final 16×16 + source; registrar en [assets.md](assets.md).
+6. `ui.py` / `ui_panel.py`: etiqueta del menú y del panel.
+7. `locales/es.json`: `build.*`, `module.*`, `module_desc.*`, `flow.*`.
+8. `assets/`: sprite final 16×16 + source; registrar en [assets.md](assets.md). Si el módulo usa un recurso nuevo, añadir icono y entrada en `resources.py`.
 9. Si una tecnología lo desbloquea, añadir `TechDef.unlock_kind` en `tech_defs.py` y la fila en [catalogo.md](catalogo.md).
 10. Tests en `test_sim.py`.
 
 ## Tecnología
 
 - `tech_defs.py` define los nodos; `research.py` guarda activo/progreso/desbloqueos.
-- `start_research()` exige laboratorio activo, energía y gasta componentes.
+- `start_research()` exige laboratorio activo, energía y gasta el `Cost` multi-material del nodo (`reciclaje` incluye chatarra).
 - El progreso escala con el factor de energía; si el laboratorio se apaga o desconecta, se pausa.
 - `construction.kind_locked()` consulta las tecnologías desbloqueadas para el menú y la colocación.
 - La pantalla `ui_tech.py` es una lista simple; no hay consola multipestaña.
@@ -115,15 +117,10 @@ En PC, `--dev --2x` mantiene el render interno en 640×480 y escala la ventana a
 ## Guardado
 
 - `save.json` junto al ejecutable; ignorado por git.
-- Guarda simulación, recursos, stock, módulos/cables, `enabled`, investigación y arrays del mundo comprimidos.
+- `VERSION` 4. Guarda simulación, los siete recursos, `stats`, módulos/cables, `cost_paid`, `enabled`, investigación, ruinas y arrays del mundo comprimidos.
+- Sin migración: si el save no es v4, se borra al cargar y se empieza de cero.
 - Auto-save al pausar, cambiar de día o salir; carga al iniciar.
-- Si cambia el esquema, subir `VERSION` en `savegame.py`. El slice de fundación sube a **v4** (pool único y `cost_paid`; detalle en [plan.md](plan.md)).
-
-## Planificado: fundación de recursos/costes
-
-- `resources.py` absorberá `Stockpile` y `Cost` multi-material; `materials.py` desaparece.
-- El pool tendrá los seis recursos, caps por `ResourceId` y `Module.cost_paid`; save v4.
-- Detalle, tabla de costes y criterio en [plan.md](plan.md). Este documento describe el código actual hasta que el slice se implemente.
+- Si cambia el esquema, subir `VERSION` en `savegame.py`.
 
 ## Luz
 
