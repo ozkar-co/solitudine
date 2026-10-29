@@ -11,10 +11,10 @@
 |-----------|---------|
 | Energía | Panel solar, Batería* |
 | Extracción | Extractor de agua, Mina |
-| Soporte | Invernadero, Lámpara, Electrolizador*, Condensador* |
-| Logística | Cable, Fabricador, Almacén |
-| Ciencia | Radar, Laboratorio* |
-| Defensa* | Torreta, Trampa |
+| Soporte | Invernadero, Lámpara, Electrolizador, Condensador, Trampa de peces* |
+| Logística | Cable, Fabricador, Almacén, Reciclador* |
+| Ciencia | Radar, Laboratorio |
+| Defensa* | Torreta, Trampa de defensa |
 
 `*` planeado o backlog. Defensa no aparece hasta que exista combate. El hábitat no es construible.
 
@@ -35,26 +35,37 @@
 | `laboratory` | Laboratorio | Ciencia | hecho | — | — |
 | `electrolyzer` | Electrolizador | Soporte | hecho | `electrolisis` | Agua + energía → O₂ |
 | `condenser` | Condensador | Soporte | hecho | `condensador` | Energía → agua |
-| `battery` | Batería | Energía | backlog | `bateria` | Almacenamiento de energía |
-| `turret` / `trap` | Torreta / Trampa | Defensa | backlog | — | Combate |
+| `fish_trap` | Trampa de peces | Soporte | backlog | — | 1-2 comida/noche sobre agua; se detiene si el agua se agota |
+| `recycler` | Reciclador | Logística | backlog | `reciclaje` | Chatarra → mineral (ratio 0,9; trazas raras) |
+| `battery` | Batería | Energía | backlog | `bateria` | Cap de energía; el almacén deja de dar cap de energía |
+| `turret` / `trap` | Torreta / Trampa de defensa | Defensa | backlog | — | Combate |
 
-## Números implementados (4B/4C)
+## Números implementados (2026-10-29)
 
 | Módulo | Coste | Obra | Energía | Entrada | Salida |
 |--------|-------|------|---------|---------|--------|
-| Laboratorio | 10 Cmp | 2 d | 3 E/d | — | Investigación |
-| Electrolizador | 8 Cmp | 1,5 d | 4 E/d | 6 agua/d | 4 O₂/d |
-| Condensador | 8 Cmp | 1,5 d | 6 E/d | — | 5 agua/d |
+| Hábitat | — | — | 8 E/d | 10 O₂/d · 10 agua/d · 8 comida/d | Soporte vital |
+| Panel solar | 5 Cmp | 1 d | — | — | 12 E/d (solo 6-18 h) |
+| Extractor de agua | 6 Cmp | 1 d | 2 E/d | — | 12 agua/d |
+| Mina | 4 Cmp | 1,5 d | 3 E/d | — | 8 mineral/d |
+| Invernadero | 8 Cmp | 1,5 d | 3 E/d | 4 agua/d | 10 comida/d + 2 O₂/d (O₂ requiere agua) |
+| Fabricador | 6 Cmp | 2 d | 4 E/d | 6 mineral/d | 4 componentes/d |
+| Almacén | 5 Cmp | 1 d | — | — | +40 a los caps de red (hoy incluye energía; planificado: solo no-energía) |
+| Radar | 8 Cmp | 1,5 d | 12 E/d | — | Exploración permanente |
+| Lámpara | 6 Cmp | 1 d | 0-4 E/d (noche) | — | Luz |
+| Laboratorio | 8 Cmp | 1,5 d | 3 E/d | — | Investigación |
+| Electrolizador | 6 Cmp | 1 d | 4 E/d | 6 agua/d | 8 O₂/d |
+| Condensador | 8 Cmp | 1,5 d | 6 E/d | — | 8 agua/d |
 
-Valores actuales; se ajustan en playtest. El resto de módulos actuales mantiene sus números de `config.py`.
+Valores actuales de playtest. Cualquier ajuste se refleja en `config.py` y en esta tabla.
 
 ## Tecnologías
 
 - Todas requieren un **Laboratorio** construido.
-- Un nodo a la vez; costo en componentes, tiempo en días; el laboratorio debe estar online, conectado y con energía.
-- T1 cuesta 6 Cmp y 2 días; T2 cuesta 10 Cmp y 3 días (propuesta).
+- Un nodo a la vez; coste en componentes (hoy) o multi-material (planificado), tiempo en días; el laboratorio debe estar online, conectado y con energía.
+- T1 cuesta 4 Cmp y 1,5 días; T2 base cuesta 10 Cmp y 3 días (propuesta). Una tecnología concreta puede tener coste multi-material (p. ej. `reciclaje`: 5 chatarra + 2 Cmp + 1 mineral).
 - Las mejoras de módulos se aplican **automáticamente** a los módulos existentes; no se reconstruyen.
-- Una tecnología puede desbloquear un módulo, una acción (p. ej. reciclaje/demolición) o subir el tier de un módulo.
+- Una tecnología puede desbloquear un módulo, una acción (p. ej. reciclaje) o subir el tier de un módulo.
 - Varios laboratorios activos suman velocidad de investigación; cada uno consume energía.
 
 | ID | Rama | Tier | Requiere | Efecto | Estado |
@@ -66,10 +77,10 @@ Valores actuales; se ajustan en playtest. El resto de módulos actuales mantiene
 | `extraccion_ii` | Industria | 1 | Laboratorio | Extractor y Mina Mk II | backlog |
 | `fabricacion_ii` | Industria | 2 | `extraccion_ii` | Fabricador Mk II | backlog |
 | `almacenamiento_ii` | Industria | 2 | `extraccion_ii` | Almacén Mk II | backlog |
-| `reciclaje` | Industria | 2 | `fabricacion_ii` | Desbloquea demolición con retorno de ~50% componentes | backlog |
+| `reciclaje` | Industria | 2 | `fabricacion_ii` | Desbloquea `recycler`; la demolición ya existe desde el día 0 | backlog |
 | `solar_ii` | Energía | 1 | Laboratorio | Panel solar Mk II | backlog |
 | `radar_ii` | Ciencia | 2 | `solar_ii` | Radar Mk II | backlog |
-| `bateria` | Energía | 2 | `solar_ii` | Desbloquea `battery` | backlog |
+| `bateria` | Energía | 2 | `solar_ii` | Desbloquea `battery` (cap de energía) | backlog |
 
 ## Reglas de upgrades
 
@@ -84,5 +95,5 @@ Valores actuales; se ajustan en playtest. El resto de módulos actuales mantiene
 - El laboratorio se construye desde el inicio.
 - SELECT abre la pantalla de Tecnología: ramas, lista de nodos, coste, progreso, prerrequisito y bloqueo.
 - A investiga el nodo seleccionado; B cierra. Sin pestañas vacías.
-- El menú de construcción se agrupa por las categorías de arriba; las piezas bloqueadas se muestran en gris con su tecnología.
-- Guardar: tecnologías desbloqueadas, tier por módulo, investigación activa y progreso.
+- El menú de construcción usa pestañas por categoría; las categorías vacías se ocultan y las piezas bloqueadas/no pagables se muestran en gris con su motivo.
+- Guardar: tecnologías desbloqueadas, tier por módulo, investigación activa, progreso y día de construcción de cada módulo.

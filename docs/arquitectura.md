@@ -42,7 +42,7 @@ main.py
 | `module_flow.py` / `module_power.py` | Delegados finos del panel a `module_defs`. |
 | `logistics.py` | Caps de red, buffers y orquestación del tick. |
 | `resources.py` / `materials.py` | Reservas vitales / stock de construcción. |
-| `construction.py` | Menú por categorías, preview, bloqueo por tecnología y colocación. |
+| `construction.py` | Menú por pestañas, preview, bloqueo por tecnología y colocación. |
 | `network.py` | Conectividad BFS cacheada. |
 | `vision.py` | Niebla y visión incremental; respeta `enabled`. |
 | `daylight.py` | Curva de luz natural. |
@@ -59,9 +59,10 @@ main.py
 | `ui_night.py` | Fuentes de luz visual y dithering por tile. |
 | `ui_panel.py` | Inspección y modo colocar. |
 | `ui_tech.py` | Pantalla de Tecnología mínima. |
-| `ui_modals.py` | Modales (pausa, construcción, game over). |
+| `ui_modals.py` | Modales (pausa, créditos, construcción, game over). |
 | `ui_input.py` / `game_help.py` | Política de input / texto contextual. |
-| `ui.py` | HUD, modales y fachada de mapa/panel. |
+| `ui.py` | HUD, modales, badges de modo y fachada de mapa/panel. |
+| `credits.py` | Datos de créditos y secuencia Konami; sin lógica de UI. |
 | `test_sim.py` | Tests de regresión. |
 
 ## Reglas de UI

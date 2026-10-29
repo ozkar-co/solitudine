@@ -25,15 +25,17 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 
 ## Recursos y supervivencia
 
-- Recursos: O₂, energía, agua, comida, mineral y componentes.
-- O₂, agua y comida son letales al llegar a cero; la energía es una restricción, no una muerte directa.
-- Los depósitos de agua/mineral son finitos.
-- La matriz de fuentes/usos y los próximos cambios están en [plan.md](plan.md).
+- Recursos actuales: O₂, energía, agua, comida, mineral y componentes.
+- Planificados: chatarra (intermedio), madera/biomasa, cristal y biodiésel (producido).
+- O₂, agua y comida son letales al llegar a cero; la energía es una restricción, pero puede matar indirectamente si falta agua para el condensador.
+- Los depósitos de agua/mineral son finitos; hoy hay un depósito de agua garantizado y se planifican depósitos RNG.
+- La regla de 2 fuentes / 2 usos es una heurística, no una obligación. La matriz completa está en [plan.md](plan.md).
 
 ## Red y logística
 
 - Los módulos producen a buffers locales; la red tiene capacidad limitada.
 - El almacén amplía la capacidad de la red.
+- Planificado: el almacén deja de dar cap de energía y la batería pasa a ser el reservorio de energía; los tanques especializados quedan para más adelante.
 - La energía se reparte proporcionalmente si falta; un módulo sin energía produce menos.
 - Los productores se detienen al llenar su buffer o la red.
 
@@ -42,12 +44,12 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 - La noche dibuja un dithering sobre el terreno; la luz lo reduce.
 - El hábitat ilumina desde el inicio; la lámpara amplía la zona iluminada.
 - La lámpara consume energía solo de noche, proporcional a la oscuridad (máx. 4 E/día).
-- La luz no cambia producción ni consumo.
+- La luz de la lámpara no cambia producción ni consumo; el panel solar sí depende del ciclo día/noche.
 
 ## Exploración e investigación
 
 - Solo el radar explora de forma permanente; el resto da visión local.
-- La investigación desbloquea módulos; el próximo slice es laboratorio + 2 tecnologías.
+- La investigación desbloquea módulos; el laboratorio y las 2 tecnologías del primer slice ya están implementados. El próximo paso es el playtest.
 - Exploración avanzada, alimañas, botín y combate están en backlog.
 
 ## Controles
@@ -60,26 +62,38 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 | Construir | Y | Y |
 | Cambiar capa | X | X |
 | Cancelar | B / Esc | B |
+| Cambiar categoría (menú de construcción) | Izquierda/Derecha | DPAD / L-stick |
 | Zoom | L1/L2 (teclas Q/E o [/]) | L1/L2 |
 | Apagar/encender | R1 | R1 |
 | Minimapa | R2 | R2 |
 | Tecnología | SELECT | SELECT |
-| Pausa | START | START |
+| Pausa / créditos | START, luego menú | START, luego menú |
 | Salir | SELECT+START | SELECT+START |
 
 ## UI
 
 - 640×480, grilla de 16 px, fuente VT323 y sprites propios.
-- Barra superior: O₂, agua, comida y energía.
-- Panel lateral: tile, estado, flujos, buffer y acciones.
+- Barra superior: O₂, agua, comida y energía, con nombre y `x/y`.
+- Modo recursos (X): los seis recursos con nombre, cap, tendencia y días de los vitales.
+- Panel lateral: estado, descripción, producción/consumo, buffer, reserva y día de construcción.
 - Minimapa con región explorada, módulos, cables y viewport.
-- Menú de construcción por categorías (Energía, Extracción, Soporte, Logística, Ciencia).
+- Menú de construcción por pestañas (Energía, Extracción, Soporte, Logística, Ciencia); categorías vacías ocultas, no disponibles en gris.
+- Badges de modo/pausa y tile seleccionado; X cambia capa también en modo colocar.
 - Consola de tecnología: una pantalla simple, sin pestañas vacías.
+- Menú de pausa con Continuar/Créditos; créditos con scroll y easter egg.
+
+## Planificado
+
+- **Chatarra y reciclador:** ruinas alrededor del hábitat, demolición desde el día 0 con retorno parcial y reciclador que convierte chatarra en mineral. La chatarra es un recurso de red con cap propio.
+- **Trampa de peces:** módulo barato sobre agua, conectado por cable; produce 1-2 comida por noche y se detiene si el agua se agota.
+- **Batería:** el almacén deja de dar cap de energía; la batería pasa a ser el reservorio de energía.
+- **Agua y radar:** depósito garantizado + depósitos RNG finitos; el radar encuentra todo y es la exploración permanente.
+- **Bosques y cristales:** contenido base futuro; bosques renovables con brotes y cristales subterráneos finitos. Sus usos se definirán antes de implementarlos.
+- **Costes multi-material:** construcciones y tecnologías podrán pedir más de un material; la obra recuerda lo pagado y los reembolsos se definen en [plan.md](plan.md).
 
 ## Backlog
 
-- Alimañas ambientales (roer cables) primero; tower defense más adelante.
-- Inventario genérico, botín y variantes de muerte.
+- Mejoras Mk II, alimañas ambientales, tower defense, botín, inventario y variantes de muerte.
 - Desgaste, eventos climáticos, radio y finales.
-- Reciclaje, batería y más tecnologías.
-- Pulido de UI (scroll, autotile, overview) solo si el contenido lo pide.
+- Pulido de UI (9-slice, autotile, animaciones, overview) solo si el contenido lo pide.
+- Chatarra/reciclador, trampa de peces, batería, agua RNG/radar y bosques/cristales están planificados en [plan.md](plan.md), no en este backlog.

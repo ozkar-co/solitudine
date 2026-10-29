@@ -1,6 +1,6 @@
 # Estado
 
-**Última actualización:** 2026-10-28
+**Última actualización:** 2026-10-29
 
 ## Dónde estamos
 
@@ -10,15 +10,17 @@
 | 4A | **Hecho** — apagado con R1, `Module.enabled`, guardado JSON y tests |
 | 4B | **Hecho** — laboratorio, 2 tecnologías y pantalla de Tecnología |
 | 4C | **Hecho** — electrolizador y condensador |
-| 5+ | **Backlog** — alimañas, inventario, combate, eventos, finales |
+| UI/balance | **Hecho** — barra de 4 vitales, modo recursos, pestañas de construcción, panel de módulo, badges de modo/pausa, créditos y balance inicial de playtest |
+| Playtest | **En curso** — PC y R36S |
+| 5+ | **Backlog/planificado** — chatarra/reciclador, trampa de peces, batería, agua RNG/radar, bosques/cristales, eventos y combate |
 
-El juego es jugable en PC y en R36S. La UI (grilla de 16 px, sprites, zoom, minimapa, día/noche, lámpara) ya está estable.
+El juego es jugable en PC y en R36S. La UI (grilla de 16 px, sprites, zoom, minimapa, día/noche, lámpara) está estable.
 
 ## Próximo trabajo
 
-1. **Playtest** de 4B/4C en PC y R36S.
-2. Ajustar balance si hace falta.
-3. Elegir el siguiente backlog (mejoras Mk II, alimañas ambientales, etc.).
+1. Terminar el **playtest** de la build actual en PC y R36S.
+2. Corregir bugs, legibilidad y balance.
+3. Abrir el slice de **chatarra/reciclador/demolición** (ver [plan.md](plan.md)).
 
 ## Comandos
 
@@ -34,16 +36,18 @@ make dist                          # paquete PortMaster
 - Todo el código `.py` vive en la raíz; `main.py` es la única entrada.
 - `module_defs.py` es la fuente única de flujos, costes y `module_active()`.
 - La UI no muta la simulación; `game.py` orquesta.
-- Guardado JSON automático; `save.json` está ignorado por git.
+- Guardado JSON automático; `save.json` está ignorado por git. `VERSION` 3; `built_day` es opcional y compatible con saves viejos.
 - La luz es visual: el hábitat ilumina desde el inicio y la lámpara consume energía solo de noche, proporcional a la oscuridad.
 - Un módulo apagado no produce, no consume, no da visión, no suma cap de almacén y no emite luz.
-- Regla de recursos: no agregar uno nuevo hasta que los seis actuales tengan dos fuentes y dos usos.
+- Regla de recursos: 2 fuentes / 2 usos es una heurística, no una regla estricta. No se agrega un recurso sin un problema, una fuente y un uso definidos.
+- La barra superior muestra solo los cuatro vitales; el modo recursos muestra los seis recursos.
+- El menú de construcción usa pestañas por categoría y los módulos no disponibles se muestran en gris.
 
 ## Documentación
 
-- [plan.md](plan.md) — roadmap y alcance del próximo slice.
+- [plan.md](plan.md) — roadmap, decisiones cerradas, matriz de recursos y próximo slice.
 - [catalogo.md](catalogo.md) — módulos, categorías, tecnologías y upgrades.
-- [diseno-juego.md](diseno-juego.md) — concepto, loop, sistemas y controles.
+- [diseno-juego.md](diseno-juego.md) — concepto, loop, sistemas, controles y UI.
 - [arquitectura.md](arquitectura.md) — mapa de código y flujo.
-- [assets.md](assets.md) — prompts, seeds y regeneración.
+- [assets.md](assets.md) — prompts, seeds, regeneración y créditos/easter egg.
 - [joy2input.md](joy2input.md) — referencia de hardware/input en R36S.

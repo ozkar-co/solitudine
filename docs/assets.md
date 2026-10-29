@@ -63,6 +63,18 @@ La hoja RD Tile es 4 columnas × 5 filas de tiles de 16×16. Los índices no usa
 
 Los finales de módulos e iconos son **16×16**: se bajan desde el PNG 32×32 con `pygame.transform.scale` (nearest). El source 32 se conserva para editar.
 
+### Créditos / easter egg
+
+- Fuente: `assets/gatos.jpg` (foto de Neo y Cleo).
+- Final: `assets/credits/gatos.png`, 640×480, pixelado desde 320×240 y reducido a una paleta de 32 colores.
+- Se muestra a pantalla completa con la secuencia ↑ ↑ ↓ ↓ ← → ← → en Créditos; cualquier tecla vuelve.
+- Regeneración:
+
+```bash
+magick assets/gatos.jpg -auto-orient -resize '320x240^' -gravity center -extent 320x240 \
+  -dither None -colors 32 -filter point -resize 640x480 assets/credits/gatos.png
+```
+
 ### Fuente
 
 - `assets/fonts/VT323-Regular.ttf`, SIL Open Font License 1.1 (`assets/fonts/OFL.txt`).
@@ -90,7 +102,7 @@ El sidecar `.meta.json` de Genkit no se commitea; esta tabla es el registro que 
 
 ## Notas
 
-- No se cuantizó a una paleta fija todavía. Si hace falta cohesión, se puede hacer una pasada posterior; los sources permiten reprocesar.
-- Los assets finales se commitean; `make dist` copia `tiles/`, `modules/`, `icons/` y `fonts/` a `dist/solitudine/assets/`. `source/` no se copia: es para editar/regenerar.
+- Los sprites no se cuantizaron a una paleta fija todavía. Si hace falta cohesión, se puede hacer una pasada posterior; los sources permiten reprocesar. El easter egg de los gatos sí usa una paleta de 32 colores.
+- Los assets finales se commitean; `make dist` copia `tiles/`, `modules/`, `icons/`, `fonts/` y `credits/` a `dist/solitudine/assets/`. `source/` no se copia: es para editar/regenerar.
 - Coste del set actual: 26 generaciones × ~$0.02 ≈ **$0.52**.
 - Si un asset no gusta: editar el PNG final o regenerar con otro seed y actualizar la tabla. No hace falta conservar un pipeline.
