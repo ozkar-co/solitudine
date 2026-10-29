@@ -256,6 +256,33 @@ def _build_kind_label(kind: BuildKind) -> str:
     }[kind]
 
 
+def _draw_build_resources(
+    surf: pygame.Surface,
+    font_sm: pygame.font.Font,
+    rect: pygame.Rect,
+    y: int,
+    sim: Simulation,
+) -> int:
+    resources = (
+        ("o2", sim.resources.o2, ResourceId.O2),
+        ("water", sim.resources.water, ResourceId.WATER),
+        ("food", sim.resources.food, ResourceId.FOOD),
+        ("power", sim.resources.power, ResourceId.POWER),
+        ("mineral", sim.stock.mineral, None),
+        ("components", sim.stock.components, None),
+    )
+    for icon_name, amount, resource in resources:
+        color = COL_TEXT
+        if resource is not None:
+            level = sim.resources.alert_level(resource)
+            if level != AlertLevel.OK:
+                color = alert_color(level)
+        surf.blit(ui_assets.icon(icon_name), (rect.x + 8, y))
+        _panel_line(surf, font_sm, rect.x + 28, y, format_amount(amount), color)
+        y += 16
+    return y
+
+
 def _draw_build_place(
     surf: pygame.Surface,
     font: pygame.font.Font,
@@ -272,22 +299,16 @@ def _draw_build_place(
     y += 26
     _panel_line(surf, font_sm, rect.x + 8, y, _build_kind_label(build.selected))
     y += 18
-    _panel_line(surf, font_sm, rect.x + 8, y, t("build.cost", value=format_amount(kind_cost(build.selected))))
-    y += 16
-    nc = network_caps(world, get_connected(world))
+    surf.blit(ui_assets.icon("components"), (rect.x + 8, y))
     _panel_line(
         surf,
         font_sm,
-        rect.x + 8,
+        rect.x + 28,
         y,
-        t(
-            "build.components",
-            value=format_amount(sim.stock.components),
-            cap=format_amount(nc.components),
-        ),
-        COL_DIM,
+        t("build.cost", value=format_amount(kind_cost(build.selected))),
     )
     y += 16
+    y = _draw_build_resources(surf, font_sm, rect, y, sim)
     days = kind_build_days(build.selected)
     if days > 0:
         _panel_line(surf, font_sm, rect.x + 8, y, t("build.time", days=f"{days:.1f}"))
@@ -313,7 +334,7 @@ def _draw_build_place(
         )
         y += 16
     y += 4
-    _panel_line(surf, font_sm, rect.x + 8, y, t("build.hint_place"), COL_DIM)
+    _panel_wrapped(surf, font_sm, rect.x + 8, y, t("build.hint_place"), rect.w - 16, COL_DIM)
 
 
 def _draw_module_inspection(
@@ -401,46 +422,21 @@ def _draw_habitat_resources(
     rect: pygame.Rect,
     y: int,
     sim: Simulation,
-    world: World,
 ) -> None:
-    nc = network_caps(world, get_connected(world))
+    flow = module_def(ModuleKind.HABITAT).nominal
     vitals = (
-        (ResourceId.O2, "o2", nc.o2),
-        (ResourceId.WATER, "water", nc.water),
-        (ResourceId.FOOD, "food", nc.food),
-        (ResourceId.POWER, "power", nc.power),
+        (ResourceId.O2, "o2", flow.o2),
+        (ResourceId.WATER, "water", flow.water),
+        (ResourceId.FOOD, "food", flow.food),
+        (ResourceId.POWER, "power", flow.power),
     )
-    for resource, icon, cap in vitals:
-        amount = sim.resources.amount(resource)
+    _panel_line(surf, font_sm, rect.x + 8, y, t("panel.consumption"), COL_DIM)
+    y += 16
+    for resource, icon, value in vitals:
         level = sim.resources.alert_level(resource)
-        rate = sim.resources.daily_use(resource)
-        days = sim.resources.days_left(resource)
+        color = COL_TEXT if level == AlertLevel.OK else alert_color(level)
         surf.blit(ui_assets.icon(icon), (rect.x + 8, y))
-        tx = rect.x + 28
-        amount_s = font_sm.render(f"{format_amount(amount)}/{format_amount(cap)}", False, alert_color(level))
-        surf.blit(amount_s, (tx, y))
-        tx += amount_s.get_width() + 6
-        rate_s = font_sm.render(f"{rate:+.1f}/d", False, COL_DIM)
-        surf.blit(rate_s, (tx, y))
-        tx += rate_s.get_width() + 6
-        days_s = font_sm.render(format_days(days), False, alert_color(level))
-        surf.blit(days_s, (tx, y))
-        y += 16
-
-    materials = (
-        ("mineral", sim.stock.mineral, nc.mineral),
-        ("components", sim.stock.components, nc.components),
-    )
-    for icon, value, cap in materials:
-        surf.blit(ui_assets.icon(icon), (rect.x + 8, y))
-        _panel_line(
-            surf,
-            font_sm,
-            rect.x + 28,
-            y,
-            f"{format_amount(value)}/{format_amount(cap)}",
-            COL_DIM,
-        )
+        _panel_line(surf, font_sm, rect.x + 28, y, f"{value:+.1f}/d", color)
         y += 16
 
     worst = sim.resources.worst_alert()
@@ -479,15 +475,14 @@ def _draw_resource_panel(
         _panel_line(surf, font_sm, rect.x + 28, y, text, color)
         y += 18
         if vital and resource is not None:
-            rate = sim.resources.daily_use(resource)
             days = sim.resources.days_left(resource)
             _panel_line(
                 surf,
                 font_sm,
                 rect.x + 28,
                 y,
-                f"{rate:+.1f}/d  {format_days(days)}",
-                COL_DIM,
+                format_days(days),
+                alert_color(level) if level is not None else COL_DIM,
             )
             y += 16
 
@@ -558,7 +553,7 @@ def draw_panel(
                 t("panel.status", status=t("status.life_support")),
             )
             y += 16
-            _draw_habitat_resources(surf, font_sm, rect, y, sim, world)
+            _draw_habitat_resources(surf, font_sm, rect, y, sim)
         else:
             _draw_module_inspection(surf, font_sm, rect.x + 8, y, rect.w - 16, mod, world, sim)
         return

@@ -21,7 +21,8 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
   - Panel de módulo con estado real, descripción, producción/consumo con nombre de recurso y día de construcción; buffer, reserva y progreso.
   - Badges de modo/pausa (`RECURSOS`, `CONSTRUIR`, `COLOCAR`, `PAUSA`), tile seleccionado marcado y X disponible en modo colocar.
   - Menú de pausa con Continuar/Créditos; créditos con scroll y easter egg.
-- Guardado `VERSION` 3; `built_day` es un campo opcional compatible con saves viejos. 25 tests de regresión.
+  - **Correcciones de playtest (2026-10-29):** hábitat solo con consumo y alertas; recursos sin gasto diario y A vuelve a inspección; construcción con iconos, sin cap de componentes, modal de altura fija con controles al pie y categoría `< >`; estados sin paréntesis.
+- Guardado `VERSION` 3; `built_day` es un campo opcional compatible con saves viejos. 26 tests de regresión.
 
 ## Ahora: playtest (en curso)
 
@@ -89,10 +90,11 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 ### UI
 
 - Barra superior solo con los cuatro vitales, con nombres; si no caben, se decide en playtest.
-- Modo recursos muestra los seis recursos aunque se repitan con la barra.
-- Menú de construcción por pestañas; categorías vacías ocultas; no disponibles en gris; coste y faltante visibles.
+- Modo recursos: seis recursos con cantidad/cap y días de los vitales; sin gasto diario. A inspecciona y vuelve al terreno.
+- Panel del hábitat: solo consumo diario por vital y alertas; las cantidades/caps viven en modo recursos.
+- Menú de construcción por pestañas; categorías vacías ocultas; no disponibles en gris; coste y faltante visibles. Recursos con iconos y sin cap de componentes; modal de altura fija con controles en pie separado; categoría seleccionada resaltada y entre `< >`.
 - Panel de módulo: estado, descripción, producción/consumo con nombres y día de construcción. Los módulos mixtos muestran ambas cosas.
-- Badge de modo/pausa y tile seleccionado. X cambia capa también en modo colocar.
+- Badge de modo/pausa y tile seleccionado. X cambia capa también en modo colocar. Los estados son concisos, sin paréntesis explicativos.
 - Sin menú de ayuda dedicado: la UI debe ser autoexplicativa; se mantienen los hints contextuales.
 - Créditos en pausa con scroll y easter egg sin pistas.
 

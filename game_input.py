@@ -181,5 +181,7 @@ def handle_frame_input(
             )
         if inp.was_pressed(frame, "A"):
             result.select_x, result.select_y = cursor_x, cursor_y
+            if layer == MapLayer.RESOURCES:
+                result.layer = MapLayer.TERRAIN
 
     return result

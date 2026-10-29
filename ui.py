@@ -16,7 +16,14 @@ from resources import AlertLevel, ResourceId
 from simulation import Simulation
 from tech_defs import tech_def, tech_for_module
 from ui_map import MapLayer, draw_map
-from ui_modals import MODAL_PAD_X, MODAL_PAD_Y, ModalLine, draw_map_modal
+from ui_modals import (
+    MODAL_FOOTER_GAP,
+    MODAL_HEIGHT,
+    MODAL_PAD_X,
+    MODAL_PAD_Y,
+    ModalLine,
+    draw_map_modal,
+)
 from ui_panel import draw_panel, module_debug_lines
 from ui_theme import (
     COL_BORDER,
@@ -184,6 +191,37 @@ def _build_kind_label(kind: BuildKind) -> str:
     }[kind]
 
 
+def _resource_modal_lines(sim: Simulation) -> list[ModalLine]:
+    resources = (
+        ("o2", sim.resources.o2, ResourceId.O2),
+        ("water", sim.resources.water, ResourceId.WATER),
+        ("food", sim.resources.food, ResourceId.FOOD),
+        ("power", sim.resources.power, ResourceId.POWER),
+        ("mineral", sim.stock.mineral, None),
+        ("components", sim.stock.components, None),
+    )
+    items: list[tuple[str, str, tuple[int, int, int]]] = []
+    for icon_name, amount, resource in resources:
+        color = COL_TEXT
+        if resource is not None:
+            level = sim.resources.alert_level(resource)
+            if level != AlertLevel.OK:
+                color = alert_color(level)
+        items.append((icon_name, format_amount(amount), color))
+    return [ModalLine(items=tuple(items[:3])), ModalLine(items=tuple(items[3:]))]
+
+
+def _category_segments(build) -> tuple[tuple[str, tuple[int, int, int]], ...]:
+    segments: list[tuple[str, tuple[int, int, int]]] = []
+    for index, (category_key, _kinds) in enumerate(BUILD_CATEGORIES):
+        label = t(category_key)
+        if index == build.menu_category:
+            segments.append((f"< {label} >", COL_WARN))
+        else:
+            segments.append((f"  {label}  ", COL_DIM))
+    return tuple(segments)
+
+
 def draw_build_menu_modal(
     surf: pygame.Surface,
     font: pygame.font.Font,
@@ -195,23 +233,11 @@ def draw_build_menu_modal(
     if build.mode != BuildMode.MENU:
         return
 
-    nc = network_caps(world, get_connected(world))
     lines: list[ModalLine] = [
         ModalLine(t("build.title"), COL_TEXT, large=True),
-        ModalLine(
-            t(
-                "build.components",
-                value=format_amount(sim.stock.components),
-                cap=format_amount(nc.components),
-            ),
-            COL_DIM,
-        ),
+        *_resource_modal_lines(sim),
+        ModalLine(segments=_category_segments(build)),
     ]
-    tabs = "  ".join(
-        f"[{t(category_key)}]" if index == build.menu_category else t(category_key)
-        for index, (category_key, _kinds) in enumerate(BUILD_CATEGORIES)
-    )
-    lines.append(ModalLine(tabs, COL_WARN))
 
     _category_key, kinds = BUILD_CATEGORIES[build.menu_category]
     for kind in kinds:
@@ -233,8 +259,22 @@ def draw_build_menu_modal(
         else:
             color = COL_TEXT
         lines.append(ModalLine(text, color))
-    lines.append(ModalLine(t("build.hint_menu"), COL_DIM))
-    draw_map_modal(surf, font, font_sm, lines, dim_map=True)
+    lines.append(
+        ModalLine(
+            t("build.selected_cost", value=format_amount(kind_cost(build.selected))),
+            COL_DIM,
+            icon="components",
+        )
+    )
+    draw_map_modal(
+        surf,
+        font,
+        font_sm,
+        lines,
+        dim_map=True,
+        fixed_height=MODAL_HEIGHT,
+        footer=[ModalLine(t("build.hint_menu"), COL_DIM)],
+    )
 
 
 def draw_pause_modal(
@@ -249,8 +289,14 @@ def draw_pause_modal(
         selected = index == sim.pause_index
         prefix = ">" if selected else " "
         lines.append(ModalLine(f"{prefix} {label}", COL_TEXT if selected else COL_DIM))
-    lines.append(ModalLine(t("pause.hint_menu"), COL_DIM))
-    draw_map_modal(surf, font, font_sm, lines, dim_map=True)
+    draw_map_modal(
+        surf,
+        font,
+        font_sm,
+        lines,
+        dim_map=True,
+        footer=[ModalLine(t("pause.hint_menu"), COL_DIM)],
+    )
 
 
 def _credits_content() -> list[ModalLine]:
@@ -280,7 +326,14 @@ def draw_credits_modal(
 
     title_h = font.get_height() + 4
     line_h = font_sm.get_height() + 2
-    fixed_height = MODAL_PAD_Y * 2 + title_h + CREDITS_VISIBLE_LINES * line_h
+    footer_h = font_sm.get_height() + 2
+    fixed_height = (
+        MODAL_PAD_Y * 2
+        + title_h
+        + CREDITS_VISIBLE_LINES * line_h
+        + footer_h
+        + MODAL_FOOTER_GAP
+    )
     min_width = (
         max(
             font.render(title.text, False, title.color).get_width(),
@@ -297,12 +350,14 @@ def draw_credits_modal(
         dim_map=True,
         min_width=min_width,
         fixed_height=fixed_height,
+        footer=[ModalLine(t("help.credits"), COL_DIM)],
     )
 
     if max_scroll > 0:
         track_x = box.right - 8
         track_top = box.y + MODAL_PAD_Y + title_h + 2
-        track_h = max(1, box.bottom - MODAL_PAD_Y - track_top)
+        track_bottom = box.bottom - MODAL_PAD_Y - footer_h - MODAL_FOOTER_GAP + 2
+        track_h = max(1, track_bottom - track_top)
         pygame.draw.rect(surf, COL_DIM, (track_x, track_top, 2, track_h))
         thumb_h = max(8, int(track_h * CREDITS_VISIBLE_LINES / len(content)))
         thumb_y = track_top + int((track_h - thumb_h) * scroll / max_scroll)
@@ -331,7 +386,7 @@ def draw_game_over(
         [
             ModalLine(t("game_over.title"), COL_CRITICAL, large=True),
             ModalLine(t(sim.death_cause), COL_TEXT),
-            ModalLine(t("game_over.restart"), COL_DIM),
         ],
         dim_map=True,
+        footer=[ModalLine(t("game_over.restart"), COL_DIM)],
     )

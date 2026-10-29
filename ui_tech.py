@@ -8,7 +8,7 @@ from i18n import t
 from research import has_active_lab
 from simulation import Simulation
 from tech_defs import TECHS, tech_def
-from ui_modals import ModalLine, draw_map_modal
+from ui_modals import MODAL_HEIGHT, ModalLine, draw_map_modal
 from ui_theme import COL_CABLE, COL_DIM, COL_TEXT, COL_WARN
 from world import World
 
@@ -54,6 +54,13 @@ def draw_tech_screen(
         lines.append(ModalLine(t("tech.no_lab"), COL_WARN))
     elif sim.resources.power <= 0.0:
         lines.append(ModalLine(t("tech.no_power"), COL_WARN))
-    lines.append(ModalLine(t("tech.hint"), COL_DIM))
-    draw_map_modal(surf, font, font_sm, lines, dim_map=True)
+    draw_map_modal(
+        surf,
+        font,
+        font_sm,
+        lines,
+        dim_map=True,
+        fixed_height=MODAL_HEIGHT,
+        footer=[ModalLine(t("tech.hint"), COL_DIM)],
+    )
 

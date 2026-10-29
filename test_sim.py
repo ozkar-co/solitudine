@@ -221,6 +221,25 @@ class BuildInputTests(unittest.TestCase):
         )
         self.assertEqual(result.layer, MapLayer.RESOURCES)
 
+    def test_a_in_resource_mode_returns_to_terrain_and_selects(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+
+        frame = FrameInput(frozenset({"A"}), frozenset({"A"}), frozenset())
+        result = handle_frame_input(
+            frame,
+            Input(dev_mode=False),
+            sim,
+            world,
+            layer=MapLayer.RESOURCES,
+            cursor_x=HABITAT_X,
+            cursor_y=HABITAT_Y,
+            select_x=None,
+            select_y=None,
+        )
+        self.assertEqual(result.layer, MapLayer.TERRAIN)
+        self.assertEqual((result.select_x, result.select_y), (HABITAT_X, HABITAT_Y))
+
 
 class SaveTests(unittest.TestCase):
     def test_roundtrip(self) -> None:
