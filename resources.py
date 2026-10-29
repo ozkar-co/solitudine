@@ -1,86 +1,193 @@
-"""Reservas y consumo del hábitat."""
+"""Recursos, caps, reservas y costes multi-material."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from enum import Enum
+from dataclasses import dataclass, field
+from enum import IntEnum, StrEnum
+from typing import Mapping
 
 from config import (
     ALERT_CRITICAL_DAYS,
     ALERT_WARNING_DAYS,
+    HABITAT_COMPONENTS_CAP,
+    HABITAT_FOOD_CAP,
+    HABITAT_FOOD_DAILY,
     HABITAT_FOOD_START,
+    HABITAT_MINERAL_CAP,
+    HABITAT_O2_CAP,
+    HABITAT_O2_DAILY,
     HABITAT_O2_START,
+    HABITAT_POWER_CAP,
+    HABITAT_POWER_DAILY,
     HABITAT_POWER_START,
+    HABITAT_SCRAP_CAP,
+    HABITAT_WATER_CAP,
+    HABITAT_WATER_DAILY,
     HABITAT_WATER_START,
+    INITIAL_COMPONENTS,
     RESOURCE_RATE_EPSILON,
     RESOURCE_RATE_TAU_DAYS,
     VITAL_EMPTY_THRESHOLD,
 )
-from module_defs import habitat_daily_consumption
 
 
-class ResourceId(Enum):
+class ResourceId(StrEnum):
     O2 = "o2"
     POWER = "power"
     WATER = "water"
     FOOD = "food"
+    MINERAL = "mineral"
+    COMPONENTS = "components"
+    SCRAP = "scrap"
 
 
-class AlertLevel(Enum):
+@dataclass(frozen=True)
+class ResourceDef:
+    id: ResourceId
+    name_key: str
+    short_key: str
+    icon: str
+    base_cap: float
+    lethal: bool = False
+    top_bar: bool = False
+    alert: bool = False
+    storage_bonus: bool = True
+
+
+RESOURCES: tuple[ResourceDef, ...] = (
+    ResourceDef(ResourceId.O2, "resource.o2", "resource.o2.short", "o2", HABITAT_O2_CAP, lethal=True, top_bar=True, alert=True),
+    ResourceDef(ResourceId.WATER, "resource.water", "resource.water.short", "water", HABITAT_WATER_CAP, lethal=True, top_bar=True, alert=True),
+    ResourceDef(ResourceId.FOOD, "resource.food", "resource.food.short", "food", HABITAT_FOOD_CAP, lethal=True, top_bar=True, alert=True),
+    ResourceDef(ResourceId.POWER, "resource.power", "resource.power.short", "power", HABITAT_POWER_CAP, top_bar=True, alert=True),
+    ResourceDef(ResourceId.MINERAL, "resource.mineral", "resource.mineral.short", "mineral", HABITAT_MINERAL_CAP),
+    ResourceDef(ResourceId.COMPONENTS, "resource.components", "resource.components.short", "components", HABITAT_COMPONENTS_CAP),
+    ResourceDef(ResourceId.SCRAP, "resource.scrap", "resource.scrap.short", "scrap", HABITAT_SCRAP_CAP),
+)
+
+RESOURCE_BY_ID: dict[ResourceId, ResourceDef] = {defn.id: defn for defn in RESOURCES}
+TOPBAR_IDS: tuple[ResourceId, ...] = tuple(defn.id for defn in RESOURCES if defn.top_bar)
+ALERT_IDS: tuple[ResourceId, ...] = tuple(defn.id for defn in RESOURCES if defn.alert)
+LETHAL_IDS: tuple[ResourceId, ...] = tuple(defn.id for defn in RESOURCES if defn.lethal)
+
+
+class AlertLevel(IntEnum):
     OK = 0
     WARNING = 1
     CRITICAL = 2
 
 
-_VITAL_DEATH_ORDER: tuple[tuple[ResourceId, str], ...] = (
-    (ResourceId.O2, "death.o2"),
-    (ResourceId.WATER, "death.water"),
-    (ResourceId.FOOD, "death.food"),
-)
+_DEATH_KEYS: dict[ResourceId, str] = {
+    ResourceId.O2: "death.o2",
+    ResourceId.WATER: "death.water",
+    ResourceId.FOOD: "death.food",
+}
+
+
+@dataclass(frozen=True)
+class Cost:
+    """Coste multi-material. Las claves pueden ser ResourceId o su valor string."""
+
+    amounts: Mapping[ResourceId | str, float] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        normalized: dict[ResourceId, float] = {}
+        for key, value in self.amounts.items():
+            rid = key if isinstance(key, ResourceId) else ResourceId(key)
+            amount = float(value)
+            if amount > 0.0:
+                normalized[rid] = amount
+        object.__setattr__(self, "amounts", normalized)
+
+    @classmethod
+    def empty(cls) -> "Cost":
+        return cls({})
+
+    def items(self) -> tuple[tuple[ResourceId, float], ...]:
+        return tuple(self.amounts.items())
+
+    def can_afford(self, pool: "ResourcePool") -> bool:
+        return all(pool.amount(rid) >= amount for rid, amount in self.amounts.items())
+
+    def spend(self, pool: "ResourcePool") -> bool:
+        if not self.can_afford(pool):
+            return False
+        for rid, amount in self.amounts.items():
+            pool.set_amount(rid, pool.amount(rid) - amount)
+        return True
+
+    def missing(self, pool: "ResourcePool") -> dict[ResourceId, float]:
+        return {
+            rid: amount - pool.amount(rid)
+            for rid, amount in self.amounts.items()
+            if pool.amount(rid) < amount
+        }
+
+    def refund(self, pool: "ResourcePool", ratio: float, caps: Mapping[ResourceId, float]) -> "Cost":
+        if ratio <= 0.0:
+            return Cost.empty()
+        credited: dict[ResourceId, float] = {}
+        for rid, amount in self.amounts.items():
+            space = max(0.0, caps.get(rid, float("inf")) - pool.amount(rid))
+            credit = min(amount * ratio, space)
+            if credit > 0.0:
+                pool.add(rid, credit)
+                credited[rid] = credit
+        return Cost(credited)
+
+    def to_dict(self) -> dict[str, float]:
+        return {rid.value: amount for rid, amount in self.amounts.items()}
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, float] | None) -> "Cost":
+        return cls(dict(data or {}))
+
+    def __bool__(self) -> bool:
+        return bool(self.amounts)
 
 
 @dataclass
 class ResourcePool:
-    o2: float
-    power: float
-    water: float
-    food: float
-    # Cambio neto por día: positivo = sube, negativo = baja.
+    o2: float = 0.0
+    power: float = 0.0
+    water: float = 0.0
+    food: float = 0.0
+    mineral: float = 0.0
+    components: float = 0.0
+    scrap: float = 0.0
+    # Cambio neto por día (solo vitales): positivo = sube, negativo = baja.
     o2_daily: float = 0.0
     power_daily: float = 0.0
     water_daily: float = 0.0
     food_daily: float = 0.0
 
     @classmethod
-    def initial(cls) -> ResourcePool:
-        vital = habitat_daily_consumption()
+    def initial(cls) -> "ResourcePool":
         return cls(
             o2=HABITAT_O2_START,
             power=HABITAT_POWER_START,
             water=HABITAT_WATER_START,
             food=HABITAT_FOOD_START,
-            o2_daily=-vital.o2,
-            power_daily=-vital.power,
-            water_daily=-vital.water,
-            food_daily=-vital.food,
+            components=INITIAL_COMPONENTS,
+            o2_daily=-HABITAT_O2_DAILY,
+            power_daily=-HABITAT_POWER_DAILY,
+            water_daily=-HABITAT_WATER_DAILY,
+            food_daily=-HABITAT_FOOD_DAILY,
         )
 
     def amount(self, resource: ResourceId) -> float:
-        return {
-            ResourceId.O2: self.o2,
-            ResourceId.POWER: self.power,
-            ResourceId.WATER: self.water,
-            ResourceId.FOOD: self.food,
-        }[resource]
+        return getattr(self, resource.value)
+
+    def set_amount(self, resource: ResourceId, value: float) -> None:
+        setattr(self, resource.value, value)
+
+    def add(self, resource: ResourceId, amount: float) -> None:
+        self.set_amount(resource, self.amount(resource) + amount)
 
     def daily_use(self, resource: ResourceId) -> float:
         """Cambio neto por día (positivo sube, negativo baja)."""
-        return {
-            ResourceId.O2: self.o2_daily,
-            ResourceId.POWER: self.power_daily,
-            ResourceId.WATER: self.water_daily,
-            ResourceId.FOOD: self.food_daily,
-        }[resource]
+        if resource not in ALERT_IDS:
+            return 0.0
+        return getattr(self, f"{resource.value}_daily")
 
     def days_left(self, resource: ResourceId) -> float:
         net = self.daily_use(resource)
@@ -105,6 +212,8 @@ class ResourcePool:
             setattr(self, rate_field, old_rate + (instant - old_rate) * alpha)
 
     def alert_level(self, resource: ResourceId) -> AlertLevel:
+        if resource not in ALERT_IDS:
+            return AlertLevel.OK
         days = self.days_left(resource)
         if days == float("inf"):
             return AlertLevel.OK
@@ -116,7 +225,7 @@ class ResourcePool:
 
     def worst_alert(self) -> AlertLevel:
         worst = AlertLevel.OK
-        for resource in ResourceId:
+        for resource in ALERT_IDS:
             level = self.alert_level(resource)
             if level.value > worst.value:
                 worst = level
@@ -128,38 +237,21 @@ class ResourcePool:
         self.water = max(0.0, self.water + water * scale)
         self.food = max(0.0, self.food + food * scale)
 
-    def add_power(self, amount: float) -> None:
-        self.power += amount
-
-    def add_water(self, amount: float) -> None:
-        self.water += amount
-
-    def add_food(self, amount: float) -> None:
-        self.food += amount
-
-    def clamp_to(self, o2_cap: float, power_cap: float, water_cap: float, food_cap: float) -> None:
-        self.o2 = min(self.o2, o2_cap)
-        self.power = min(self.power, power_cap)
-        self.water = min(self.water, water_cap)
-        self.food = min(self.food, food_cap)
+    def clamp(self, caps: Mapping[ResourceId, float]) -> None:
+        for defn in RESOURCES:
+            self.set_amount(defn.id, min(self.amount(defn.id), caps[defn.id]))
 
     def _snap_vitals(self) -> None:
         """Alinea reservas residuales con el umbral de muerte (evita 0.04 mostrado como 0.0)."""
-        for resource in (ResourceId.O2, ResourceId.WATER, ResourceId.FOOD):
-            amount = self.amount(resource)
-            if amount <= VITAL_EMPTY_THRESHOLD:
-                if resource == ResourceId.O2:
-                    self.o2 = 0.0
-                elif resource == ResourceId.WATER:
-                    self.water = 0.0
-                else:
-                    self.food = 0.0
+        for resource in LETHAL_IDS:
+            if self.amount(resource) <= VITAL_EMPTY_THRESHOLD:
+                self.set_amount(resource, 0.0)
 
     def death_cause(self) -> str | None:
         self._snap_vitals()
-        for resource, key in _VITAL_DEATH_ORDER:
+        for resource in LETHAL_IDS:
             if self.amount(resource) <= 0.0:
-                return key
+                return _DEATH_KEYS[resource]
         return None
 
     def check_death(self) -> str | None:

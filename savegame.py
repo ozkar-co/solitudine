@@ -10,15 +10,15 @@ from array import array
 from dataclasses import asdict
 from pathlib import Path
 
-from materials import Stockpile
 from module_defs import module_def
 from module_kind import ModuleKind
-from resources import ResourcePool
+from resources import Cost, ResourcePool
 from simulation import Simulation
+from stats import Stats
 from world import Module, ModuleState, World, generate_world
 
 SAVE_PATH = Path(__file__).resolve().parent / "save.json"
-VERSION = 3
+VERSION = 4
 
 
 def _pack(data: bytes) -> str:
@@ -37,7 +37,7 @@ def _save_data(world: World, sim: Simulation) -> dict:
             "day": sim.day,
             "day_progress": sim.day_progress,
             "resources": asdict(sim.resources),
-            "stock": asdict(sim.stock),
+            "stats": asdict(sim.stats),
             "game_over": sim.game_over,
             "death_cause": sim.death_cause,
             "research": {
@@ -73,10 +73,12 @@ def _save_data(world: World, sim: Simulation) -> dict:
                     "shadow_stamped": mod.shadow_stamped,
                     "clear_active": mod.clear_active,
                     "built_day": mod.built_day,
+                    "cost_paid": mod.cost_paid.to_dict(),
                 }
                 for mod in world.modules
             ],
             "cables": [[x, y] for x, y in world.cables],
+            "ruins": [[x, y, amount] for (x, y), amount in sorted(world.ruins.items())],
         },
     }
 
@@ -96,9 +98,10 @@ def load_game(path: Path = SAVE_PATH) -> tuple[World, Simulation] | None:
     if not path.exists():
         return None
     data = json.loads(path.read_text(encoding="utf-8"))
-    version = data.get("version")
-    if version not in (1, 2, VERSION):
-        raise ValueError("Versión de guardado incompatible")
+    if data.get("version") != VERSION:
+        # Pre-alfa: sin migraciones. El save viejo se descarta.
+        delete_save(path)
+        return None
 
     wd = data["world"]
     world = generate_world()
@@ -150,27 +153,24 @@ def load_game(path: Path = SAVE_PATH) -> tuple[World, Simulation] | None:
             shadow_stamped=raw["shadow_stamped"],
             clear_active=raw["clear_active"],
             built_day=raw.get("built_day", 0),
+            cost_paid=Cost.from_dict(raw.get("cost_paid")),
         )
         if not module_def(mod.kind).can_toggle:
             mod.enabled = True
         world.modules.append(mod)
         world.module_cells[(mod.x, mod.y)] = mod
     world.cables = {(x, y) for x, y in wd["cables"]}
+    world.ruins = {
+        (int(x), int(y)): float(amount) for x, y, amount in wd.get("ruins", ())
+    }
     world.invalidate_network_cache()
 
     sd = data["sim"]
-    resources = dict(sd["resources"])
-    if version < 3:
-        # En v1/v2 los campos diarios eran consumo bruto (positivo).
-        for key in ("o2_daily", "power_daily", "water_daily", "food_daily"):
-            value = float(resources.get(key, 0.0))
-            if value > 0.0:
-                resources[key] = -value
     sim = Simulation(
         day=sd["day"],
         day_progress=sd["day_progress"],
-        resources=ResourcePool(**resources),
-        stock=Stockpile(**sd["stock"]),
+        resources=ResourcePool(**sd["resources"]),
+        stats=Stats(**sd.get("stats", {})),
     )
     sim.game_over = bool(sd.get("game_over", False))
     sim.death_cause = sd.get("death_cause", "")

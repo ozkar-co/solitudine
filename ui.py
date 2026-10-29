@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pygame
 
+import demolition
 import ui_assets
 from config import SCREEN_W
 from ui_layout import bottom_bar_rect, top_bar_rect
@@ -11,9 +12,16 @@ from construction import BUILD_CATEGORIES, BuildKind, BuildMode, kind_cost, kind
 from credits import CREDITS_SECTIONS, CREDITS_VISIBLE_LINES
 from i18n import t
 from logistics import network_caps
-from module_defs import module_def
+from module_defs import CABLE_COST, ModuleKind, module_def
 from network import get_connected
-from resources import AlertLevel, ResourceId
+from resources import (
+    RESOURCE_BY_ID,
+    RESOURCES,
+    TOPBAR_IDS,
+    AlertLevel,
+    Cost,
+    ResourceId,
+)
 from simulation import Simulation
 from ui_map import MapLayer, draw_map
 from ui_modals import (
@@ -34,6 +42,7 @@ from ui_theme import (
     COL_WARN,
     alert_color,
     format_amount,
+    format_cost_text,
     map_rect,
     panel_rect,
 )
@@ -43,6 +52,7 @@ __all__ = [
     "draw_bottom_bar",
     "draw_build_menu_modal",
     "draw_credits_modal",
+    "draw_demolish_modal",
     "draw_easter_egg",
     "draw_dev_debug",
     "draw_game_over",
@@ -102,18 +112,15 @@ def draw_top_bar(
 
     nc = network_caps(world, get_connected(world))
     x = 8
-    vitals = (
-        ("o2", t("resource.o2"), sim.resources.o2, nc.o2, ResourceId.O2),
-        ("water", t("resource.water"), sim.resources.water, nc.water, ResourceId.WATER),
-        ("food", t("resource.food"), sim.resources.food, nc.food, ResourceId.FOOD),
-        ("power", t("resource.power"), sim.resources.power, nc.power, ResourceId.POWER),
-    )
-    for icon_name, label, amount, cap, resource in vitals:
-        text = f"{label} {format_amount(amount)}/{format_amount(cap)}"
+    for resource in TOPBAR_IDS:
+        defn = RESOURCE_BY_ID[resource]
+        amount = sim.resources.amount(resource)
+        cap = nc[resource]
+        text = f"{t(defn.name_key)} {format_amount(amount)}/{format_amount(cap)}"
         level = sim.resources.alert_level(resource)
         color = COL_TEXT if level == AlertLevel.OK else alert_color(level)
         stats_s = font_sm.render(text, False, color)
-        surf.blit(ui_assets.icon(icon_name), (x, 16))
+        surf.blit(ui_assets.icon(defn.icon), (x, 16))
         surf.blit(stats_s, (x + 20, 16))
         x += 20 + stats_s.get_width() + 8
 
@@ -208,6 +215,7 @@ def _build_kind_label(kind: BuildKind) -> str:
         BuildKind.LABORATORY: t("build.laboratory"),
         BuildKind.ELECTROLYZER: t("build.electrolyzer"),
         BuildKind.CONDENSER: t("build.condenser"),
+        BuildKind.RECYCLER: t("build.recycler"),
     }[kind]
 
 
@@ -224,6 +232,7 @@ _BUILD_FLOW_FIELDS = (
     ("power", "power"),
     ("mineral", "mineral"),
     ("components", "components"),
+    ("scrap", "scrap"),
 )
 
 
@@ -264,23 +273,15 @@ def _build_effect_line(
 
 
 def _resource_modal_lines(sim: Simulation) -> list[ModalLine]:
-    resources = (
-        ("o2", sim.resources.o2, ResourceId.O2),
-        ("water", sim.resources.water, ResourceId.WATER),
-        ("food", sim.resources.food, ResourceId.FOOD),
-        ("power", sim.resources.power, ResourceId.POWER),
-        ("mineral", sim.stock.mineral, None),
-        ("components", sim.stock.components, None),
-    )
     items: list[tuple[str, str, tuple[int, int, int]]] = []
-    for icon_name, amount, resource in resources:
+    for defn in RESOURCES:
         color = COL_TEXT
-        if resource is not None:
-            level = sim.resources.alert_level(resource)
+        if defn.alert:
+            level = sim.resources.alert_level(defn.id)
             if level != AlertLevel.OK:
                 color = alert_color(level)
-        items.append((icon_name, format_amount(amount), color))
-    return [ModalLine(items=tuple(items[:3])), ModalLine(items=tuple(items[3:]))]
+        items.append((defn.icon, format_amount(sim.resources.amount(defn.id)), color))
+    return [ModalLine(items=tuple(items[i : i + 4])) for i in range(0, len(items), 4)]
 
 
 def _category_segments(build) -> tuple[tuple[str, tuple[int, int, int]], ...]:
@@ -317,24 +318,25 @@ def draw_build_menu_modal(
         prefix = ">" if selected else " "
         cost = kind_cost(kind)
         locked = kind_locked(kind, sim.research.unlocked)
-        affordable = sim.stock.can_afford(cost)
+        affordable = cost.can_afford(sim.resources)
+        missing = cost.missing(sim.resources)
         suffix = ""
         if locked:
             suffix = f"  {t('build.locked')}"
-        elif not affordable:
-            suffix = f"  {t('build.missing', value=format_amount(cost - sim.stock.components))}"
+        elif missing:
+            suffix = f"  {t('build.missing', value=format_cost_text(Cost(missing)))}"
         unavailable = locked or not affordable
         if unavailable:
             color = COL_WARN if selected else COL_DIM
         else:
             color = COL_TEXT
-        items = [
-            ("", f"{prefix} {_build_kind_label(kind)} ( ", color),
-            ("components", f"{format_amount(cost)})", color),
-        ]
+        items = [("", f"{prefix} {_build_kind_label(kind)} ( ", color)]
+        for resource, amount in cost.items():
+            items.append((RESOURCE_BY_ID[resource].icon, format_amount(amount), color))
+        items.append(("", ")", color))
         if suffix:
             items.append(("", suffix, color))
-        lines.append(ModalLine(items=tuple(items), item_gap=0))
+        lines.append(ModalLine(items=tuple(items), item_gap=4))
         lines.append(ModalLine(_build_kind_desc(kind), COL_DIM))
         lines.append(_build_effect_line(kind, COL_DIM if unavailable else COL_TEXT))
     draw_map_modal(
@@ -347,6 +349,65 @@ def draw_build_menu_modal(
         fixed_height=BUILD_MODAL_HEIGHT,
         footer=[ModalLine(t("build.hint_menu"), COL_DIM)],
         wide=True,
+    )
+
+
+def draw_demolish_modal(
+    surf: pygame.Surface,
+    font: pygame.font.Font,
+    font_sm: pygame.font.Font,
+    sim: Simulation,
+    world,
+) -> None:
+    if sim.demolish is None:
+        return
+    x, y = sim.demolish
+    mod = world.module_at(x, y)
+    lines = [
+        ModalLine(t("demolish.title"), COL_TEXT, large=True),
+        ModalLine(t("panel.coords", x=x, y=y), COL_DIM),
+    ]
+    if mod is not None:
+        if mod.kind == ModuleKind.HABITAT:
+            return
+        name = t(f"module.{mod.kind.value}")
+        if demolition.is_site(mod):
+            lines.append(ModalLine(t("demolish.site", name=name), COL_TEXT))
+            lines.append(
+                ModalLine(
+                    t("demolish.scrap", value=format_amount(demolition.cancel_scrap(mod))),
+                    COL_WARN,
+                )
+            )
+            lines.append(ModalLine(t("demolish.cancel_warning"), COL_DIM))
+        else:
+            lines.append(ModalLine(t("demolish.module", name=name), COL_TEXT))
+            low, high = demolition.scrap_range(mod)
+            lines.append(
+                ModalLine(
+                    t(
+                        "demolish.scrap_range",
+                        low=format_amount(low),
+                        high=format_amount(high),
+                    ),
+                    COL_WARN,
+                )
+            )
+            lines.append(ModalLine(t("demolish.ruin_warning"), COL_DIM))
+    elif (x, y) in world.cables:
+        lines.append(ModalLine(t("demolish.cable"), COL_TEXT))
+        refund = CABLE_COST.amounts.get(ResourceId.COMPONENTS, 0.0)
+        lines.append(ModalLine(t("demolish.components", value=format_amount(refund)), COL_WARN))
+    else:
+        return
+    draw_map_modal(
+        surf,
+        font,
+        font_sm,
+        lines,
+        dim_map=True,
+        min_width=420,
+        footer=[ModalLine(t("demolish.hint"), COL_DIM)],
     )
 
 

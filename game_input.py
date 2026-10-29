@@ -4,12 +4,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+import demolition
 from construction import BuildController, BuildKind, BuildMode, kind_cost
 from credits import CREDITS_SCROLL_STEP, KONAMI_SEQUENCE, max_credits_scroll
 from gamepad import LJOY_DOWN, LJOY_LEFT, LJOY_RIGHT, LJOY_UP
 from input_state import FrameInput, Input
+from logistics import network_caps
 from module_defs import module_active, module_def
 from network import get_connected
+from resources import ResourceId
 from simulation import Simulation
 from ui import MapLayer
 from vision import set_module_clear
@@ -26,6 +29,7 @@ class FrameInputResult:
     select_x: int | None
     select_y: int | None
     reset_session: bool = False
+    save_requested: bool = False
 
 
 def handle_frame_input(
@@ -51,6 +55,18 @@ def handle_frame_input(
     if sim.game_over:
         if inp.was_pressed(frame, "A"):
             result.reset_session = True
+        return result
+
+    if sim.demolish is not None:
+        if inp.was_pressed(frame, "A"):
+            dx, dy = sim.demolish
+            if demolition.demolish(world, sim, dx, dy):
+                result.select_x = None
+                result.select_y = None
+                result.save_requested = True
+            sim.demolish = None
+        elif inp.was_pressed(frame, "B") or inp.was_pressed(frame, "START"):
+            sim.demolish = None
         return result
 
     if sim.research.open:
@@ -132,6 +148,13 @@ def handle_frame_input(
     elif inp.was_pressed(frame, "B"):
         if build.mode in (BuildMode.MENU, BuildMode.PLACE):
             build.cancel_build()
+        elif (
+            select_x is not None
+            and select_y is not None
+            and demolition.can_demolish(world, select_x, select_y)
+        ):
+            sim.demolish = (select_x, select_y)
+            return result
 
     if build.mode == BuildMode.MENU:
         if inp.was_pressed(frame, "DPAD_UP") or inp.was_pressed(frame, LJOY_UP):
@@ -145,7 +168,7 @@ def handle_frame_input(
         if (
             inp.was_pressed(frame, "A")
             and not build.selected_locked(sim.research.unlocked)
-            and sim.stock.can_afford(kind_cost(build.selected))
+            and kind_cost(build.selected).can_afford(sim.resources)
         ):
             build.enter_place()
 
@@ -155,7 +178,7 @@ def handle_frame_input(
                 MapLayer.RESOURCES if layer == MapLayer.TERRAIN else MapLayer.TERRAIN
             )
         if inp.was_pressed(frame, "A"):
-            if build.try_place(world, sim.stock, cursor_x, cursor_y, sim.research.unlocked):
+            if build.try_place(world, sim.resources, cursor_x, cursor_y, sim.research.unlocked):
                 if build.selected != BuildKind.CABLE:
                     build.cancel_build()
 
@@ -178,6 +201,15 @@ def handle_frame_input(
             if layer == MapLayer.RESOURCES:
                 result.select_x, result.select_y = cursor_x, cursor_y
                 result.layer = MapLayer.TERRAIN
+            elif world.has_ruin(cursor_x, cursor_y):
+                caps = network_caps(world, get_connected(world))
+                space = max(0.0, caps[ResourceId.SCRAP] - sim.resources.scrap)
+                taken = world.take_ruin(cursor_x, cursor_y, space)
+                if taken > 0.0:
+                    sim.resources.add(ResourceId.SCRAP, taken)
+                    sim.stats.scrap_collected += taken
+                    result.save_requested = True
+                result.select_x, result.select_y = cursor_x, cursor_y
             else:
                 mod = world.module_at(cursor_x, cursor_y)
                 already_selected = select_x == cursor_x and select_y == cursor_y

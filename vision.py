@@ -112,6 +112,14 @@ def on_cable_added(world, x: int, y: int) -> None:
     activate_clear(world, x, y, CABLE_VISION)
 
 
+def on_cable_removed(world, x: int, y: int) -> None:
+    deactivate_clear(world, x, y, CABLE_VISION)
+
+
+def on_module_removed(world, mod) -> None:
+    set_module_clear(world, mod, False)
+
+
 def init_habitat(world, mod) -> None:
     ensure_module_shadow(world, mod)
     set_module_clear(world, mod, True)

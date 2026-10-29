@@ -17,28 +17,18 @@ from config import (
     SOLAR_HOUR_START,
 )
 from daylight import darkness
-from materials import Stockpile
 from module_defs import BufferOutput, ModuleKind, module_active, module_def
-from resources import ResourcePool
+from resources import ResourceId, ResourcePool
+from stats import Stats
 from world import Deposit, Module, World
-
-
-@dataclass
-class NetworkCaps:
-    o2: float
-    power: float
-    water: float
-    food: float
-    mineral: float
-    components: float
 
 
 @dataclass
 class TickContext:
     world: World
     resources: ResourcePool
-    stock: Stockpile
-    caps: NetworkCaps
+    stats: Stats
+    caps: dict[ResourceId, float]
     connected: set[tuple[int, int]]
     scale: float
     hour_float: float
@@ -92,11 +82,11 @@ def tick_solar_production(ctx: TickContext) -> None:
     for mod in ctx.world.modules:
         if mod.kind != ModuleKind.SOLAR or not _mod_online(mod, ctx):
             continue
-        if ctx.resources.power >= ctx.caps.power:
+        if ctx.resources.power >= ctx.caps[ResourceId.POWER]:
             continue
         ctx.resources.power, _ = _push(
             ctx.resources.power,
-            ctx.caps.power,
+            ctx.caps[ResourceId.POWER],
             rate * solar_scale,
         )
 
@@ -175,6 +165,12 @@ def collect_power_jobs(ctx: TickContext) -> list[PowerJob]:
             job = _job_condenser(ctx)
             if job:
                 jobs.append(job)
+            continue
+
+        if mod.kind == ModuleKind.RECYCLER:
+            job = _job_recycler(ctx)
+            if job:
+                jobs.append(job)
 
     return jobs
 
@@ -183,7 +179,7 @@ def _job_extractor(ctx: TickContext, mod: Module) -> PowerJob | None:
     rate = module_def(ModuleKind.EXTRACTOR).nominal
     if not ctx.world.patch_has_deposit(mod.x, mod.y, Deposit.WATER):
         return None
-    space = _output_space(mod, ctx.resources.water, ctx.caps.water)
+    space = _output_space(mod, ctx.resources.water, ctx.caps[ResourceId.WATER])
     if space <= 0:
         return None
 
@@ -197,7 +193,9 @@ def _job_extractor(ctx: TickContext, mod: Module) -> PowerJob | None:
         in_buf = _try_add_buffer(m, extracted)
         overflow = extracted - in_buf
         if overflow > 0:
-            ctx.resources.water, _ = _push(ctx.resources.water, ctx.caps.water, overflow)
+            ctx.resources.water, _ = _push(
+                ctx.resources.water, ctx.caps[ResourceId.WATER], overflow
+            )
 
     return PowerJob(abs(rate.power) * ctx.scale, run)
 
@@ -206,7 +204,7 @@ def _job_mine(ctx: TickContext, mod: Module) -> PowerJob | None:
     rate = module_def(ModuleKind.MINE).nominal
     if not ctx.world.patch_has_deposit(mod.x, mod.y, Deposit.MINERAL):
         return None
-    space = _output_space(mod, ctx.stock.mineral, ctx.caps.mineral)
+    space = _output_space(mod, ctx.resources.mineral, ctx.caps[ResourceId.MINERAL])
     if space <= 0:
         return None
 
@@ -220,14 +218,16 @@ def _job_mine(ctx: TickContext, mod: Module) -> PowerJob | None:
         in_buf = _try_add_buffer(m, extracted)
         overflow = extracted - in_buf
         if overflow > 0:
-            ctx.stock.mineral, _ = _push(ctx.stock.mineral, ctx.caps.mineral, overflow)
+            ctx.resources.mineral, _ = _push(
+                ctx.resources.mineral, ctx.caps[ResourceId.MINERAL], overflow
+            )
 
     return PowerJob(abs(rate.power) * ctx.scale, run)
 
 
 def _job_greenhouse(ctx: TickContext, mod: Module) -> PowerJob | None:
-    food_space = _output_space(mod, ctx.resources.food, ctx.caps.food)
-    o2_space = max(0.0, ctx.caps.o2 - ctx.resources.o2)
+    food_space = _output_space(mod, ctx.resources.food, ctx.caps[ResourceId.FOOD])
+    o2_space = max(0.0, ctx.caps[ResourceId.O2] - ctx.resources.o2)
     if ctx.resources.water <= 0.0 or (food_space <= 0 and o2_space <= 0):
         return None
     power = abs(module_def(ModuleKind.GREENHOUSE).nominal.power) * ctx.scale
@@ -244,21 +244,25 @@ def _job_greenhouse(ctx: TickContext, mod: Module) -> PowerJob | None:
         ctx.resources.water -= water_need
         if os_ > 0:
             o2_amt = min(GREENHOUSE_O2_DAILY * ctx.scale * f, os_)
-            ctx.resources.o2, _ = _push(ctx.resources.o2, ctx.caps.o2, o2_amt)
+            ctx.resources.o2, _ = _push(ctx.resources.o2, ctx.caps[ResourceId.O2], o2_amt)
         if fs <= 0:
             return
         food_amt = min(GREENHOUSE_FOOD_DAILY * ctx.scale * f, fs)
         in_buf = _try_add_buffer(m, food_amt)
         overflow = food_amt - in_buf
         if overflow > 0:
-            ctx.resources.food, _ = _push(ctx.resources.food, ctx.caps.food, overflow)
+            ctx.resources.food, _ = _push(
+                ctx.resources.food, ctx.caps[ResourceId.FOOD], overflow
+            )
 
     return PowerJob(power, run)
 
 
 def _job_fabricator(ctx: TickContext, mod: Module) -> PowerJob | None:
-    space = _output_space(mod, ctx.stock.components, ctx.caps.components)
-    if space <= 0 or ctx.stock.mineral <= 0:
+    space = _output_space(
+        mod, ctx.resources.components, ctx.caps[ResourceId.COMPONENTS]
+    )
+    if space <= 0 or ctx.resources.mineral <= 0:
         return None
     rate = module_def(ModuleKind.FABRICATOR).nominal
 
@@ -266,22 +270,24 @@ def _job_fabricator(ctx: TickContext, mod: Module) -> PowerJob | None:
         if f <= 0:
             return
         mineral_need = FABRICATOR_MINERAL_DAILY * ctx.scale * f
-        mineral_use = min(mineral_need, ctx.stock.mineral)
+        mineral_use = min(mineral_need, ctx.resources.mineral)
         if mineral_use <= 0:
             return
         ratio = mineral_use / (FABRICATOR_MINERAL_DAILY * ctx.scale) if ctx.scale > 0 else 0.0
-        ctx.stock.mineral -= mineral_use
+        ctx.resources.mineral -= mineral_use
         cmp_amt = min(FABRICATOR_COMPONENTS_DAILY * ctx.scale * ratio, sp)
         in_buf = _try_add_buffer(m, cmp_amt)
         overflow = cmp_amt - in_buf
         if overflow > 0:
-            ctx.stock.components, _ = _push(ctx.stock.components, ctx.caps.components, overflow)
+            ctx.resources.components, _ = _push(
+                ctx.resources.components, ctx.caps[ResourceId.COMPONENTS], overflow
+            )
 
     return PowerJob(abs(rate.power) * ctx.scale, run)
 
 
 def _job_electrolyzer(ctx: TickContext) -> PowerJob | None:
-    o2_space = max(0.0, ctx.caps.o2 - ctx.resources.o2)
+    o2_space = max(0.0, ctx.caps[ResourceId.O2] - ctx.resources.o2)
     if o2_space <= 0.0 or ctx.resources.water <= 0.0:
         return None
     rate = module_def(ModuleKind.ELECTROLYZER).nominal
@@ -297,13 +303,13 @@ def _job_electrolyzer(ctx: TickContext) -> PowerJob | None:
             return
         ctx.resources.water -= water_need
         o2 = min(rate.o2 * ctx.scale * f, sp)
-        ctx.resources.o2, _ = _push(ctx.resources.o2, ctx.caps.o2, o2)
+        ctx.resources.o2, _ = _push(ctx.resources.o2, ctx.caps[ResourceId.O2], o2)
 
     return PowerJob(abs(rate.power) * ctx.scale, run)
 
 
 def _job_condenser(ctx: TickContext) -> PowerJob | None:
-    space = max(0.0, ctx.caps.water - ctx.resources.water)
+    space = max(0.0, ctx.caps[ResourceId.WATER] - ctx.resources.water)
     if space <= 0.0:
         return None
     rate = module_def(ModuleKind.CONDENSER).nominal
@@ -312,9 +318,53 @@ def _job_condenser(ctx: TickContext) -> PowerJob | None:
         if f <= 0.0:
             return
         water = min(rate.water * ctx.scale * f, sp)
-        ctx.resources.water, _ = _push(ctx.resources.water, ctx.caps.water, water)
+        ctx.resources.water, _ = _push(
+            ctx.resources.water, ctx.caps[ResourceId.WATER], water
+        )
 
     return PowerJob(abs(rate.power) * ctx.scale, run)
+
+
+def _job_recycler(ctx: TickContext) -> PowerJob | None:
+    rate = module_def(ModuleKind.RECYCLER).nominal
+    mineral_space = max(0.0, ctx.caps[ResourceId.MINERAL] - ctx.resources.mineral)
+    if mineral_space <= 0.0 or ctx.resources.scrap <= 0.0 or ctx.resources.water <= 0.0:
+        return None
+    power = abs(rate.power) * ctx.scale
+
+    def run(f: float, sp=mineral_space) -> None:
+        if f <= 0.0 or ctx.scale <= 0.0:
+            return
+        scrap_rate = abs(rate.scrap)
+        water_rate = abs(rate.water)
+        mineral_rate = rate.mineral
+        if scrap_rate <= 0.0 or mineral_rate <= 0.0:
+            return
+        factor = f
+        factor = min(factor, ctx.resources.scrap / (scrap_rate * ctx.scale))
+        if water_rate > 0.0:
+            factor = min(factor, ctx.resources.water / (water_rate * ctx.scale))
+        factor = min(factor, sp / (mineral_rate * ctx.scale))
+        if factor <= 0.0:
+            return
+        scrap_use = scrap_rate * ctx.scale * factor
+        water_use = water_rate * ctx.scale * factor
+        mineral = mineral_rate * ctx.scale * factor
+        ctx.resources.scrap = max(0.0, ctx.resources.scrap - scrap_use)
+        ctx.resources.water = max(0.0, ctx.resources.water - water_use)
+        ctx.resources.mineral = min(
+            ctx.caps[ResourceId.MINERAL], ctx.resources.mineral + mineral
+        )
+        comp_space = max(
+            0.0, ctx.caps[ResourceId.COMPONENTS] - ctx.resources.components
+        )
+        components = min(rate.components * ctx.scale * factor, comp_space)
+        ctx.resources.components += components
+        ctx.stats.scrap_processed += scrap_use
+        ctx.stats.mineral_from_scrap += mineral
+        ctx.stats.components_from_scrap += components
+
+    return PowerJob(power, run)
 
 
 def apply_power_jobs(ctx: TickContext, jobs: list[PowerJob]) -> float:
@@ -337,23 +387,25 @@ def flush_module_buffers(ctx: TickContext) -> None:
             continue
         out = defn.buffer_output
         if out == BufferOutput.WATER:
-            ctx.resources.water, moved = _push(ctx.resources.water, ctx.caps.water, mod.buffer)
+            ctx.resources.water, moved = _push(
+                ctx.resources.water, ctx.caps[ResourceId.WATER], mod.buffer
+            )
         elif out == BufferOutput.FOOD:
-            ctx.resources.food, moved = _push(ctx.resources.food, ctx.caps.food, mod.buffer)
+            ctx.resources.food, moved = _push(
+                ctx.resources.food, ctx.caps[ResourceId.FOOD], mod.buffer
+            )
         elif out == BufferOutput.MINERAL:
-            ctx.stock.mineral, moved = _push(ctx.stock.mineral, ctx.caps.mineral, mod.buffer)
+            ctx.resources.mineral, moved = _push(
+                ctx.resources.mineral, ctx.caps[ResourceId.MINERAL], mod.buffer
+            )
         elif out == BufferOutput.COMPONENTS:
-            ctx.stock.components, moved = _push(ctx.stock.components, ctx.caps.components, mod.buffer)
+            ctx.resources.components, moved = _push(
+                ctx.resources.components, ctx.caps[ResourceId.COMPONENTS], mod.buffer
+            )
         else:
             continue
         mod.buffer -= moved
 
 
 def clamp_pools(ctx: TickContext) -> None:
-    r, s, c = ctx.resources, ctx.stock, ctx.caps
-    r.o2 = min(r.o2, c.o2)
-    r.power = min(r.power, c.power)
-    r.water = min(r.water, c.water)
-    r.food = min(r.food, c.food)
-    s.mineral = min(s.mineral, c.mineral)
-    s.components = min(s.components, c.components)
+    ctx.resources.clamp(ctx.caps)

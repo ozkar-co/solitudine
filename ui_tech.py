@@ -9,7 +9,7 @@ from research import has_active_lab
 from simulation import Simulation
 from tech_defs import TECHS, tech_def
 from ui_modals import MODAL_HEIGHT, ModalLine, draw_map_modal
-from ui_theme import COL_CABLE, COL_DIM, COL_TEXT, COL_WARN
+from ui_theme import COL_CABLE, COL_DIM, COL_TEXT, COL_WARN, format_cost_text
 from world import World
 
 
@@ -36,7 +36,10 @@ def draw_tech_screen(
         else:
             status = t("tech.status.locked")
             color = COL_TEXT if is_selected else COL_DIM
-        text = f"{prefix} {status} {t(tech.name_key)}  T{tech.tier}  {tech.cost:.0f} Cmp / {tech.days:.0f}d"
+        text = (
+            f"{prefix} {status} {t(tech.name_key)}  T{tech.tier}  "
+            f"{format_cost_text(tech.cost)} / {tech.days:.0f}d"
+        )
         lines.append(ModalLine(text, color))
 
     lines.append(ModalLine(t(selected.desc_key), COL_DIM))

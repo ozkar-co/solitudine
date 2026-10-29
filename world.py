@@ -12,6 +12,12 @@ from config import (
     HABITAT_Y,
     INITIAL_VISION_RADIUS,
     RADAR_VISION_CLEAR,
+    RUIN_GUARANTEED_SCRAP_MAX,
+    RUIN_GUARANTEED_SCRAP_MIN,
+    RUIN_MAX_PLACEMENT_TRIES,
+    RUIN_PROCEDURAL,
+    RUIN_SCRAP_MAX,
+    RUIN_SCRAP_MIN,
     STARTER_DEP_MINERAL_R,
     STARTER_DEP_MINERAL_X,
     STARTER_DEP_MINERAL_Y,
@@ -32,6 +38,7 @@ from config import (
     WORLD_SIZE,
 )
 from module_kind import ModuleKind
+from resources import Cost
 
 
 class Tile(IntEnum):
@@ -67,6 +74,7 @@ class Module:
     shadow_stamped: bool = False
     clear_active: bool = False
     built_day: int = 0
+    cost_paid: Cost = field(default_factory=Cost.empty)
 
     def __post_init__(self) -> None:
         if self.buffer_cap == 0.0 and self.kind.value not in MODULES_NO_BUFFER:
@@ -84,6 +92,7 @@ class World:
     modules: list[Module] = field(default_factory=list)
     module_cells: dict[tuple[int, int], Module] = field(default_factory=dict)
     cables: set[tuple[int, int]] = field(default_factory=set)
+    ruins: dict[tuple[int, int], float] = field(default_factory=dict)
     size: int = WORLD_SIZE
     expl_min_x: int = WORLD_SIZE
     expl_min_y: int = WORLD_SIZE
@@ -196,6 +205,29 @@ class World:
     def module_at(self, x: int, y: int) -> Module | None:
         return self.module_cells.get((x, y))
 
+    def has_ruin(self, x: int, y: int) -> bool:
+        return self.ruins.get((x, y), 0.0) > 0.0
+
+    def ruin_amount(self, x: int, y: int) -> float:
+        return self.ruins.get((x, y), 0.0)
+
+    def add_ruin(self, x: int, y: int, amount: float) -> None:
+        if amount <= 0.0 or not self.in_bounds(x, y):
+            return
+        self.ruins[(x, y)] = self.ruins.get((x, y), 0.0) + amount
+
+    def take_ruin(self, x: int, y: int, amount: float) -> float:
+        available = self.ruin_amount(x, y)
+        taken = min(available, max(0.0, amount))
+        if taken <= 0.0:
+            return 0.0
+        remaining = available - taken
+        if remaining <= 0.0:
+            self.ruins.pop((x, y), None)
+        else:
+            self.ruins[(x, y)] = remaining
+        return taken
+
     def radar_scan_at(self, x: int, y: int) -> bool:
         r2 = RADAR_VISION_CLEAR * RADAR_VISION_CLEAR
         for mod in self.modules:
@@ -261,6 +293,7 @@ def generate_world(seed: str = WORLD_SEED) -> World:
     deposit_amounts = [0.0] * n
     explored = bytearray(n)
     visible = bytearray(n)
+    ruins: dict[tuple[int, int], float] = {}
 
     for _ in range(55):
         _paint_blob(
@@ -280,6 +313,7 @@ def generate_world(seed: str = WORLD_SEED) -> World:
         _paint_deposit(deposits, deposit_amounts, tiles, size, rng, Deposit.MINERAL, blob_r=rng.randint(3, 8))
 
     _guarantee_starter_patches(tiles, deposits, deposit_amounts, size)
+    _generate_ruins(ruins, tiles, deposits, deposit_amounts, size, rng)
 
     from vision import init_habitat, make_visible_count
 
@@ -290,6 +324,7 @@ def generate_world(seed: str = WORLD_SEED) -> World:
         explored=explored,
         visible=visible,
         visible_count=make_visible_count(n),
+        ruins=ruins,
         size=size,
     )
     hab = Module(ModuleKind.HABITAT, HABITAT_X, HABITAT_Y)
@@ -376,6 +411,67 @@ def _paint_disc_deposit(
             if tiles[i] == Tile.GROUND:
                 deposits[i] = kind
                 deposit_amounts[i] = amount_per_tile
+
+
+def _ruin_tile_ok(
+    tiles: list[int],
+    deposits: list[int],
+    deposit_amounts: list[float],
+    size: int,
+    x: int,
+    y: int,
+) -> bool:
+    if not (0 <= x < size and 0 <= y < size):
+        return False
+    if (x, y) == (HABITAT_X, HABITAT_Y):
+        return False
+    i = y * size + x
+    return tiles[i] == Tile.GROUND and deposits[i] == Deposit.NONE and deposit_amounts[i] <= 0.0
+
+
+def _find_ruin_near(
+    ruins: dict[tuple[int, int], float],
+    tiles: list[int],
+    deposits: list[int],
+    deposit_amounts: list[float],
+    size: int,
+    cx: int,
+    cy: int,
+) -> tuple[int, int] | None:
+    for radius in range(3, 14):
+        for dy in range(-radius, radius + 1):
+            for dx in range(-radius, radius + 1):
+                if max(abs(dx), abs(dy)) != radius:
+                    continue
+                x, y = cx + dx, cy + dy
+                if (x, y) not in ruins and _ruin_tile_ok(tiles, deposits, deposit_amounts, size, x, y):
+                    return x, y
+    return None
+
+
+def _generate_ruins(
+    ruins: dict[tuple[int, int], float],
+    tiles: list[int],
+    deposits: list[int],
+    deposit_amounts: list[float],
+    size: int,
+    rng: random.Random,
+) -> None:
+    for _ in range(2):
+        spot = _find_ruin_near(ruins, tiles, deposits, deposit_amounts, size, HABITAT_X, HABITAT_Y)
+        if spot is None:
+            break
+        ruins[spot] = rng.uniform(RUIN_GUARANTEED_SCRAP_MIN, RUIN_GUARANTEED_SCRAP_MAX)
+
+    target = 2 + RUIN_PROCEDURAL
+    for _ in range(RUIN_MAX_PLACEMENT_TRIES):
+        if len(ruins) >= target:
+            break
+        x = rng.randrange(size)
+        y = rng.randrange(size)
+        if (x, y) in ruins or not _ruin_tile_ok(tiles, deposits, deposit_amounts, size, x, y):
+            continue
+        ruins[(x, y)] = rng.uniform(RUIN_SCRAP_MIN, RUIN_SCRAP_MAX)
 
 
 def _guarantee_starter_patches(

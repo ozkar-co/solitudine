@@ -22,6 +22,7 @@ ICON_NAMES = (
     "power",
     "components",
     "mineral",
+    "scrap",
     "biomass",
     "chitin",
     "alloy",
@@ -33,6 +34,8 @@ _modules: dict[ModuleKind, pygame.Surface] = {}
 _icons: dict[str, pygame.Surface] = {}
 _tile_cache: dict[tuple[Tile, int, int], pygame.Surface] = {}
 _module_cache: dict[tuple[ModuleKind, int], pygame.Surface] = {}
+_ruin: pygame.Surface | None = None
+_ruin_cache: dict[int, pygame.Surface] = {}
 _font_sm: pygame.font.Font | None = None
 _font_lg: pygame.font.Font | None = None
 _easter_egg: pygame.Surface | None = None
@@ -46,7 +49,7 @@ def _load_image(path: Path) -> pygame.Surface:
 
 def load() -> None:
     """Carga todos los assets. Debe llamarse después de create_display()."""
-    global _font_sm, _font_lg, _easter_egg
+    global _font_sm, _font_lg, _easter_egg, _ruin
 
     _easter_egg = None
 
@@ -55,6 +58,8 @@ def load() -> None:
         if not paths:
             raise FileNotFoundError(f"Faltan tiles para {name}: {ASSETS_DIR / 'tiles'}")
         _tiles[tile] = [_load_image(p) for p in paths]
+
+    _ruin = _load_image(ASSETS_DIR / "tiles" / "ruin_00.png")
 
     for kind in ModuleKind:
         _modules[kind] = _load_image(ASSETS_DIR / "modules" / f"{kind.value}.png")
@@ -108,6 +113,17 @@ def module(kind: ModuleKind, px: int) -> pygame.Surface:
     if cached is None:
         cached = pygame.transform.scale(base, (px, px))
         _module_cache[key] = cached
+    return cached
+
+
+def ruin(px: int) -> pygame.Surface:
+    assert _ruin is not None, "assets.load() no fue llamado"
+    if px == _ruin.get_width():
+        return _ruin
+    cached = _ruin_cache.get(px)
+    if cached is None:
+        cached = pygame.transform.scale(_ruin, (px, px))
+        _ruin_cache[px] = cached
     return cached
 
 

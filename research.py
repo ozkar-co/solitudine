@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from materials import Stockpile
 from module_defs import module_active
 from module_kind import ModuleKind
 from network import get_connected
+from resources import ResourcePool
 from tech_defs import TECHS, TechDef
 from world import World
 
@@ -39,12 +39,12 @@ class ResearchState:
     def select(self, delta: int) -> None:
         self.selected = (self.selected + delta) % len(TECHS)
 
-    def start(self, tech: TechDef, stock: Stockpile, has_lab: bool) -> bool:
+    def start(self, tech: TechDef, resources: ResourcePool, has_lab: bool) -> bool:
         if self.active is not None or not has_lab:
             return False
         if tech.id in self.unlocked or not set(tech.prereqs).issubset(self.unlocked):
             return False
-        if not stock.spend(tech.cost):
+        if not tech.cost.spend(resources):
             return False
         self.active = tech.id
         self.progress = 0.0

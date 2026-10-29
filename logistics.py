@@ -2,18 +2,8 @@
 
 from __future__ import annotations
 
-from config import (
-    HABITAT_COMPONENTS_CAP,
-    HABITAT_FOOD_CAP,
-    HABITAT_MINERAL_CAP,
-    HABITAT_O2_CAP,
-    HABITAT_POWER_CAP,
-    HABITAT_WATER_CAP,
-)
-from materials import Stockpile
 from module_defs import ModuleKind, module_active, module_def
 from module_tick import (
-    NetworkCaps,
     TickContext,
     apply_power_jobs,
     clamp_pools,
@@ -22,13 +12,14 @@ from module_tick import (
     tick_solar_production,
 )
 from network import get_connected
-from resources import ResourcePool
+from resources import RESOURCES, ResourceId, ResourcePool
+from stats import Stats
 from world import World
 
 
 class SimulationProxy:
     resources: ResourcePool
-    stock: Stockpile
+    stats: Stats
 
 
 def storage_bonus(world: World, connected: set[tuple[int, int]]) -> float:
@@ -41,18 +32,17 @@ def storage_bonus(world: World, connected: set[tuple[int, int]]) -> float:
     )
 
 
-def network_caps(world: World, connected: set[tuple[int, int]] | None = None) -> NetworkCaps:
+def network_caps(
+    world: World,
+    connected: set[tuple[int, int]] | None = None,
+) -> dict[ResourceId, float]:
     if connected is None:
         connected = get_connected(world)
     bonus = storage_bonus(world, connected)
-    return NetworkCaps(
-        o2=HABITAT_O2_CAP + bonus,
-        power=HABITAT_POWER_CAP + bonus,
-        water=HABITAT_WATER_CAP + bonus,
-        food=HABITAT_FOOD_CAP + bonus,
-        mineral=HABITAT_MINERAL_CAP + bonus,
-        components=HABITAT_COMPONENTS_CAP + bonus,
-    )
+    return {
+        defn.id: defn.base_cap + (bonus if defn.storage_bonus else 0.0)
+        for defn in RESOURCES
+    }
 
 
 def apply_modules_dt(
@@ -68,7 +58,7 @@ def apply_modules_dt(
     ctx = TickContext(
         world=world,
         resources=sim.resources,
-        stock=sim.stock,
+        stats=sim.stats,
         caps=caps,
         connected=connected,
         scale=scale,

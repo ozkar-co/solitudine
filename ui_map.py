@@ -192,6 +192,9 @@ def draw_map(
                 if overlay is not None:
                     surf.blit(_tint_overlay(overlay, tile_rect.w), tile_rect.topleft)
 
+            if world.has_ruin(tx, ty):
+                surf.blit(ui_assets.ruin(tile_rect.w), tile_rect.topleft)
+
             if natural < 0.999:
                 level = tile_level(tx, ty, natural, sources)
                 pattern = dither_pattern(level, tile_rect.w)
@@ -219,7 +222,7 @@ def draw_map(
         )
         cr = _tile_draw_rect(csx, csy, px)
         if rect.colliderect(cr):
-            preview = build.preview(world, sim.stock, cursor_x, cursor_y)
+            preview = build.preview(world, sim.resources, cursor_x, cursor_y)
             ok = preview == BuildPreview.OK
             pygame.draw.rect(surf, COL_PREVIEW_OK if ok else COL_PREVIEW_BAD, cr, 2)
 

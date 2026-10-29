@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 
 from config import (
@@ -15,6 +15,7 @@ from config import (
     BUILD_DAYS_LAMP,
     BUILD_DAYS_MINE,
     BUILD_DAYS_RADAR,
+    BUILD_DAYS_RECYCLER,
     BUILD_DAYS_SOLAR,
     BUILD_DAYS_STORAGE,
     COST_CABLE,
@@ -27,6 +28,7 @@ from config import (
     COST_LAMP,
     COST_MINE,
     COST_RADAR,
+    COST_RECYCLER,
     COST_SOLAR,
     COST_STORAGE,
     EXTRACTOR_POWER_DAILY,
@@ -56,12 +58,18 @@ from config import (
     MINE_POWER_DAILY,
     MODULE_BUFFER_CAP,
     RADAR_POWER_DAILY,
+    RECYCLER_COMPONENTS_DAILY,
+    RECYCLER_MINERAL_DAILY,
+    RECYCLER_POWER_DAILY,
+    RECYCLER_SCRAP_DAILY,
+    RECYCLER_WATER_DAILY,
     SOLAR_HOUR_END,
     SOLAR_HOUR_START,
     SOLAR_POWER_DAILY,
     STORAGE_NETWORK_BONUS,
 )
 from module_kind import ModuleKind
+from resources import Cost
 from world import Deposit, Module, ModuleState, World
 from daylight import darkness
 
@@ -83,13 +91,14 @@ class ResourceFlow:
     food: float = 0.0
     mineral: float = 0.0
     components: float = 0.0
+    scrap: float = 0.0
 
 
 @dataclass(frozen=True)
 class ModuleDef:
     kind: ModuleKind
     nominal: ResourceFlow
-    cost: float = 0.0
+    cost: Cost = field(default_factory=Cost.empty)
     build_days: float = 0.0
     has_buffer: bool = False
     buffer_output: BufferOutput | None = None
@@ -118,20 +127,20 @@ MODULE_DEFS: dict[ModuleKind, ModuleDef] = {
     ModuleKind.SOLAR: ModuleDef(
         kind=ModuleKind.SOLAR,
         nominal=ResourceFlow(power=SOLAR_POWER_DAILY),
-        cost=COST_SOLAR,
+        cost=Cost(COST_SOLAR),
         build_days=BUILD_DAYS_SOLAR,
         solar_producer=True,
     ),
     ModuleKind.RADAR: ModuleDef(
         kind=ModuleKind.RADAR,
         nominal=ResourceFlow(power=-RADAR_POWER_DAILY),
-        cost=COST_RADAR,
+        cost=Cost(COST_RADAR),
         build_days=BUILD_DAYS_RADAR,
     ),
     ModuleKind.EXTRACTOR: ModuleDef(
         kind=ModuleKind.EXTRACTOR,
         nominal=ResourceFlow(power=-EXTRACTOR_POWER_DAILY, water=EXTRACTOR_WATER_DAILY),
-        cost=COST_EXTRACTOR,
+        cost=Cost(COST_EXTRACTOR),
         build_days=BUILD_DAYS_EXTRACTOR,
         has_buffer=True,
         buffer_output=BufferOutput.WATER,
@@ -145,7 +154,7 @@ MODULE_DEFS: dict[ModuleKind, ModuleDef] = {
             food=GREENHOUSE_FOOD_DAILY,
             o2=GREENHOUSE_O2_DAILY,
         ),
-        cost=COST_GREENHOUSE,
+        cost=Cost(COST_GREENHOUSE),
         build_days=BUILD_DAYS_GREENHOUSE,
         has_buffer=True,
         buffer_output=BufferOutput.FOOD,
@@ -153,7 +162,7 @@ MODULE_DEFS: dict[ModuleKind, ModuleDef] = {
     ModuleKind.MINE: ModuleDef(
         kind=ModuleKind.MINE,
         nominal=ResourceFlow(power=-MINE_POWER_DAILY, mineral=MINE_MINERAL_DAILY),
-        cost=COST_MINE,
+        cost=Cost(COST_MINE),
         build_days=BUILD_DAYS_MINE,
         has_buffer=True,
         buffer_output=BufferOutput.MINERAL,
@@ -166,7 +175,7 @@ MODULE_DEFS: dict[ModuleKind, ModuleDef] = {
             mineral=-FABRICATOR_MINERAL_DAILY,
             components=FABRICATOR_COMPONENTS_DAILY,
         ),
-        cost=COST_FABRICATOR,
+        cost=Cost(COST_FABRICATOR),
         build_days=BUILD_DAYS_FABRICATOR,
         has_buffer=True,
         buffer_output=BufferOutput.COMPONENTS,
@@ -174,7 +183,7 @@ MODULE_DEFS: dict[ModuleKind, ModuleDef] = {
     ModuleKind.STORAGE: ModuleDef(
         kind=ModuleKind.STORAGE,
         nominal=ResourceFlow(),
-        cost=COST_STORAGE,
+        cost=Cost(COST_STORAGE),
         build_days=BUILD_DAYS_STORAGE,
         storage_cap_bonus=STORAGE_NETWORK_BONUS,
         can_toggle=False,
@@ -182,14 +191,14 @@ MODULE_DEFS: dict[ModuleKind, ModuleDef] = {
     ModuleKind.LAMP: ModuleDef(
         kind=ModuleKind.LAMP,
         nominal=ResourceFlow(power=-LAMP_POWER_DAILY),
-        cost=COST_LAMP,
+        cost=Cost(COST_LAMP),
         build_days=BUILD_DAYS_LAMP,
         light_radius=LAMP_LIGHT_RADIUS,
     ),
     ModuleKind.LABORATORY: ModuleDef(
         kind=ModuleKind.LABORATORY,
         nominal=ResourceFlow(power=-LABORATORY_POWER_DAILY),
-        cost=COST_LABORATORY,
+        cost=Cost(COST_LABORATORY),
         build_days=BUILD_DAYS_LABORATORY,
         special_action="research",
     ),
@@ -200,14 +209,26 @@ MODULE_DEFS: dict[ModuleKind, ModuleDef] = {
             water=-ELECTROLYZER_WATER_DAILY,
             o2=ELECTROLYZER_O2_DAILY,
         ),
-        cost=COST_ELECTROLYZER,
+        cost=Cost(COST_ELECTROLYZER),
         build_days=BUILD_DAYS_ELECTROLYZER,
     ),
     ModuleKind.CONDENSER: ModuleDef(
         kind=ModuleKind.CONDENSER,
         nominal=ResourceFlow(power=-CONDENSER_POWER_DAILY, water=CONDENSER_WATER_DAILY),
-        cost=COST_CONDENSER,
+        cost=Cost(COST_CONDENSER),
         build_days=BUILD_DAYS_CONDENSER,
+    ),
+    ModuleKind.RECYCLER: ModuleDef(
+        kind=ModuleKind.RECYCLER,
+        nominal=ResourceFlow(
+            power=-RECYCLER_POWER_DAILY,
+            water=-RECYCLER_WATER_DAILY,
+            scrap=-RECYCLER_SCRAP_DAILY,
+            mineral=RECYCLER_MINERAL_DAILY,
+            components=RECYCLER_COMPONENTS_DAILY,
+        ),
+        cost=Cost(COST_RECYCLER),
+        build_days=BUILD_DAYS_RECYCLER,
     ),
 }
 
@@ -223,9 +244,10 @@ BUILDABLE_KINDS: tuple[ModuleKind, ...] = (
     ModuleKind.LABORATORY,
     ModuleKind.ELECTROLYZER,
     ModuleKind.CONDENSER,
+    ModuleKind.RECYCLER,
 )
 
-CABLE_COST = COST_CABLE
+CABLE_COST = Cost(COST_CABLE)
 
 _FLOW_KEYS: tuple[tuple[str, str, str], ...] = (
     ("o2", "flow.o2", "flow.o2_use"),
@@ -233,6 +255,7 @@ _FLOW_KEYS: tuple[tuple[str, str, str], ...] = (
     ("food", "flow.food", "flow.food_use"),
     ("mineral", "flow.mineral", "flow.mineral_use"),
     ("components", "flow.components", "flow.components"),
+    ("scrap", "flow.scrap", "flow.scrap_use"),
 )
 
 

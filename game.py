@@ -30,6 +30,7 @@ from ui import (
     draw_bottom_bar,
     draw_build_menu_modal,
     draw_credits_modal,
+    draw_demolish_modal,
     draw_easter_egg,
     draw_dev_debug,
     draw_game_over,
@@ -239,6 +240,7 @@ def run(dev: bool = False, handheld: bool = False, scale: int = 1) -> int:
             game_over=sim.game_over,
             user_paused=sim.user_paused,
             tech_open=sim.research.open,
+            demolish_open=sim.demolish is not None,
         )
         sim.paused = policy.pause_time
 
@@ -260,6 +262,8 @@ def run(dev: bool = False, handheld: bool = False, scale: int = 1) -> int:
             continue
         layer = input_result.layer
         select_x, select_y = input_result.select_x, input_result.select_y
+        if input_result.save_requested:
+            save_now()
         pause_modal = not sim.game_over and sim.user_paused
 
         if not was_paused and sim.user_paused:
@@ -375,6 +379,8 @@ def run(dev: bool = False, handheld: bool = False, scale: int = 1) -> int:
                 draw_pause_modal(screen, font, font_sm, sim)
         elif build.mode == BuildMode.MENU:
             draw_build_menu_modal(screen, font, font_sm, sim, world)
+        elif sim.demolish is not None:
+            draw_demolish_modal(screen, font, font_sm, sim, world)
 
         if sim.easter_egg_open:
             draw_easter_egg(screen)

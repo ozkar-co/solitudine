@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from resources import AlertLevel
+from i18n import t
+from resources import RESOURCE_BY_ID, AlertLevel, Cost
 from world import Deposit, Tile
 
 from ui_layout import map_rect, panel_rect
@@ -55,3 +56,11 @@ def format_days(days: float) -> str:
     if days >= 100:
         return "99+d"
     return f"{days:.1f}d"
+
+
+def format_cost_text(cost: Cost) -> str:
+    parts = []
+    for resource, amount in cost.items():
+        defn = RESOURCE_BY_ID[resource]
+        parts.append(f"{format_amount(amount)} {t(defn.short_key)}")
+    return " + ".join(parts)

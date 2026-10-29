@@ -32,7 +32,7 @@ from module_defs import (
 from module_flow import module_flow_lines
 from module_power import format_energy_daily, module_energy_daily
 from network import get_connected
-from resources import AlertLevel, ResourceId
+from resources import RESOURCE_BY_ID, RESOURCES, AlertLevel, ResourceId
 from simulation import Simulation
 import ui_assets
 from ui_map import MapLayer
@@ -129,16 +129,16 @@ def _module_status_key(mod, sim: Simulation, world: World, caps) -> str:
         if not world.patch_has_deposit(mod.x, mod.y, dep):
             return "status.no_deposit"
         if kind == ModuleKind.EXTRACTOR:
-            space = _output_space(sim.resources.water, caps.water, mod)
+            space = _output_space(sim.resources.water, caps[ResourceId.WATER], mod)
         else:
-            space = _output_space(sim.stock.mineral, caps.mineral, mod)
+            space = _output_space(sim.resources.mineral, caps[ResourceId.MINERAL], mod)
         if space <= 0.0:
             return "status.no_output"
         return "status.producing"
 
     if kind == ModuleKind.GREENHOUSE:
-        food_space = _output_space(sim.resources.food, caps.food, mod)
-        o2_space = max(0.0, caps.o2 - sim.resources.o2)
+        food_space = _output_space(sim.resources.food, caps[ResourceId.FOOD], mod)
+        o2_space = max(0.0, caps[ResourceId.O2] - sim.resources.o2)
         if sim.resources.water <= 0.0:
             return "status.no_water"
         if food_space <= 0.0 and o2_space <= 0.0:
@@ -148,29 +148,38 @@ def _module_status_key(mod, sim: Simulation, world: World, caps) -> str:
         return "status.producing"
 
     if kind == ModuleKind.FABRICATOR:
-        if sim.stock.mineral <= 0.0:
+        if sim.resources.mineral <= 0.0:
             return "status.no_mineral"
-        if _output_space(sim.stock.components, caps.components, mod) <= 0.0:
+        if _output_space(sim.resources.components, caps[ResourceId.COMPONENTS], mod) <= 0.0:
             return "status.no_output"
         return "status.producing"
 
     if kind == ModuleKind.ELECTROLYZER:
         if sim.resources.water <= 0.0:
             return "status.no_water"
-        if sim.resources.o2 >= caps.o2:
+        if sim.resources.o2 >= caps[ResourceId.O2]:
             return "status.o2_full"
         return "status.producing"
 
     if kind == ModuleKind.CONDENSER:
-        if sim.resources.water >= caps.water:
+        if sim.resources.water >= caps[ResourceId.WATER]:
             return "status.water_full"
         return "status.producing"
+
+    if kind == ModuleKind.RECYCLER:
+        if sim.resources.scrap <= 0.0:
+            return "status.no_scrap"
+        if sim.resources.water <= 0.0:
+            return "status.no_water"
+        if sim.resources.mineral >= caps[ResourceId.MINERAL]:
+            return "status.no_output"
+        return "status.recycling"
 
     if kind == ModuleKind.SOLAR:
         hour = sim.day_progress * HOURS_PER_DAY
         if not (SOLAR_HOUR_START <= hour < SOLAR_HOUR_END):
             return "status.night"
-        if sim.resources.power >= caps.power:
+        if sim.resources.power >= caps[ResourceId.POWER]:
             return "status.power_full"
         return "status.producing"
 
@@ -197,6 +206,7 @@ def _status_color(key: str) -> tuple[int, int, int]:
         "status.low_power",
         "status.no_water",
         "status.no_mineral",
+        "status.no_scrap",
         "status.no_deposit",
         "status.o2_only",
     ):
@@ -258,6 +268,7 @@ def _build_kind_label(kind: BuildKind) -> str:
         BuildKind.LABORATORY: t("build.laboratory"),
         BuildKind.ELECTROLYZER: t("build.electrolyzer"),
         BuildKind.CONDENSER: t("build.condenser"),
+        BuildKind.RECYCLER: t("build.recycler"),
     }[kind]
 
 
@@ -268,22 +279,21 @@ def _draw_build_resources(
     y: int,
     sim: Simulation,
 ) -> int:
-    resources = (
-        ("o2", sim.resources.o2, ResourceId.O2),
-        ("water", sim.resources.water, ResourceId.WATER),
-        ("food", sim.resources.food, ResourceId.FOOD),
-        ("power", sim.resources.power, ResourceId.POWER),
-        ("mineral", sim.stock.mineral, None),
-        ("components", sim.stock.components, None),
-    )
-    for icon_name, amount, resource in resources:
+    for defn in RESOURCES:
         color = COL_TEXT
-        if resource is not None:
-            level = sim.resources.alert_level(resource)
+        if defn.alert:
+            level = sim.resources.alert_level(defn.id)
             if level != AlertLevel.OK:
                 color = alert_color(level)
-        surf.blit(ui_assets.icon(icon_name), (rect.x + 8, y))
-        _panel_line(surf, font_sm, rect.x + 28, y, format_amount(amount), color)
+        surf.blit(ui_assets.icon(defn.icon), (rect.x + 8, y))
+        _panel_line(
+            surf,
+            font_sm,
+            rect.x + 28,
+            y,
+            format_amount(sim.resources.amount(defn.id)),
+            color,
+        )
         y += 16
     return y
 
@@ -304,15 +314,16 @@ def _draw_build_place(
     y += 26
     _panel_line(surf, font_sm, rect.x + 8, y, _build_kind_label(build.selected))
     y += 18
-    surf.blit(ui_assets.icon("components"), (rect.x + 8, y))
-    _panel_line(
-        surf,
-        font_sm,
-        rect.x + 28,
-        y,
-        t("build.cost", value=format_amount(kind_cost(build.selected))),
-    )
-    y += 16
+    cost = kind_cost(build.selected)
+    _panel_line(surf, font_sm, rect.x + 8, y, t("build.cost_label"), COL_DIM)
+    cx = rect.x + 52
+    for resource, amount in cost.items():
+        defn = RESOURCE_BY_ID[resource]
+        surf.blit(ui_assets.icon(defn.icon), (cx, y))
+        text = font_sm.render(format_amount(amount), False, COL_TEXT)
+        surf.blit(text, (cx + 18, y))
+        cx += 18 + text.get_width() + 6
+    y += 18
     y = _draw_build_resources(surf, font_sm, rect, y, sim)
     days = kind_build_days(build.selected)
     if days > 0:
@@ -324,7 +335,7 @@ def _draw_build_place(
             _panel_line(surf, font_sm, rect.x + 8, y, t("build.light_radius", radius=radius))
             y += 16
     if world.in_bounds(cursor_x, cursor_y):
-        preview = build.preview(world, sim.stock, cursor_x, cursor_y)
+        preview = build.preview(world, sim.resources, cursor_x, cursor_y)
         ok = preview == BuildPreview.OK
         color = COL_PREVIEW_OK if ok else COL_PREVIEW_BAD
         _panel_line(surf, font_sm, rect.x + 8, y, t("panel.coords", x=cursor_x, y=cursor_y), color)
@@ -375,6 +386,7 @@ def _draw_module_inspection(
             ("food", "resource.food"),
             ("mineral", "resource.mineral"),
             ("components", "resource.components"),
+            ("scrap", "resource.scrap"),
         )
         if abs(value := getattr(flow, field)) >= 0.05
     ]
@@ -388,6 +400,25 @@ def _draw_module_inspection(
             y,
             f"{sign} {t(key)} {abs(value):.1f}/d",
             COL_TEXT if value > 0.0 else COL_DIM,
+        )
+        y += 16
+    if mod.kind == ModuleKind.RECYCLER:
+        _panel_line(
+            surf,
+            font_sm,
+            x,
+            y,
+            t("panel.scrap_processed", value=format_amount(sim.stats.scrap_processed)),
+            COL_DIM,
+        )
+        y += 16
+        _panel_line(
+            surf,
+            font_sm,
+            x,
+            y,
+            t("panel.scrap_mineral", value=format_amount(sim.stats.mineral_from_scrap)),
+            COL_DIM,
         )
         y += 16
     radius = module_def(mod.kind).light_radius
@@ -475,19 +506,13 @@ def _draw_resource_panel(
     y += 26
 
     nc = network_caps(world, get_connected(world))
-    resources = (
-        ("o2", ResourceId.O2, sim.resources.o2, nc.o2),
-        ("water", ResourceId.WATER, sim.resources.water, nc.water),
-        ("food", ResourceId.FOOD, sim.resources.food, nc.food),
-        ("power", ResourceId.POWER, sim.resources.power, nc.power),
-        ("mineral", None, sim.stock.mineral, nc.mineral),
-        ("components", None, sim.stock.components, nc.components),
-    )
-    for icon_name, resource, amount, cap in resources:
-        level = sim.resources.alert_level(resource) if resource is not None else None
+    for defn in RESOURCES:
+        amount = sim.resources.amount(defn.id)
+        cap = nc[defn.id]
+        level = sim.resources.alert_level(defn.id) if defn.alert else None
         color = alert_color(level) if level is not None else COL_DIM
-        surf.blit(ui_assets.icon(icon_name), (rect.x + 8, y))
-        text = f"{t(f'resource.{icon_name}')} {format_amount(amount)}/{format_amount(cap)}"
+        surf.blit(ui_assets.icon(defn.icon), (rect.x + 8, y))
+        text = f"{t(defn.name_key)} {format_amount(amount)}/{format_amount(cap)}"
         _panel_line(surf, font_sm, rect.x + 28, y, text, color)
         y += 18
 
@@ -539,6 +564,21 @@ def draw_panel(
 
     _panel_line(surf, font_sm, rect.x + 8, y, t("panel.coords", x=sel_x, y=sel_y))
     y += 18
+
+    if world.has_ruin(sel_x, sel_y):
+        _panel_line(surf, font_sm, rect.x + 8, y, t("panel.ruin"), COL_WARN)
+        y += 16
+        _panel_line(
+            surf,
+            font_sm,
+            rect.x + 8,
+            y,
+            t("panel.ruin_scrap", value=format_amount(world.ruin_amount(sel_x, sel_y))),
+            COL_DIM,
+        )
+        y += 16
+        _panel_wrapped(surf, font_sm, rect.x + 8, y, t("panel.ruin_hint"), rect.w - 16, COL_DIM)
+        return
 
     if (sel_x, sel_y) in world.cables:
         _panel_line(surf, font_sm, rect.x + 8, y, t("panel.cable"))

@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from config import COST_TECH_CONDENSADOR, COST_TECH_ELECTROLISIS, COST_TECH_RECICLAJE
 from module_kind import ModuleKind
+from resources import Cost
 
 
 @dataclass(frozen=True)
@@ -14,7 +16,7 @@ class TechDef:
     desc_key: str
     branch_key: str
     tier: int
-    cost: float
+    cost: Cost
     days: float
     prereqs: tuple[str, ...] = ()
     unlock_kind: ModuleKind | None = None
@@ -27,7 +29,7 @@ TECHS: tuple[TechDef, ...] = (
         desc_key="tech.electrolisis_desc",
         branch_key="tech.branch.support",
         tier=1,
-        cost=4.0,
+        cost=Cost(COST_TECH_ELECTROLISIS),
         days=1.5,
         unlock_kind=ModuleKind.ELECTROLYZER,
     ),
@@ -37,9 +39,19 @@ TECHS: tuple[TechDef, ...] = (
         desc_key="tech.condensador_desc",
         branch_key="tech.branch.support",
         tier=1,
-        cost=4.0,
+        cost=Cost(COST_TECH_CONDENSADOR),
         days=1.5,
         unlock_kind=ModuleKind.CONDENSER,
+    ),
+    TechDef(
+        id="reciclaje",
+        name_key="tech.reciclaje",
+        desc_key="tech.reciclaje_desc",
+        branch_key="tech.branch.industry",
+        tier=1,
+        cost=Cost(COST_TECH_RECICLAJE),
+        days=2.0,
+        unlock_kind=ModuleKind.RECYCLER,
     ),
 )
 

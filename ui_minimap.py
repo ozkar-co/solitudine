@@ -98,6 +98,13 @@ def draw_minimap(
         if 0 <= mx < _MINIMAP_PX and 0 <= my < _MINIMAP_PX:
             screen.set_at((x + mx, y + my), COL_CABLE)
 
+    for rx, ry in world.ruins:
+        if not world.explored[world.idx(rx, ry)]:
+            continue
+        mx, my = _project(rx, ry)
+        if 0 <= mx < _MINIMAP_PX and 0 <= my < _MINIMAP_PX:
+            screen.set_at((x + mx, y + my), (170, 130, 80))
+
     for mod in world.modules:
         mx, my = _project(mod.x, mod.y)
         if 0 <= mx < _MINIMAP_PX and 0 <= my < _MINIMAP_PX:

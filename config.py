@@ -54,12 +54,15 @@ HABITAT_WATER_CAP = 100.0
 HABITAT_FOOD_CAP = 80.0
 HABITAT_MINERAL_CAP = 40.0
 HABITAT_COMPONENTS_CAP = 80.0
+HABITAT_SCRAP_CAP = 30.0
 
 MODULE_BUFFER_CAP = 10.0
 STORAGE_NETWORK_BONUS = 40.0
 
 # Módulos que envían producción directo a la red (sin buffer local)
-MODULES_NO_BUFFER = frozenset({"habitat", "solar", "radar", "storage", "lamp", "laboratory", "electrolyzer", "condenser"})
+MODULES_NO_BUFFER = frozenset(
+    {"habitat", "solar", "radar", "storage", "lamp", "laboratory", "electrolyzer", "condenser", "recycler"}
+)
 
 ALERT_WARNING_DAYS = 3.0
 ALERT_CRITICAL_DAYS = 1.0
@@ -74,19 +77,25 @@ RESOURCE_RATE_EPSILON = 0.05
 # Equipaje del astronauta — primeros módulos + margen para cablear y probar
 INITIAL_COMPONENTS = 60.0
 
-# Costes de construcción (balanceados para progresión con 60 Cmp iniciales)
-COST_CABLE = 1.0
-COST_SOLAR = 5.0
-COST_RADAR = 8.0
-COST_EXTRACTOR = 6.0
-COST_GREENHOUSE = 8.0
-COST_MINE = 4.0
-COST_FABRICATOR = 6.0
-COST_STORAGE = 5.0
-COST_LAMP = 6.0
-COST_LABORATORY = 8.0
-COST_ELECTROLYZER = 6.0
-COST_CONDENSER = 8.0
+# Costes de construcción multi-material: id de recurso -> cantidad
+COST_CABLE = {"components": 1.0}
+COST_SOLAR = {"components": 5.0}
+COST_RADAR = {"components": 8.0}
+COST_EXTRACTOR = {"components": 6.0}
+COST_GREENHOUSE = {"components": 8.0}
+COST_MINE = {"components": 4.0}
+COST_FABRICATOR = {"components": 5.0, "mineral": 2.0}
+COST_STORAGE = {"components": 5.0}
+COST_LAMP = {"components": 6.0}
+COST_LABORATORY = {"components": 8.0}
+COST_ELECTROLYZER = {"components": 6.0}
+COST_CONDENSER = {"components": 8.0}
+COST_RECYCLER = {"components": 3.0}
+
+# Costes de investigación
+COST_TECH_ELECTROLISIS = {"components": 4.0}
+COST_TECH_CONDENSADOR = {"components": 4.0}
+COST_TECH_RECICLAJE = {"scrap": 5.0, "components": 2.0, "mineral": 1.0}
 
 BUILD_DAYS_SOLAR = 1.0
 BUILD_DAYS_RADAR = 1.5
@@ -99,6 +108,7 @@ BUILD_DAYS_LAMP = 1.0
 BUILD_DAYS_LABORATORY = 1.5
 BUILD_DAYS_ELECTROLYZER = 1.0
 BUILD_DAYS_CONDENSER = 1.5
+BUILD_DAYS_RECYCLER = 0.5
 
 # Producción / consumo de módulos (por día)
 SOLAR_POWER_DAILY = 12.0
@@ -121,6 +131,14 @@ ELECTROLYZER_WATER_DAILY = 6.0
 ELECTROLYZER_O2_DAILY = 8.0
 CONDENSER_POWER_DAILY = 6.0
 CONDENSER_WATER_DAILY = 8.0
+RECYCLER_POWER_DAILY = 1.0
+RECYCLER_WATER_DAILY = 0.5
+RECYCLER_SCRAP_DAILY = 4.0
+RECYCLER_MINERAL_DAILY = 3.6
+RECYCLER_COMPONENTS_DAILY = 0.2
+
+# Equivalencia usada para demoler: 4 componentes requieren 6 mineral.
+COMPONENT_MINERAL_VALUE = FABRICATOR_MINERAL_DAILY / FABRICATOR_COMPONENTS_DAILY
 
 # Luz visual: hábitat y lámpara aclaran el dithering nocturno.
 HABITAT_LIGHT_RADIUS = 8
@@ -133,6 +151,19 @@ DEPOSIT_WATER_PER_TILE = 40.0
 DEPOSIT_MINERAL_PER_TILE = 50.0
 SURFACE_WATER_PER_TILE = 45.0
 STARTER_DEPOSIT_MULTIPLIER = 4.0
+
+# Ruinas y chatarra
+RUIN_PROCEDURAL = 24
+RUIN_SCRAP_MIN = 4.0
+RUIN_SCRAP_MAX = 10.0
+RUIN_GUARANTEED_SCRAP_MIN = 7.0
+RUIN_GUARANTEED_SCRAP_MAX = 10.0
+RUIN_MAX_PLACEMENT_TRIES = 400
+
+# Demolición y cancelación de obra
+DEMOLISH_MIN_RATIO = 0.6
+DEMOLISH_MAX_RATIO = 0.9
+CANCEL_MAX_RATIO = 0.9
 
 EXTRACTOR_PATCH_RADIUS = 1  # 3×3
 

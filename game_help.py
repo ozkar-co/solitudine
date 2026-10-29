@@ -27,6 +27,8 @@ def context_help(
         return t("help.credits")
     if sim.user_paused:
         return t("help.paused")
+    if sim.demolish is not None:
+        return t("help.demolish_confirm")
     if build.mode == BuildMode.MENU:
         return t("help.build_menu")
     if build.mode == BuildMode.PLACE:
@@ -38,5 +40,7 @@ def context_help(
             mod = world.module_at(select_x, select_y)
             if mod is not None and not module_def(mod.kind).can_toggle:
                 return t("help.selected_fixed")
+            if world.has_ruin(select_x, select_y):
+                return t("help.ruin")
         return t("help.selected")
     return t("help.default")

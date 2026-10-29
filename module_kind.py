@@ -16,3 +16,4 @@ class ModuleKind(StrEnum):
     LABORATORY = "laboratory"
     ELECTROLYZER = "electrolyzer"
     CONDENSER = "condenser"
+    RECYCLER = "recycler"

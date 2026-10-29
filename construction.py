@@ -5,9 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum, auto
 
-from materials import Stockpile
 from module_defs import CABLE_COST, ModuleKind, module_def
 from network import get_connected, invalidate_network_cache, is_adjacent_to_network
+from resources import Cost, ResourcePool
 from tech_defs import tech_for_module
 from vision import on_cable_added, on_module_built, on_module_online_changed
 from world import Deposit, Module, ModuleState, Tile, World
@@ -26,6 +26,7 @@ class BuildKind(Enum):
     LABORATORY = auto()
     ELECTROLYZER = auto()
     CONDENSER = auto()
+    RECYCLER = auto()
 
 
 BUILD_CATEGORIES: tuple[tuple[str, tuple[BuildKind, ...]], ...] = (
@@ -35,7 +36,10 @@ BUILD_CATEGORIES: tuple[tuple[str, tuple[BuildKind, ...]], ...] = (
         "category.support",
         (BuildKind.GREENHOUSE, BuildKind.LAMP, BuildKind.ELECTROLYZER, BuildKind.CONDENSER),
     ),
-    ("category.logistics", (BuildKind.CABLE, BuildKind.FABRICATOR, BuildKind.STORAGE)),
+    (
+        "category.logistics",
+        (BuildKind.CABLE, BuildKind.FABRICATOR, BuildKind.STORAGE, BuildKind.RECYCLER),
+    ),
     ("category.science", (BuildKind.RADAR, BuildKind.LABORATORY)),
 )
 
@@ -54,10 +58,11 @@ class BuildPreview(Enum):
     OUT_OF_BOUNDS = "out_of_bounds"
     UNEXPLORED = "unexplored"
     OCCUPIED = "occupied"
+    RUIN = "ruin"
     BAD_TERRAIN = "bad_terrain"
     NO_WATER_DEPOSIT = "no_water_deposit"
     NO_MINERAL_DEPOSIT = "no_mineral_deposit"
-    NO_COMPONENTS = "no_components"
+    NO_RESOURCES = "no_resources"
     NO_NETWORK = "no_network"
     CABLE_NOT_CHAIN = "cable_not_chain"
 
@@ -80,10 +85,11 @@ BUILD_TO_MODULE: dict[BuildKind, ModuleKind] = {
     BuildKind.LABORATORY: ModuleKind.LABORATORY,
     BuildKind.ELECTROLYZER: ModuleKind.ELECTROLYZER,
     BuildKind.CONDENSER: ModuleKind.CONDENSER,
+    BuildKind.RECYCLER: ModuleKind.RECYCLER,
 }
 
 
-def kind_cost(kind: BuildKind) -> float:
+def kind_cost(kind: BuildKind) -> Cost:
     if kind == BuildKind.CABLE:
         return CABLE_COST
     return module_def(BUILD_TO_MODULE[kind]).cost
@@ -180,6 +186,8 @@ class BuildController:
             return BuildPreview.UNEXPLORED
         if (x, y) in world.module_cells or (x, y) in world.cables:
             return BuildPreview.OCCUPIED
+        if world.has_ruin(x, y):
+            return BuildPreview.RUIN
         tile = Tile(world.tiles[world.idx(x, y)])
         if kind == BuildKind.CABLE:
             return BuildPreview.OK if tile == Tile.GROUND else BuildPreview.BAD_TERRAIN
@@ -215,20 +223,28 @@ class BuildController:
     def _can_extend_cable(self, world: World, x: int, y: int, connected: set[tuple[int, int]]) -> bool:
         return self._cable_preview(world, x, y, connected) == BuildPreview.OK
 
-    def preview(self, world: World, stock: Stockpile, x: int, y: int) -> BuildPreview:
+    def preview(self, world: World, resources: ResourcePool, x: int, y: int) -> BuildPreview:
         connected = get_connected(world)
         if self.selected == BuildKind.CABLE:
             preview = self._cable_preview(world, x, y, connected)
             if preview != BuildPreview.OK:
                 return preview
-            return BuildPreview.OK if stock.can_afford(CABLE_COST) else BuildPreview.NO_COMPONENTS
+            return (
+                BuildPreview.OK
+                if CABLE_COST.can_afford(resources)
+                else BuildPreview.NO_RESOURCES
+            )
         preview = self._tile_preview(world, x, y, self.selected)
         if preview != BuildPreview.OK:
             return preview
-        return BuildPreview.OK if stock.can_afford(kind_cost(self.selected)) else BuildPreview.NO_COMPONENTS
+        return (
+            BuildPreview.OK
+            if kind_cost(self.selected).can_afford(resources)
+            else BuildPreview.NO_RESOURCES
+        )
 
-    def preview_valid(self, world: World, stock: Stockpile, x: int, y: int) -> bool:
-        return self.preview(world, stock, x, y) == BuildPreview.OK
+    def preview_valid(self, world: World, resources: ResourcePool, x: int, y: int) -> bool:
+        return self.preview(world, resources, x, y) == BuildPreview.OK
 
     def selected_locked(self, unlocked: set[str]) -> bool:
         return kind_locked(self.selected, unlocked)
@@ -236,7 +252,7 @@ class BuildController:
     def try_place(
         self,
         world: World,
-        stock: Stockpile,
+        resources: ResourcePool,
         x: int,
         y: int,
         unlocked: set[str] | None = None,
@@ -247,7 +263,7 @@ class BuildController:
         if self.selected == BuildKind.CABLE:
             if not self._can_extend_cable(world, x, y, connected):
                 return False
-            if not stock.spend(CABLE_COST):
+            if not CABLE_COST.spend(resources):
                 return False
             world.cables.add((x, y))
             self.cable_chain.append((x, y))
@@ -259,7 +275,7 @@ class BuildController:
         if not self.can_place_tile(world, x, y, self.selected):
             return False
         cost = kind_cost(self.selected)
-        if not stock.spend(cost):
+        if not cost.spend(resources):
             return False
 
         mod_kind = module_kind_for(self.selected)
@@ -273,6 +289,7 @@ class BuildController:
             state=ModuleState.BUILDING if tile_connected else ModuleState.WAITING,
             build_progress=0.0,
             build_total=build_days,
+            cost_paid=cost,
         )
         world.modules.append(mod)
         world.module_cells[(x, y)] = mod
@@ -301,6 +318,10 @@ class BuildController:
                 on_module_built(world, mod)
             elif was_online != is_online:
                 on_module_online_changed(world, mod, was_online, is_online)
+
+    def refresh_network(self, world: World) -> None:
+        invalidate_network_cache(world)
+        self._refresh_connection_states(world, get_connected(world))
 
     def update_sites(self, world: World, dt_days: float, day: int = 0) -> None:
         connected = get_connected(world)
