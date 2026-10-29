@@ -27,10 +27,12 @@ def draw_map_modal(
     lines: list[ModalLine],
     *,
     dim_map: bool = False,
-) -> None:
+    min_width: int = 0,
+    fixed_height: int = 0,
+) -> pygame.Rect:
     """Dibuja un recuadro centrado en el mapa. Una sola implementación para todos los modales."""
     if not lines:
-        return
+        return pygame.Rect(0, 0, 0, 0)
 
     mrect = map_rect()
     if dim_map:
@@ -49,6 +51,10 @@ def draw_map_modal(
         w = max(w, s.get_width() + pad_x * 2)
         h += s.get_height() + (4 if line.large else 2)
 
+    w = max(w, min_width)
+    if fixed_height > 0:
+        h = fixed_height
+
     box = pygame.Rect(0, 0, w, h)
     box.center = (mrect.centerx, mrect.centery)
     pygame.draw.rect(surf, COL_PANEL, box)
@@ -58,3 +64,5 @@ def draw_map_modal(
     for s, large in rendered:
         surf.blit(s, (box.centerx - s.get_width() // 2, y))
         y += s.get_height() + (4 if large else 2)
+
+    return box

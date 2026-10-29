@@ -25,6 +25,7 @@ class Simulation:
     user_paused: bool = False
     pause_index: int = 0
     credits_open: bool = False
+    credits_scroll: int = 0
     game_over: bool = False
     death_cause: str = ""
     power_factor: float = 1.0
@@ -83,4 +84,5 @@ class Simulation:
         self.user_paused = False
         self.pause_index = 0
         self.credits_open = False
+        self.credits_scroll = 0
         self.build.cancel_build()

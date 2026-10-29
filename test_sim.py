@@ -9,6 +9,7 @@ from pathlib import Path
 
 from config import HABITAT_X, HABITAT_Y
 from construction import BuildController, BuildKind, BuildMode, kind_locked
+from credits import CREDITS_SCROLL_STEP
 from game_input import handle_frame_input
 from input_state import FrameInput, Input
 from logistics import network_caps
@@ -327,6 +328,11 @@ class PauseMenuTests(unittest.TestCase):
         self._press(sim, world, "A")
         self.assertTrue(sim.credits_open)
         self.assertTrue(sim.user_paused)
+
+        self._press(sim, world, "DPAD_DOWN")
+        self.assertEqual(sim.credits_scroll, CREDITS_SCROLL_STEP)
+        self._press(sim, world, "DPAD_UP")
+        self.assertEqual(sim.credits_scroll, 0)
 
         self._press(sim, world, "B")
         self.assertFalse(sim.credits_open)

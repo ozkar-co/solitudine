@@ -8,6 +8,7 @@ import ui_assets
 from config import SCREEN_W
 from ui_layout import bottom_bar_rect, top_bar_rect
 from construction import BUILD_CATEGORIES, BuildKind, BuildMode, kind_cost, kind_locked, module_kind_for
+from credits import CREDITS_SECTIONS, CREDITS_VISIBLE_LINES
 from i18n import t
 from logistics import network_caps
 from network import get_connected
@@ -15,7 +16,7 @@ from resources import AlertLevel, ResourceId
 from simulation import Simulation
 from tech_defs import tech_def, tech_for_module
 from ui_map import MapLayer, draw_map
-from ui_modals import ModalLine, draw_map_modal
+from ui_modals import MODAL_PAD_X, MODAL_PAD_Y, ModalLine, draw_map_modal
 from ui_panel import draw_panel, module_debug_lines
 from ui_theme import (
     COL_BORDER,
@@ -218,27 +219,60 @@ def draw_pause_modal(
     draw_map_modal(surf, font, font_sm, lines, dim_map=True)
 
 
+def _credits_content() -> list[ModalLine]:
+    lines: list[ModalLine] = []
+    for section_key, entries in CREDITS_SECTIONS:
+        lines.append(ModalLine(t(section_key), COL_WARN))
+        for entry in entries:
+            lines.append(ModalLine(t(entry.name_key), COL_TEXT))
+            lines.append(ModalLine(t(entry.role_key), COL_DIM))
+    return lines
+
+
 def draw_credits_modal(
     surf: pygame.Surface,
     font: pygame.font.Font,
     font_sm: pygame.font.Font,
+    sim: Simulation,
 ) -> None:
-    lines = [
-        ModalLine(t("credits.title"), COL_TEXT, large=True),
-        ModalLine(t("credits.ozkr_name"), COL_WARN),
-        ModalLine(t("credits.ozkr_roles"), COL_DIM),
-        ModalLine(t("credits.deepseek_name"), COL_WARN),
-        ModalLine(t("credits.deepseek_roles"), COL_DIM),
-        ModalLine(t("credits.retro_name"), COL_WARN),
-        ModalLine(t("credits.retro_roles"), COL_DIM),
-        ModalLine(t("credits.juandi_name"), COL_WARN),
-        ModalLine(t("credits.juandi_roles"), COL_DIM),
-        ModalLine(t("credits.neozound_name"), COL_WARN),
-        ModalLine(t("credits.neozound_roles"), COL_DIM),
-        ModalLine(t("credits.font"), COL_DIM),
-        ModalLine(t("credits.hint"), COL_DIM),
-    ]
-    draw_map_modal(surf, font, font_sm, lines, dim_map=True)
+    content = _credits_content()
+    max_scroll = max(0, len(content) - CREDITS_VISIBLE_LINES)
+    scroll = min(max(sim.credits_scroll, 0), max_scroll)
+    window = content[scroll : scroll + CREDITS_VISIBLE_LINES]
+    window += [ModalLine("", COL_DIM)] * (CREDITS_VISIBLE_LINES - len(window))
+
+    title = ModalLine(t("credits.title"), COL_TEXT, large=True)
+    lines = [title] + window
+
+    title_h = font.get_height() + 4
+    line_h = font_sm.get_height() + 2
+    fixed_height = MODAL_PAD_Y * 2 + title_h + CREDITS_VISIBLE_LINES * line_h
+    min_width = (
+        max(
+            font.render(title.text, False, title.color).get_width(),
+            *(font_sm.render(line.text, False, line.color).get_width() for line in content),
+        )
+        + MODAL_PAD_X * 2
+        + 8
+    )
+    box = draw_map_modal(
+        surf,
+        font,
+        font_sm,
+        lines,
+        dim_map=True,
+        min_width=min_width,
+        fixed_height=fixed_height,
+    )
+
+    if max_scroll > 0:
+        track_x = box.right - 8
+        track_top = box.y + MODAL_PAD_Y + title_h + 2
+        track_h = max(1, box.bottom - MODAL_PAD_Y - track_top)
+        pygame.draw.rect(surf, COL_DIM, (track_x, track_top, 2, track_h))
+        thumb_h = max(8, int(track_h * CREDITS_VISIBLE_LINES / len(content)))
+        thumb_y = track_top + int((track_h - thumb_h) * scroll / max_scroll)
+        pygame.draw.rect(surf, COL_TEXT, (track_x, thumb_y, 2, thumb_h))
 
 
 def draw_game_over(

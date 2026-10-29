@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from construction import BuildController, BuildKind, BuildMode
+from credits import CREDITS_SCROLL_STEP, max_credits_scroll
 from gamepad import LJOY_DOWN, LJOY_LEFT, LJOY_RIGHT, LJOY_UP
 from input_state import FrameInput, Input
 from module_defs import module_active
@@ -67,6 +68,11 @@ def handle_frame_input(
                 or inp.was_pressed(frame, "START")
             ):
                 sim.credits_open = False
+                sim.credits_scroll = 0
+            elif inp.was_pressed(frame, "DPAD_UP") or inp.was_pressed(frame, LJOY_UP):
+                sim.credits_scroll = max(0, sim.credits_scroll - CREDITS_SCROLL_STEP)
+            elif inp.was_pressed(frame, "DPAD_DOWN") or inp.was_pressed(frame, LJOY_DOWN):
+                sim.credits_scroll = min(max_credits_scroll(), sim.credits_scroll + CREDITS_SCROLL_STEP)
             return result
         if inp.was_pressed(frame, "START") or inp.was_pressed(frame, "B"):
             sim.user_paused = False
@@ -79,6 +85,7 @@ def handle_frame_input(
         elif inp.was_pressed(frame, "A"):
             if sim.pause_index == PAUSE_CREDITS:
                 sim.credits_open = True
+                sim.credits_scroll = 0
             else:
                 sim.user_paused = False
                 sim.pause_index = 0
@@ -92,6 +99,7 @@ def handle_frame_input(
         sim.user_paused = True
         sim.pause_index = 0
         sim.credits_open = False
+        sim.credits_scroll = 0
         return result
 
     if inp.was_pressed(frame, "Y"):

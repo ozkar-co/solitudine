@@ -305,7 +305,7 @@ def run(dev: bool = False, handheld: bool = False) -> int:
             draw_tech_screen(screen, font, font_sm, sim, world)
         elif pause_modal:
             if sim.credits_open:
-                draw_credits_modal(screen, font, font_sm)
+                draw_credits_modal(screen, font, font_sm, sim)
             else:
                 draw_pause_modal(screen, font, font_sm, sim)
         elif build.mode == BuildMode.MENU:

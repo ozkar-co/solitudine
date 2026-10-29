@@ -12,8 +12,8 @@
 - El **menú de construcción** y el **modo colocar** pausan el tiempo. La partida no arranca pausada.
 - Un extractor/mina con depósito agotado ya **no consume energía**.
 - Guardado: `VERSION` 3; los guardados v1/v2 con tasas positivas se convierten a netas negativas al cargar.
-- Tests nuevos: días netos y extractor agotado sin consumo.
-- **Menú de pausa** con Continuar / Créditos y modal de créditos (ozkr, DeepSeek, Retro Diffusion, JuanDi, Neozound y VT323).
+- Tests nuevos: días netos, extractor agotado sin consumo, menú de pausa/créditos y scroll.
+- **Menú de pausa** con Continuar / Créditos y modal de créditos con scroll (equipo, apoyo, agradecimientos y licencias).
 
 ---
 
@@ -62,7 +62,7 @@ Núcleo estable objetivo: 2 solares + 2 extractores + 1 invernadero + 1 laborato
 Prioridad alta:
 
 - **Pausa del menú de construcción y del modo colocar** (implementado): el tiempo ya no corre mientras el jugador lee o elige un tile. La partida no arranca pausada. Falta un indicador visible de “PAUSA” en esos modos.
-- **Menú de pausa con créditos** (implementado): Continuar y Créditos; Créditos abre un modal con ozkr (creador/director; diseño, programación y producción), DeepSeek (programación auxiliar), Retro Diffusion (diseño auxiliar de sprites con Genkit, rd-tile / rd-plus), JuanDi (alpha testing y colaboración creativa) y Neozound (composición y diseño sonoro). Incluye la tipografía VT323 (SIL OFL 1.1).
+- **Menú de pausa con créditos** (implementado): Continuar y Créditos; Créditos abre un modal con scroll que incluye equipo (ozkr, DeepSeek, Retro Diffusion, JuanDi, Neozound, Laura), apoyo (Neo & Cleo), agradecimientos (comunidad open source/open hardware, Python, pygame-ce, PortMaster/R36S) y licencias (Python PSF, pygame-ce LGPL, VT323 SIL OFL 1.1).
 - **Hacer visible el modo.** No hay badge persistente de MODO, no se marca el tile seleccionado y el cursor siempre es igual. A cambia de significado según el modo.
 - **Estado real del módulo** (implementado en parte): falta que la UI explique mejor el motivo y las acciones disponibles.
 - **Iconos sin leyenda.** No hay forma de saber qué representa cada icono. Opciones: menú de ayuda; que el “modo recursos” muestre la lista de recursos con icono y nombre; nombres también en fichas y paneles.
@@ -467,12 +467,11 @@ Queda como tuning, no como arquitectura: tabla exacta de costes multi-material, 
 
 ### Créditos (implementado)
 
-- Menú de pausa: **Continuar** y **Créditos**. En pausa, LJOY/DPAD elige, A confirma y START o B continúa. En créditos, A/B/START vuelve al menú de pausa.
-- El modal de créditos contiene:
-  - **ozkr** — creador y director; diseño de juego, programación y producción.
-  - **DeepSeek** — programación auxiliar.
-  - **Retro Diffusion** — diseño auxiliar de sprites (Genkit, modelos rd-tile / rd-plus).
-  - **JuanDi** — alpha testing y colaboración creativa.
-  - **Neozound** — composición musical y diseño sonoro.
-  - **VT323** — tipografía (SIL OFL 1.1).
+- Menú de pausa: **Continuar** y **Créditos**. En pausa, LJOY/DPAD elige, A confirma y START o B continúa. En créditos, LJOY/DPAD desplaza y B/START vuelve al menú de pausa.
+- El modal tiene scroll por secciones para poder sumar colaboradores sin rediseñarlo:
+  - **Equipo:** ozkr (creador/director; diseño, programación y producción), DeepSeek (programación auxiliar), Retro Diffusion (diseño auxiliar de sprites con Genkit, rd-tile / rd-plus), JuanDi (alpha testing y colaboración creativa), Neozound (composición y diseño sonoro) y Laura (secretaria y asistente).
+  - **Apoyo:** Neo & Cleo (soporte emocional y musas creativas).
+  - **Agradecimientos:** comunidad open source y open hardware; Python; pygame-ce; PortMaster y R36S.
+  - **Licencias:** Python (PSF License), pygame-ce (LGPL), VT323 (SIL OFL 1.1).
 - El juego permanece pausado con el menú o el modal abiertos.
+- Para sumar colaboradores alcanza con agregar entradas en `credits.py` y sus claves en `locales/es.json`; el scroll se recalcula solo.
