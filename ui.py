@@ -154,7 +154,7 @@ def draw_dev_debug(
 
     rect = map_rect()
     lines = [
-        f"FPS {fps:4.1f}  frame {frame_ms:5.1f}ms  tiles {tiles_drawn}  zoom {zoom_px}px",
+        f"FPS {fps:4.1f}  frame {frame_ms:5.1f}ms  celdas {tiles_drawn}  zoom {zoom_px}px",
         f"gen {gen_ms:.0f}ms  held: {format_actions(held)}",
     ]
     y = rect.y + 4

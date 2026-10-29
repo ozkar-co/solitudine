@@ -19,7 +19,7 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
   - Modo recursos (X/C) con los seis recursos, nombre, cap, tendencia y días de los vitales.
   - Menú de construcción con pestañas por categoría, navegación izquierda/derecha, categorías vacías filtradas, bloqueados/no pagables en gris y “Faltan X Cmp”.
   - Panel de módulo con estado real, descripción, producción/consumo con nombre de recurso y día de construcción; buffer, reserva y progreso.
-  - Badges de modo/pausa (`RECURSOS`, `CONSTRUIR`, `COLOCAR`, `PAUSA`), tile seleccionado marcado y X disponible en modo colocar.
+  - Badges de modo/pausa (`RECURSOS`, `CONSTRUIR`, `COLOCAR`, `PAUSA`), celda seleccionada marcada y X disponible en modo colocar.
   - Menú de pausa con Continuar/Créditos; créditos con scroll y easter egg.
   - **Correcciones de playtest (2026-10-29):** hábitat solo con consumo y alertas; recursos sin gasto diario y A vuelve a inspección; construcción con iconos, sin cap de componentes, modal de altura fija con controles al pie y categoría `< >`; estados sin paréntesis.
   - **Tecnología y muerte (2026-10-29):** A otra vez sobre el laboratorio inspeccionado abre Tecnología; SELECT queda libre. La muerte guarda el estado de game over y al reabrir se mantiene.
@@ -33,7 +33,7 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
   - Modo recursos: seis recursos, duplicación con la barra, tendencia/días.
   - Menú de construcción: pestañas, izquierda/derecha, grises, “faltan”, categorías.
   - Panel: descripción, flujos, día de construcción, buffer, reserva y estados.
-  - Modos: badges, pausa, X en colocar, selección de tile y ayuda contextual.
+  - Modos: badges, pausa, X en colocar, selección de celda y ayuda contextual.
   - Balance: margen inicial, núcleo 2 solar + 2 extractores + invernadero + laboratorio + electrolizador, O₂ en break-even, agua/energía, invernadero sin agua, radar y condensador.
   - Guardado/carga de `built_day`, `game_over`/`death_cause` y del progreso.
 - Registrar hallazgos en este plan o en el backlog; **no crear otro análisis temporal**.
@@ -96,7 +96,7 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 - Menú de construcción por pestañas; categorías vacías ocultas; no disponibles en gris; coste y faltante visibles. Recursos con iconos y sin cap de componentes; el coste muestra icono y cantidad del recurso entre paréntesis; modal de altura fija con controles en pie separado; categoría seleccionada resaltada y entre `< >`.
 - Panel de módulo: estado, descripción, producción/consumo con nombres y día de construcción. Los módulos mixtos muestran ambas cosas.
 - Acciones especiales: cada módulo declara `special_action`; con el módulo inspeccionado, A ejecuta la acción y el panel muestra “Pulsa A para {acción}”. SELECT queda libre. Laboratorio: A otra vez abre Tecnología.
-- Badge de modo/pausa y tile seleccionado. X cambia capa también en modo colocar. Los estados son concisos, sin paréntesis explicativos.
+- Badge de modo/pausa y celda seleccionada. X cambia capa también en modo colocar. Los estados son concisos, sin paréntesis explicativos.
 - Sin menú de ayuda dedicado: la UI debe ser autoexplicativa; se mantienen los hints contextuales.
 - Créditos en pausa con scroll y easter egg sin pistas.
 
