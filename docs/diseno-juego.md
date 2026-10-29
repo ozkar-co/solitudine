@@ -50,7 +50,7 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 ## Exploración e investigación
 
 - Solo el radar explora de forma permanente; el resto da visión local.
-- La investigación desbloquea módulos; el laboratorio y las 2 tecnologías del primer slice ya están implementados. El próximo paso es el playtest.
+- La investigación desbloquea módulos; el laboratorio y las 2 tecnologías del primer slice ya están implementados. El próximo paso es la fundación de recursos/costes (costes multi-material y save v4).
 - Exploración avanzada, alimañas, botín y combate están en backlog.
 
 ## Controles
@@ -91,7 +91,7 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 - **Batería:** el almacén deja de dar cap de energía; la batería pasa a ser el reservorio de energía.
 - **Agua y radar:** depósito garantizado + depósitos RNG finitos; el radar encuentra todo y es la exploración permanente.
 - **Bosques y cristales:** contenido base futuro; bosques renovables con brotes y cristales subterráneos finitos. Sus usos se definirán antes de implementarlos.
-- **Costes multi-material:** construcciones y tecnologías podrán pedir más de un material; la obra recuerda lo pagado y los reembolsos se definen en [plan.md](plan.md).
+- **Costes multi-material:** planificado; construcciones y tecnologías pedirán un `Cost` y la obra recordará lo pagado (`cost_paid`). Los reembolsos jugables se definen en [plan.md](plan.md).
 
 ## Backlog
 

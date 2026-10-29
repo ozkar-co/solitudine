@@ -51,7 +51,7 @@ El cable forma una **red logística única**: conecta módulos de cualquier tipo
 | Extractor de agua | 6 Cmp | 1 d | 2 E/d | — | 12 agua/d |
 | Mina | 4 Cmp | 1,5 d | 3 E/d | — | 8 mineral/d |
 | Invernadero | 8 Cmp | 1,5 d | 3 E/d | 4 agua/d | 10 comida/d + 2 O₂/d (O₂ requiere agua) |
-| Fabricador | 6 Cmp | 2 d | 4 E/d | 6 mineral/d | 4 componentes/d |
+| Fabricador | 5 Cmp + 2 mineral | 2 d | 4 E/d | 6 mineral/d | 4 componentes/d |
 | Almacén | 5 Cmp | 1 d | — | — | +40 a los caps de red (hoy incluye energía; planificado: solo no-energía) |
 | Radar | 8 Cmp | 1,5 d | 12 E/d | — | Exploración permanente |
 | Lámpara | 6 Cmp | 1 d | 0-4 E/d (noche) | — | Luz |
@@ -61,10 +61,12 @@ El cable forma una **red logística única**: conecta módulos de cualquier tipo
 
 Valores actuales de playtest. Cualquier ajuste se refleja en `config.py` y en esta tabla.
 
+> **Coste v4 en preparación:** el Fabricador es el primer módulo con coste multi-material (**5 Cmp + 2 mineral**). La mina sigue en componentes para no bloquear el arranque. Hasta implementar el slice de fundación, el código cobra 6 Cmp.
+
 ## Tecnologías
 
 - Todas requieren un **Laboratorio** construido.
-- Un nodo a la vez; coste en componentes (hoy) o multi-material (planificado), tiempo en días; el laboratorio debe estar online, conectado y con energía.
+- Un nodo a la vez; coste multi-material (`Cost`), tiempo en días; el laboratorio debe estar online, conectado y con energía. Las T1 actuales siguen costando 4 Cmp.
 - T1 cuesta 4 Cmp y 1,5 días; T2 base cuesta 10 Cmp y 3 días (propuesta). Una tecnología concreta puede tener coste multi-material (p. ej. `reciclaje`: 5 chatarra + 2 Cmp + 1 mineral).
 - Las mejoras de módulos se aplican **automáticamente** a los módulos existentes; no se reconstruyen.
 - Una tecnología puede desbloquear un módulo, una acción (p. ej. reciclaje) o subir el tier de un módulo.
@@ -98,4 +100,4 @@ Valores actuales de playtest. Cualquier ajuste se refleja en `config.py` y en es
 - Con el laboratorio activo e inspeccionado, A otra vez abre la pantalla de Tecnología; SELECT queda libre. Incluye ramas, lista de nodos, coste, progreso, prerrequisito y bloqueo.
 - A investiga el nodo seleccionado; B cierra. Sin pestañas vacías.
 - El menú de construcción usa pestañas por categoría; las categorías vacías se ocultan y las piezas bloqueadas/no pagables se muestran en gris; las bloqueadas dicen “Investigar”. Cada módulo muestra descripción y flujo produce/consume.
-- Guardar: tecnologías desbloqueadas, tier por módulo, investigación activa, progreso y día de construcción de cada módulo.
+- Guardar: tecnologías desbloqueadas, tier por módulo, investigación activa, progreso, día de construcción y coste pagado (`cost_paid`) de cada obra.

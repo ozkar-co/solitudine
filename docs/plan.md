@@ -2,11 +2,11 @@
 
 > Fuente única del roadmap. Catálogo de módulos/tecnologías: [catalogo.md](catalogo.md). Estado: [estado.md](estado.md). Código: [arquitectura.md](arquitectura.md). Juego: [diseno-juego.md](diseno-juego.md).
 >
-> Regla: un slice a la vez. 4B/4C y la pasada de UI/balance están cerrados. Ahora toca **playtest**. El análisis temporal quedó absorbido acá y en el catálogo/diseño; fue eliminado el 2026-10-29.
+> Regla: un slice a la vez. 4B/4C, la pasada de UI/balance y el playtest están cerrados. Ahora toca la **fundación de recursos/costes** (slice 2). El análisis temporal quedó absorbido acá y en el catálogo/diseño; fue eliminado el 2026-10-29.
 
 ## Norte
 
-Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y mantenimiento desde la consola del astronauta. La base es jugable. El problema inmediato es **validar la UI y el balance**; después, cerrar la progresión con chatarra/reciclador, energía y exploración.
+Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y mantenimiento desde la consola del astronauta. La base es jugable y el playtest cerró. El problema inmediato es la **fundación de recursos/costes**; después, cerrar la progresión con chatarra/reciclador, energía y exploración.
 
 ## Estado actual (hecho)
 
@@ -25,20 +25,110 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
   - **Tecnología y muerte (2026-10-29):** A otra vez sobre el laboratorio inspeccionado abre Tecnología; SELECT queda libre. La muerte guarda el estado de game over y al reabrir se mantiene.
   - **Arranque (2026-10-29):** splash de texto best-effort en el lanzador antes del runtime; splash con pygame que se mantiene durante assets/guardado/mundo; joystick e inicialización pesada diferidos; al terminar pide START.
   - **Playtest UI (2026-10-29):** red logística única para cualquier módulo; almacén no apagable; menú de construcción con descripción y flujos produce/consume; bloqueos dicen “Investigar”; modales de menú más grandes; Juanka en créditos.
-- Guardado `VERSION` 3; `built_day`, `game_over` y `death_cause` son campos opcionales compatibles con saves viejos. 32 tests de regresión.
+- **Playtest (2026-10-29):** cerrado; los ajustes aplicados quedaron absorbidos por la pasada de UI/balance.
+- Guardado `VERSION` 3 (el slice de fundación lo sube a 4); `built_day`, `game_over` y `death_cause` son campos opcionales compatibles con saves viejos. 32 tests de regresión.
 
-## Ahora: playtest (en curso)
+## Ahora: fundación de recursos/costes (slice 2)
 
-- Jugar la build actual en PC y R36S.
-- Revisar:
-  - Legibilidad de la barra: nombres, valores, caps y alertas.
-  - Modo recursos: seis recursos, duplicación con la barra, tendencia/días.
-  - Menú de construcción: pestañas, izquierda/derecha, grises, “faltan”, categorías.
-  - Panel: descripción, flujos, día de construcción, buffer, reserva y estados.
-  - Modos: badges, pausa, X en colocar, selección de celda y ayuda contextual.
-  - Balance: margen inicial, núcleo 2 solar + 2 extractores + invernadero + laboratorio + electrolizador, O₂ en break-even, agua/energía, invernadero sin agua, radar y condensador.
-  - Guardado/carga de `built_day`, `game_over`/`death_cause` y del progreso.
-- Registrar hallazgos en este plan o en el backlog; **no crear otro análisis temporal**.
+**Objetivo.** Unificar el modelo de recursos y costes antes de abrir chatarra/reciclador/demolición. Chatarra necesita cantidad y cap propios, costes multi-material, obra que recuerde lo pagado, reembolsos y save v4; hacerlo después obligaría a reescribir el slice 3.
+
+### Alcance
+
+**Entra**
+
+- Registro único de recursos (`ResourceId` + `ResourceDef`) para los seis actuales.
+- Pool único de cantidades/caps; `Stockpile` se absorbe y desaparece.
+- Coste multi-material (`Cost`) en módulos y tecnologías; pago atómico.
+- `Module.cost_paid` persistido y primitiva de reembolso.
+- Save `VERSION` 4 con migración v1-v3.
+- UI de coste/faltantes con todos los recursos.
+- Tests de coste, caps, save y migración.
+
+**No entra**
+
+- Chatarra, ruinas, reciclador, demolición y cancelación de obra jugable (slice 3).
+- Batería, trampa de peces, agua RNG/radar, bosques/cristales, biodiésel.
+- Rebalanceo general: solo el Fabricador pasa a coste multi-material como caso real.
+
+### Diseño técnico
+
+1. **Registro de recursos (`resources.py`)**
+   - `ResourceId`: O2, POWER, WATER, FOOD, MINERAL, COMPONENTS (IDs estables).
+   - `ResourceDef`: `id`, `name_key`, `icon`, `base_cap`, `lethal`, `top_bar`, `alert`, `storage_bonus`.
+   - `RESOURCES` ordenado para UI; `TOPBAR_IDS`, `ALERT_IDS`, `LETHAL_IDS`.
+   - `ResourcePool` pasa a tener los seis montos y los cuatro `*_daily`; `amount`, `add`, `set_amount`, `clamp`.
+   - `resources.py` deja de importar `module_defs` (el consumo inicial sale de `config`); esto evita el ciclo `world → resources → module_defs → world`.
+
+2. **Coste (`resources.py`; se elimina `materials.py`)**
+   - `Cost` inmutable sobre `dict[ResourceId, float]`; `items()`, `can_afford(pool)`, `spend(pool)`, `missing(pool)`, `refund(pool, ratio, caps)` (acredita hasta el cap y devuelve lo acreditado), `to_dict`/`from_dict`.
+   - `spend` atómico: si falta un recurso no descuenta ninguno.
+   - `ModuleDef.cost` y `TechDef.cost` pasan de `float` a `Cost`; `CABLE_COST` también.
+   - `config.py` guarda los costes como dicts (`COST_FABRICATOR = {"components": 5.0, "mineral": 2.0}`); `module_defs` los convierte a `Cost`.
+   - `Simulation.stock` desaparece; todo usa `sim.resources`.
+
+3. **Caps**
+   - `network_caps(world) -> dict[ResourceId, float]` desde `ResourceDef.base_cap` + bonus de almacén si `storage_bonus`.
+   - `module_tick` y la UI leen caps por `ResourceId`; no hay `NetworkCaps` con campos fijos.
+   - El almacén sigue dando +40 a los seis; energía incluida hasta el slice de batería.
+
+4. **Construcción**
+   - `kind_cost(kind) -> Cost`; `preview` consulta `pool.can_afford(cost)`; `try_place` descuenta el coste completo y guarda `mod.cost_paid = cost`.
+   - `BuildPreview.NO_COMPONENTS` → `NO_RESOURCES`; locale “Recursos insuficientes”.
+   - El cable cuesta `CABLE_COST`; no guarda coste por tile (el slice 3 usa el coste fijo del cable).
+   - No se agrega todavía cancelar/demoler jugable: la primitiva de reembolso queda testeada para el slice 3.
+
+5. **Save v4**
+   - `VERSION = 4`; un solo bloque `sim.resources` con los seis montos + daily; se elimina `sim.stock`.
+   - `world.modules[].cost_paid` como dict `{resource_id: amount}`; `built_day` sigue opcional.
+   - Migración v1-v3: signo de daily, fusionar `stock` en `resources`, inferir `cost_paid` con el coste actual del módulo (save de desarrollo; no se preserva el coste histórico exacto).
+   - Loader tolerante: recursos nuevos ausentes → 0.0 (prepara chatarra en v4 sin romper saves).
+   - El `save.json` actual v3 debe cargar y migrar.
+
+6. **UI**
+   - Barra superior y modo recursos salen del registro; no listas hardcodeadas.
+   - Menú de construcción: coste con un icono+cantidad por recurso; “Faltan …” por recurso; gris si falta cualquiera.
+   - Panel de colocar: coste completo con iconos; el panel de 192 px debe entrar en una fila de dos recursos o dos líneas.
+   - Tecnología: coste con nombres cortos (`Cmp`, `Min`) hasta que la pantalla se rediseñe con iconos.
+   - Añadir `resource.*.short` y ajustar `build.missing`/`build.err.no_resources`.
+
+### Tabla de costes del slice
+
+| Módulo | Coste v4 |
+|--------|----------|
+| Cable | 1 Cmp |
+| Panel solar | 5 Cmp |
+| Extractor | 6 Cmp |
+| Mina | 4 Cmp |
+| Invernadero | 8 Cmp |
+| Fabricador | **5 Cmp + 2 mineral** |
+| Almacén | 5 Cmp |
+| Radar | 8 Cmp |
+| Lámpara | 6 Cmp |
+| Laboratorio | 8 Cmp |
+| Electrolizador | 6 Cmp |
+| Condensador | 8 Cmp |
+| Investigación T1 | 4 Cmp |
+
+La mina queda solo en componentes para no bloquear el arranque: es la fuente de mineral. El Fabricador es el caso real de coste multi-material; el resto conserva sus números de playtest. La tabla se refleja en [catalogo.md](catalogo.md) antes de tocar código.
+
+### Pasos
+
+1. Docs + tabla de costes + tests base (sin cambiar comportamiento).
+2. Registro/pool único y caps por `ResourceId`; adaptar tick, logística y UI a `sim.resources`; tests verdes.
+3. `Cost` + costes de módulos/tecnologías + construcción/research; test de pago atómico.
+4. `Module.cost_paid` + save v4 + migración + tests de roundtrip v3→v4.
+5. UI de coste multi-material y faltantes; revisar 640×480.
+6. `make test`, cargar el `save.json` actual, playtest corto del Fabricador y del menú.
+
+### Criterio de cierre
+
+- Un módulo actual (Fabricador) declara y cobra dos recursos; el pago es atómico.
+- La obra guarda `cost_paid` y sobrevive a guardar/cargar.
+- Save v4 carga v1-v3 sin pérdida de recursos.
+- La UI muestra todos los costes y faltantes; no hay texto cortado a 640×480.
+- `make test` pasa con los 32 tests actuales adaptados + tests nuevos.
+- Sin softlock: la mina sigue siendo construible solo con componentes.
+- Chatarra/reciclador/demolición quedan explícitamente fuera.
 
 ## Decisiones cerradas
 
@@ -104,8 +194,8 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 
 ## Orden de implementación
 
-1. **Playtest y correcciones.** Cerrar bugs, legibilidad y balance actual. Criterio: sin crashes, UI comprensible, núcleo superviviente y sin inicios imposibles.
-2. **Fundación de recursos/costes.** Estándar de recursos, costes multi-material, obra que recuerda lo pagado, reembolsos y save v4; la tabla de costes se define en [catalogo.md](catalogo.md) antes de implementar. Criterio: un módulo actual puede declarar varios costes y guardar/cargar la obra.
+1. ~~Playtest y correcciones.~~ Cerrado (2026-10-29).
+2. **Fundación de recursos/costes (actual).** Detalle en “Ahora”. Criterio: un módulo actual declara varios costes y la obra se guarda/carga. La tabla de costes vive en [catalogo.md](catalogo.md).
 3. **Chatarra/reciclador/demolición.** Primer slice de contenido nuevo; incluye el nodo de tecnología del reciclador. Criterio: recoger, reciclar, demoler, guardar y balancear el loop.
 4. **Trampa de peces + comida.** Criterio: placement sobre agua, cable sobre agua, producción nocturna y parada al agotarse el agua.
 5. **Batería/almacén + energía.** Criterio: almacén sin cap de energía, batería con cap, tecnología y rebalance.
@@ -145,7 +235,7 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 | Invernadero | 8 Cmp, 1,5 d, 3 E/d, 4 agua/d → 10 comida/d + 2 O₂/d (O₂ requiere agua) |
 | Núcleo estable | 2 solar + 2 extractores + invernadero + laboratorio + electrolizador |
 
-El playtest manda. Cualquier cambio se refleja en `config.py` y en [catalogo.md](catalogo.md).
+El playtest manda. Cualquier cambio se refleja en `config.py` y en [catalogo.md](catalogo.md). En el slice de fundación, el Fabricador pasa a **5 Cmp + 2 mineral**; la mina sigue en componentes para no bloquear el arranque.
 
 ## Backlog (no agendado)
 
@@ -165,13 +255,14 @@ El playtest manda. Cualquier cambio se refleja en `config.py` y en [catalogo.md]
 - Crear un framework de UI o pantallas con pestañas vacías.
 - Combatir/tower defense como próxima etapa.
 - Nuitka/PyInstaller: la distribución sigue siendo PortMaster + squashfs.
-- Abrir un slice nuevo antes de cerrar el playtest y el slice actual.
+- Abrir un slice nuevo antes de cerrar el slice actual.
 
 ## Riesgos y decisiones
 
 - **Scope creep:** un slice a la vez; el backlog no se agenda solo.
 - **UI:** se mantiene la grilla de 16 px; no crear `ui_state`/`ui_widgets` hasta que haya varias pantallas.
-- **Balance:** los números actuales son propuestas de playtest; pueden cambiar.
-- **Save:** `VERSION` 3; al agregar recursos o costes multi-material, subir a v4 con migración. Los IDs de módulos, recursos y tecnologías no se renombran. No hay multisave: la muerte pisa el guardado y el game over persiste al reabrir.
+- **Balance:** los números actuales son propuestas de playtest; pueden cambiar. La fundación solo cambia el coste del Fabricador; el resto se mantiene.
+- **Recursos/costes:** un pool único y `Cost` multi-material. No volver a separar `Stockpile` de `ResourcePool`; los recursos nuevos se agregan al registro con default 0.
+- **Save:** `VERSION` 4 en este slice, con migración v1-v3, un solo bloque `resources` y `cost_paid` por obra. Los IDs de módulos, recursos y tecnologías no se renombran. No hay multisave: la muerte pisa el guardado y el game over persiste al reabrir.
 - **Contenido:** módulos y recursos se declaran por datos (flujos, costes, placement y tech); evitar ramas de código por contenido.
 - **Documentación:** `plan.md` es el roadmap; `catalogo.md` manda en módulos/tecnologías; `diseno-juego.md` describe el juego; `analisis-temporal.md` fue eliminado el 2026-10-29; este plan es el roadmap vigente.

@@ -117,7 +117,13 @@ En PC, `--dev --2x` mantiene el render interno en 640×480 y escala la ventana a
 - `save.json` junto al ejecutable; ignorado por git.
 - Guarda simulación, recursos, stock, módulos/cables, `enabled`, investigación y arrays del mundo comprimidos.
 - Auto-save al pausar, cambiar de día o salir; carga al iniciar.
-- Si cambia el esquema, subir `VERSION` en `savegame.py`.
+- Si cambia el esquema, subir `VERSION` en `savegame.py`. El slice de fundación sube a **v4** (pool único y `cost_paid`; detalle en [plan.md](plan.md)).
+
+## Planificado: fundación de recursos/costes
+
+- `resources.py` absorberá `Stockpile` y `Cost` multi-material; `materials.py` desaparece.
+- El pool tendrá los seis recursos, caps por `ResourceId` y `Module.cost_paid`; save v4.
+- Detalle, tabla de costes y criterio en [plan.md](plan.md). Este documento describe el código actual hasta que el slice se implemente.
 
 ## Luz
 
@@ -131,4 +137,5 @@ En PC, `--dev --2x` mantiene el render interno en 640×480 y escala la ventana a
 - Recalcular el mundo completo por frame.
 - Meter lógica de negocio en `ui_*`.
 - Crear pantallas vacías o abstracciones para features futuras.
+- Separar de nuevo el stock de materiales del pool de recursos o volver a costes `float` de un solo material.
 - Añadir dependencias sin justificarlo.
