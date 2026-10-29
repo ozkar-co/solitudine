@@ -39,6 +39,7 @@ BUILD_CATEGORIES: tuple[tuple[str, tuple[BuildKind, ...]], ...] = (
     ("category.science", (BuildKind.RADAR, BuildKind.LABORATORY)),
 )
 
+BUILD_CATEGORIES = tuple((key, kinds) for key, kinds in BUILD_CATEGORIES if kinds)
 BUILD_KINDS = tuple(kind for _key, kinds in BUILD_CATEGORIES for kind in kinds)
 
 
@@ -109,13 +110,21 @@ def kind_locked(build: BuildKind, unlocked: set[str]) -> bool:
 class BuildController:
     mode: BuildMode = BuildMode.NONE
     selected: BuildKind = BuildKind.CABLE
-    menu_index: int = 0
+    menu_category: int = 0
+    menu_item: int = 0
     cable_chain: list[tuple[int, int]] = field(default_factory=list)
+
+    def _current_kinds(self) -> tuple[BuildKind, ...]:
+        return BUILD_CATEGORIES[self.menu_category][1]
+
+    def _sync_selected(self) -> None:
+        self.selected = self._current_kinds()[self.menu_item]
 
     def enter_menu(self) -> None:
         self.mode = BuildMode.MENU
-        self.menu_index = 0
-        self.selected = BUILD_KINDS[self.menu_index]
+        self.menu_category = 0
+        self.menu_item = 0
+        self._sync_selected()
         self.cable_chain.clear()
 
     def exit_menu(self) -> None:
@@ -125,14 +134,28 @@ class BuildController:
     def menu_up(self) -> None:
         if self.mode != BuildMode.MENU:
             return
-        self.menu_index = (self.menu_index - 1) % len(BUILD_KINDS)
-        self.selected = BUILD_KINDS[self.menu_index]
+        self.menu_item = (self.menu_item - 1) % len(self._current_kinds())
+        self._sync_selected()
 
     def menu_down(self) -> None:
         if self.mode != BuildMode.MENU:
             return
-        self.menu_index = (self.menu_index + 1) % len(BUILD_KINDS)
-        self.selected = BUILD_KINDS[self.menu_index]
+        self.menu_item = (self.menu_item + 1) % len(self._current_kinds())
+        self._sync_selected()
+
+    def menu_left(self) -> None:
+        if self.mode != BuildMode.MENU:
+            return
+        self.menu_category = (self.menu_category - 1) % len(BUILD_CATEGORIES)
+        self.menu_item = 0
+        self._sync_selected()
+
+    def menu_right(self) -> None:
+        if self.mode != BuildMode.MENU:
+            return
+        self.menu_category = (self.menu_category + 1) % len(BUILD_CATEGORIES)
+        self.menu_item = 0
+        self._sync_selected()
 
     def enter_place(self) -> None:
         if self.mode != BuildMode.MENU:
@@ -279,7 +302,7 @@ class BuildController:
             elif was_online != is_online:
                 on_module_online_changed(world, mod, was_online, is_online)
 
-    def update_sites(self, world: World, dt_days: float) -> None:
+    def update_sites(self, world: World, dt_days: float, day: int = 0) -> None:
         connected = get_connected(world)
         for mod in world.modules:
             if mod.kind == ModuleKind.HABITAT:
@@ -288,5 +311,6 @@ class BuildController:
                 mod.build_progress = min(mod.build_total, mod.build_progress + dt_days)
                 if mod.build_progress >= mod.build_total:
                     mod.state = ModuleState.ONLINE if (mod.x, mod.y) in connected else ModuleState.OFFLINE
+                    mod.built_day = day
                     on_module_built(world, mod)
         self._refresh_connection_states(world, connected)

@@ -91,9 +91,10 @@ class EnabledTests(unittest.TestCase):
         sim.day_progress = 0.5
         sim.stock.mineral = 100.0
         fab = add_module(world, ModuleKind.FABRICATOR, 1)
+        before = sim.stock.components
 
         run(sim, world, 2.0)
-        self.assertGreater(sim.stock.components, 42.0)
+        self.assertGreater(sim.stock.components, before)
 
         fab.enabled = False
         before = sim.stock.components
@@ -160,6 +161,66 @@ class BuildInputTests(unittest.TestCase):
         self.assertEqual(sim.build.mode, BuildMode.MENU)
         self.assertEqual(sim.build.selected, selected)
 
+    def test_build_menu_categories(self) -> None:
+        build = BuildController()
+        build.enter_menu()
+        self.assertEqual(build.selected, BuildKind.SOLAR)
+
+        build.menu_right()
+        self.assertEqual(build.menu_category, 1)
+        self.assertEqual(build.selected, BuildKind.EXTRACTOR)
+
+        build.menu_down()
+        self.assertEqual(build.selected, BuildKind.MINE)
+
+        build.menu_right()
+        self.assertEqual(build.menu_category, 2)
+        self.assertEqual(build.selected, BuildKind.GREENHOUSE)
+
+        build.menu_left()
+        self.assertEqual(build.menu_category, 1)
+        self.assertEqual(build.selected, BuildKind.EXTRACTOR)
+
+    def test_unaffordable_build_item_does_not_enter_place(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        sim.stock.components = 0.0
+        sim.build.enter_menu()
+
+        frame = FrameInput(frozenset({"A"}), frozenset({"A"}), frozenset())
+        handle_frame_input(
+            frame,
+            Input(dev_mode=False),
+            sim,
+            world,
+            layer=MapLayer.TERRAIN,
+            cursor_x=HABITAT_X,
+            cursor_y=HABITAT_Y,
+            select_x=None,
+            select_y=None,
+        )
+        self.assertEqual(sim.build.mode, BuildMode.MENU)
+
+    def test_x_toggles_layer_in_place_mode(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        sim.build.enter_menu()
+        sim.build.enter_place()
+
+        frame = FrameInput(frozenset({"X"}), frozenset({"X"}), frozenset())
+        result = handle_frame_input(
+            frame,
+            Input(dev_mode=False),
+            sim,
+            world,
+            layer=MapLayer.TERRAIN,
+            cursor_x=HABITAT_X,
+            cursor_y=HABITAT_Y,
+            select_x=None,
+            select_y=None,
+        )
+        self.assertEqual(result.layer, MapLayer.RESOURCES)
+
 
 class SaveTests(unittest.TestCase):
     def test_roundtrip(self) -> None:
@@ -169,6 +230,7 @@ class SaveTests(unittest.TestCase):
         sim.day_progress = 0.42
         sim.stock.components = 31.0
         fab = add_module(world, ModuleKind.FABRICATOR, 1, enabled=False)
+        fab.built_day = 3
         lamp = add_module(world, ModuleKind.LAMP, 2)
         sim.resources.power = 33.0
         sim.research.unlocked = {"condensador"}
@@ -188,6 +250,7 @@ class SaveTests(unittest.TestCase):
             mod = world2.module_at(fab.x, fab.y)
             self.assertIsNotNone(mod)
             self.assertFalse(mod.enabled)
+            self.assertEqual(mod.built_day, 3)
             self.assertEqual(world2.module_at(lamp.x, lamp.y).kind, ModuleKind.LAMP)
             self.assertEqual(sim2.research.unlocked, {"condensador"})
             self.assertEqual(sim2.research.active, "electrolisis")
@@ -219,7 +282,7 @@ class ResearchTests(unittest.TestCase):
         lab = add_module(world, ModuleKind.LABORATORY, 1)
         before = sim.stock.components
         self.assertTrue(sim.start_research(world))
-        self.assertEqual(sim.stock.components, before - 6.0)
+        self.assertEqual(sim.stock.components, before - 4.0)
         run(sim, world, 1.0)
         self.assertGreater(sim.research.progress, 0.0)
         lab.enabled = False
@@ -242,6 +305,32 @@ class ResearchTests(unittest.TestCase):
         self.assertTrue(kind_locked(BuildKind.ELECTROLYZER, set()))
         self.assertFalse(kind_locked(BuildKind.ELECTROLYZER, {"electrolisis"}))
         self.assertTrue(kind_locked(BuildKind.CONDENSER, set()))
+
+
+class BalanceTests(unittest.TestCase):
+    def test_initial_reserve_days(self) -> None:
+        sim = Simulation()
+        self.assertAlmostEqual(sim.resources.days_left(ResourceId.O2), 12.0)
+        self.assertAlmostEqual(sim.resources.days_left(ResourceId.WATER), 9.0)
+        self.assertAlmostEqual(sim.resources.days_left(ResourceId.FOOD), 7.0)
+        self.assertAlmostEqual(sim.resources.days_left(ResourceId.POWER), 10.0)
+
+
+class GreenhouseTests(unittest.TestCase):
+    def test_o2_production_requires_water(self) -> None:
+        def o2_after(with_greenhouse: bool, water: float) -> float:
+            world = generate_world()
+            sim = Simulation()
+            sim.day_progress = 0.5
+            sim.resources.o2 = 50.0
+            sim.resources.water = water
+            if with_greenhouse:
+                add_module(world, ModuleKind.GREENHOUSE, 1)
+            run(sim, world, 1.0)
+            return sim.resources.o2
+
+        self.assertGreater(o2_after(True, 10.0), o2_after(False, 10.0))
+        self.assertAlmostEqual(o2_after(True, 0.0), o2_after(False, 0.0), places=4)
 
 
 class TechModuleTests(unittest.TestCase):

@@ -69,6 +69,7 @@ def _save_data(world: World, sim: Simulation) -> dict:
                     "buffer_cap": mod.buffer_cap,
                     "shadow_stamped": mod.shadow_stamped,
                     "clear_active": mod.clear_active,
+                    "built_day": mod.built_day,
                 }
                 for mod in world.modules
             ],
@@ -145,6 +146,7 @@ def load_game(path: Path = SAVE_PATH) -> tuple[World, Simulation] | None:
             buffer_cap=raw["buffer_cap"],
             shadow_stamped=raw["shadow_stamped"],
             clear_active=raw["clear_active"],
+            built_day=raw.get("built_day", 0),
         )
         world.modules.append(mod)
         world.module_cells[(mod.x, mod.y)] = mod

@@ -5,10 +5,10 @@
 ## Implementado en esta pasada (info real)
 
 - Días restantes y alertas usan el **cambio neto real** de cada recurso, no el consumo bruto del hábitat.
-- La barra superior muestra **x/y** de los seis recursos: O2, agua, comida, energía, mineral y componentes.
+- La barra superior muestra **x/y** de los cuatro vitales; mineral y componentes pasaron al modo recursos.
 - El panel del hábitat muestra **x/y + tendencia/día + días restantes**.
-- El panel de módulo ya no muestra los flujos diarios nominales. Muestra un **estado real** (sin agua, sin mineral, sin salida, sin energía, depósito agotado, O2 lleno, noche, etc.).
-- Los flujos diarios nominales pasaron al **overlay de debug** (`--dev`), solo para el módulo seleccionado.
+- El panel de módulo muestra **estado real**, una descripción breve, producción/consumo con nombre de recurso y día de construcción; los flujos nominales completos siguen en debug.
+- El **overlay de debug** (`--dev`) conserva todos los flujos nominales del módulo seleccionado.
 - El **menú de construcción** y el **modo colocar** pausan el tiempo. La partida no arranca pausada.
 - Un extractor/mina con depósito agotado ya **no consume energía**.
 - Guardado: `VERSION` 3; los guardados v1/v2 con tasas positivas se convierten a netas negativas al cargar.
@@ -17,7 +17,19 @@
 
 ---
 
-## Balance actual (medido con el código previo a esta pasada)
+## UI/balance implementado (2026-10-29)
+
+- **Barra superior:** solo O2, agua, comida y energía, con nombre y `x/y`; mineral y componentes salieron de la barra.
+- **Modo recursos:** muestra los seis recursos con nombre y cap, aunque los vitales se repitan en la barra; incluye tendencia y días de los vitales. Badge de modo visible.
+- **Menú de construcción:** pestañas por categoría, navegación izquierda/derecha, coste por módulo, bloqueados/no pagables en gris y texto “Faltan X Cmp”. Las categorías vacías se filtran.
+- **Panel de módulo:** estado real, descripción breve, producción/consumo con nombre de recurso y día de construcción; se mantienen buffer, reserva y progreso.
+- **Modos y pausa:** badge `PAUSA`, `CONSTRUIR · PAUSA`, `COLOCAR · PAUSA` o `RECURSOS`; tile seleccionado marcado; X cambia capa también en modo colocar; ayuda contextual por capa.
+- **Balance:** reservas iniciales 12/9/7/10 días (O2/agua/comida/energía); caps 140/100/80/100; componentes 60/80; laboratorio 8 Cmp/1,5 d; investigación T1 4 Cmp/1,5 d; electrolizador 8 O2/6 Cmp/1 d; radar 8 Cmp/12 E; condensador 8 agua; el O2 del invernadero depende de agua.
+- **Tests:** 25 (incluye reservas iniciales, navegación de pestañas, bloqueo por coste, capa en modo colocar y O2 del invernadero sin agua).
+
+---
+
+## Balance de referencia (código anterior a UI/balance)
 
 | Escenario | Resultado |
 |-----------|-----------|
@@ -39,10 +51,12 @@ Conclusiones:
 - La lámpara cuesta 6 Cmp + 4 E/noche y es cosmética.
 - Storage ya da +40 de capacidad de energía; una batería separada es redundante hasta definir la diferencia.
 
-### Hipótesis de números para playtest (no implementado)
+### Hipótesis de números para playtest (implementado 2026-10-29)
 
-| Parámetro | Actual | Hipótesis |
-|-----------|--------|-----------|
+> La columna “Hipótesis” es la que rige ahora; ver “UI/balance implementado”.
+
+| Parámetro | Antes | Ahora |
+|-----------|-------|-------|
 | Inicio O2/agua/comida/energía | 6/6/6/6 días | 12/9/7/10 días escalonados |
 | Caps iniciales | 80/60/50/80 | 140/100/80/100 |
 | Cmp iniciales / cap | 42/50 | 60-70 / 80-100 |
@@ -329,7 +343,7 @@ Para reescribir el plan no hacía falta cerrar los 23 puntos: alcanzaba con seis
 | Bosques/cristales | Base; visibles desde el inicio aunque no sean obtenibles; bosques renovables, cristales subterráneos finitos; usos sin diseñar | Falta diseño |
 | Biodiésel | Recurso producido; compite con otros consumos; se controla apagando módulos | Falta productor y consumidor |
 | Multi-material | Todo se paga al inicio; componentes es la base; las pestañas dan espacio para mostrar costes | Falta tabla y política de reembolso |
-| UI | Barra con 4 vitales; modo recursos (X/C) con nombres; pestañas; panel de producción/consumo + descripción/fecha; menú de pausa con Continuar/Créditos; evitar ayuda | Casi; faltan layout, Defensa y panel mixto |
+| UI | Barra con 4 vitales con nombres; modo recursos (X/C) con los seis recursos; pestañas; panel de producción/consumo + descripción/fecha; menú de pausa con Continuar/Créditos; evitar ayuda | Implementado en la pasada UI/balance |
 | Docs | Se actualizan solo cuando el usuario lo pida explícitamente | Claro |
 
 ### Huecos que pueden romper la implementación

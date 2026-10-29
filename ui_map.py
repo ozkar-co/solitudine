@@ -149,6 +149,8 @@ def draw_map(
     layer: MapLayer,
     cursor_x: int,
     cursor_y: int,
+    select_x: int | None = None,
+    select_y: int | None = None,
 ) -> int:
     rect = map_rect()
     prev_clip = surf.get_clip()
@@ -219,6 +221,14 @@ def draw_map(
             preview = build.preview(world, sim.stock, cursor_x, cursor_y)
             ok = preview == BuildPreview.OK
             pygame.draw.rect(surf, COL_PREVIEW_OK if ok else COL_PREVIEW_BAD, cr, 2)
+
+    if select_x is not None and select_y is not None and world.in_bounds(select_x, select_y):
+        ssx, ssy = camera.tile_to_screen(
+            select_x, select_y, rect.x, rect.y, rect.w, rect.h
+        )
+        sr = _tile_draw_rect(ssx, ssy, px)
+        if rect.colliderect(sr):
+            pygame.draw.rect(surf, COL_CABLE, sr, 2)
 
     if world.in_bounds(cursor_x, cursor_y):
         csx, csy = camera.tile_to_screen(

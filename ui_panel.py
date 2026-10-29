@@ -22,7 +22,7 @@ from construction import (
 from daylight import darkness
 from i18n import t
 from logistics import network_caps
-from module_defs import ModuleContext, ModuleKind, module_def
+from module_defs import ModuleContext, ModuleKind, effective_flow, module_def
 from module_flow import module_flow_lines
 from module_power import format_energy_daily, module_energy_daily
 from network import get_connected
@@ -134,10 +134,12 @@ def _module_status_key(mod, sim: Simulation, world: World, caps) -> str:
     if kind == ModuleKind.GREENHOUSE:
         food_space = _output_space(sim.resources.food, caps.food, mod)
         o2_space = max(0.0, caps.o2 - sim.resources.o2)
-        if food_space <= 0.0:
-            return "status.o2_only" if o2_space > 0.0 else "status.no_output"
         if sim.resources.water <= 0.0:
-            return "status.o2_only" if o2_space > 0.0 else "status.no_output"
+            return "status.no_water"
+        if food_space <= 0.0 and o2_space <= 0.0:
+            return "status.no_output"
+        if food_space <= 0.0:
+            return "status.o2_only"
         return "status.producing"
 
     if kind == ModuleKind.FABRICATOR:
@@ -206,6 +208,35 @@ def _status_color(key: str) -> tuple[int, int, int]:
     ):
         return COL_DIM
     return COL_TEXT
+
+
+def _panel_wrapped(
+    surf: pygame.Surface,
+    font: pygame.font.Font,
+    x: int,
+    y: int,
+    text: str,
+    width: int,
+    color: tuple[int, int, int] = COL_DIM,
+    max_lines: int = 2,
+) -> int:
+    words = text.split()
+    lines: list[str] = []
+    current = ""
+    for word in words:
+        candidate = f"{current} {word}".strip()
+        if font.size(candidate)[0] <= width:
+            current = candidate
+        else:
+            if current:
+                lines.append(current)
+            current = word
+    if current:
+        lines.append(current)
+    for line in lines[:max_lines]:
+        _panel_line(surf, font, x, y, line, color)
+        y += 16
+    return y
 
 
 def _build_kind_label(kind: BuildKind) -> str:
@@ -290,6 +321,7 @@ def _draw_module_inspection(
     font_sm: pygame.font.Font,
     x: int,
     y: int,
+    width: int,
     mod,
     world: World,
     sim: Simulation,
@@ -305,6 +337,33 @@ def _draw_module_inspection(
         _status_color(status),
     )
     y += 16
+    y = _panel_wrapped(surf, font_sm, x, y, t(f"module_desc.{mod.kind.value}"), width)
+    ctx = _module_ctx(sim, world, mod)
+    flow = effective_flow(mod, ctx)
+    flows = [
+        (value, key)
+        for field, key in (
+            ("o2", "resource.o2"),
+            ("power", "resource.power"),
+            ("water", "resource.water"),
+            ("food", "resource.food"),
+            ("mineral", "resource.mineral"),
+            ("components", "resource.components"),
+        )
+        if abs(value := getattr(flow, field)) >= 0.05
+    ]
+    flows.sort(key=lambda item: item[0] <= 0.0)
+    for value, key in flows:
+        sign = "+" if value > 0.0 else "-"
+        _panel_line(
+            surf,
+            font_sm,
+            x,
+            y,
+            f"{sign} {t(key)} {abs(value):.1f}/d",
+            COL_TEXT if value > 0.0 else COL_DIM,
+        )
+        y += 16
     radius = module_def(mod.kind).light_radius
     if radius > 0:
         _panel_line(surf, font_sm, x, y, t("panel.light_radius", radius=radius))
@@ -329,6 +388,9 @@ def _draw_module_inspection(
     if mod.state == ModuleState.BUILDING and mod.build_total > 0:
         pct = 100.0 * mod.build_progress / mod.build_total
         _panel_line(surf, font_sm, x, y, t("panel.build_pct", pct=f"{pct:.0f}"))
+        y += 16
+    if mod.built_day > 0:
+        _panel_line(surf, font_sm, x, y, t("panel.built", day=mod.built_day), COL_DIM)
         y += 16
     return y
 
@@ -388,6 +450,50 @@ def _draw_habitat_resources(
         _panel_line(surf, font_sm, rect.x + 8, y, t(alert_key), alert_color(worst))
 
 
+def _draw_resource_panel(
+    surf: pygame.Surface,
+    font: pygame.font.Font,
+    font_sm: pygame.font.Font,
+    rect: pygame.Rect,
+    sim: Simulation,
+    world: World,
+) -> None:
+    y = rect.y + 10
+    surf.blit(font.render(t("panel.resources_title"), False, COL_TEXT), (rect.x + 8, y))
+    y += 26
+
+    nc = network_caps(world, get_connected(world))
+    resources = (
+        ("o2", ResourceId.O2, sim.resources.o2, nc.o2, True),
+        ("water", ResourceId.WATER, sim.resources.water, nc.water, True),
+        ("food", ResourceId.FOOD, sim.resources.food, nc.food, True),
+        ("power", ResourceId.POWER, sim.resources.power, nc.power, True),
+        ("mineral", None, sim.stock.mineral, nc.mineral, False),
+        ("components", None, sim.stock.components, nc.components, False),
+    )
+    for icon_name, resource, amount, cap, vital in resources:
+        level = sim.resources.alert_level(resource) if resource is not None else None
+        color = alert_color(level) if level is not None else COL_DIM
+        surf.blit(ui_assets.icon(icon_name), (rect.x + 8, y))
+        text = f"{t(f'resource.{icon_name}')} {format_amount(amount)}/{format_amount(cap)}"
+        _panel_line(surf, font_sm, rect.x + 28, y, text, color)
+        y += 18
+        if vital and resource is not None:
+            rate = sim.resources.daily_use(resource)
+            days = sim.resources.days_left(resource)
+            _panel_line(
+                surf,
+                font_sm,
+                rect.x + 28,
+                y,
+                f"{rate:+.1f}/d  {format_days(days)}",
+                COL_DIM,
+            )
+            y += 16
+
+    _panel_line(surf, font_sm, rect.x + 8, rect.bottom - 24, t("panel.resources_hint"), COL_DIM)
+
+
 def draw_panel(
     surf: pygame.Surface,
     font: pygame.font.Font,
@@ -408,6 +514,9 @@ def draw_panel(
     build = sim.build
     if build.mode == BuildMode.PLACE:
         _draw_build_place(surf, font, font_sm, rect, sim, world, cursor_x, cursor_y)
+        return
+    if layer == MapLayer.RESOURCES:
+        _draw_resource_panel(surf, font, font_sm, rect, sim, world)
         return
 
     y = rect.y + 10
@@ -451,7 +560,7 @@ def draw_panel(
             y += 16
             _draw_habitat_resources(surf, font_sm, rect, y, sim, world)
         else:
-            _draw_module_inspection(surf, font_sm, rect.x + 8, y, mod, world, sim)
+            _draw_module_inspection(surf, font_sm, rect.x + 8, y, rect.w - 16, mod, world, sim)
         return
 
     tile = world.tile_at(sel_x, sel_y)

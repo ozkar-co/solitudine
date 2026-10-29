@@ -67,7 +67,7 @@ class Simulation:
             labs = active_labs(world)
             if self.research.active is not None and labs:
                 self.research.advance(dt_days * factor * labs)
-            self.build.update_sites(world, dt_days)
+            self.build.update_sites(world, dt_days, self.day)
 
         self._apply_death_if_needed()
 

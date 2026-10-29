@@ -228,20 +228,12 @@ def _job_mine(ctx: TickContext, mod: Module) -> PowerJob | None:
 def _job_greenhouse(ctx: TickContext, mod: Module) -> PowerJob | None:
     food_space = _output_space(mod, ctx.resources.food, ctx.caps.food)
     o2_space = max(0.0, ctx.caps.o2 - ctx.resources.o2)
-    can_food = food_space > 0 and ctx.resources.water > 0
-    can_o2 = o2_space > 0
-    if not can_food and not can_o2:
+    if ctx.resources.water <= 0.0 or (food_space <= 0 and o2_space <= 0):
         return None
-    base_power = abs(module_def(ModuleKind.GREENHOUSE).nominal.power) * ctx.scale
-    power = base_power if can_food else base_power * 0.25
+    power = abs(module_def(ModuleKind.GREENHOUSE).nominal.power) * ctx.scale
 
-    def run(f: float, m=mod, fs=food_space, os_=o2_space, cf=can_food) -> None:
+    def run(f: float, m=mod, fs=food_space, os_=o2_space) -> None:
         if f <= 0:
-            return
-        if os_ > 0:
-            o2_amt = min(GREENHOUSE_O2_DAILY * ctx.scale * f, os_)
-            ctx.resources.o2, _ = _push(ctx.resources.o2, ctx.caps.o2, o2_amt)
-        if not cf:
             return
         water_need = GREENHOUSE_WATER_DAILY * ctx.scale * f
         if ctx.resources.water < water_need:
@@ -250,6 +242,11 @@ def _job_greenhouse(ctx: TickContext, mod: Module) -> PowerJob | None:
         if f <= 0 or water_need <= 0:
             return
         ctx.resources.water -= water_need
+        if os_ > 0:
+            o2_amt = min(GREENHOUSE_O2_DAILY * ctx.scale * f, os_)
+            ctx.resources.o2, _ = _push(ctx.resources.o2, ctx.caps.o2, o2_amt)
+        if fs <= 0:
+            return
         food_amt = min(GREENHOUSE_FOOD_DAILY * ctx.scale * f, fs)
         in_buf = _try_add_buffer(m, food_amt)
         overflow = food_amt - in_buf

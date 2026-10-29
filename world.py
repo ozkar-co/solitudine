@@ -66,6 +66,7 @@ class Module:
     buffer_cap: float = 0.0
     shadow_stamped: bool = False
     clear_active: bool = False
+    built_day: int = 0
 
     def __post_init__(self) -> None:
         if self.buffer_cap == 0.0 and self.kind.value not in MODULES_NO_BUFFER:

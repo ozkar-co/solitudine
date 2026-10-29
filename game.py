@@ -34,6 +34,7 @@ from ui import (
     draw_dev_debug,
     draw_game_over,
     draw_map,
+    draw_mode_badge,
     draw_panel,
     draw_pause_modal,
     draw_top_bar,
@@ -263,7 +264,10 @@ def run(dev: bool = False, handheld: bool = False) -> int:
         )
 
         screen.fill((0, 0, 0))
-        tiles_drawn = draw_map(screen, world, sim, camera, layer, cursor_x, cursor_y)
+        tiles_drawn = draw_map(
+            screen, world, sim, camera, layer, cursor_x, cursor_y,
+            select_x=select_x, select_y=select_y,
+        )
         draw_minimap(
             screen,
             world,
@@ -272,13 +276,14 @@ def run(dev: bool = False, handheld: bool = False) -> int:
             cursor_y=cursor_y,
             visible=minimap_on,
         )
+        draw_mode_badge(screen, font_sm, sim, build, layer)
         draw_top_bar(screen, font, font_sm, sim, world)
         draw_panel(
             screen, font, font_sm, world, sim, select_x, select_y, layer,
             cursor_x=cursor_x, cursor_y=cursor_y,
         )
 
-        help_text = context_help(sim, build, select_x=select_x)
+        help_text = context_help(sim, build, select_x=select_x, layer=layer)
 
         draw_bottom_bar(screen, font_sm, help_text)
         if dev_mode:

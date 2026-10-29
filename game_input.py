@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from construction import BuildController, BuildKind, BuildMode
+from construction import BuildController, BuildKind, BuildMode, kind_cost
 from credits import CREDITS_SCROLL_STEP, KONAMI_SEQUENCE, max_credits_scroll
 from gamepad import LJOY_DOWN, LJOY_LEFT, LJOY_RIGHT, LJOY_UP
 from input_state import FrameInput, Input
@@ -143,10 +143,22 @@ def handle_frame_input(
             build.menu_up()
         if inp.was_pressed(frame, "DPAD_DOWN") or inp.was_pressed(frame, LJOY_DOWN):
             build.menu_down()
-        if inp.was_pressed(frame, "A") and not build.selected_locked(sim.research.unlocked):
+        if inp.was_pressed(frame, "DPAD_LEFT") or inp.was_pressed(frame, LJOY_LEFT):
+            build.menu_left()
+        if inp.was_pressed(frame, "DPAD_RIGHT") or inp.was_pressed(frame, LJOY_RIGHT):
+            build.menu_right()
+        if (
+            inp.was_pressed(frame, "A")
+            and not build.selected_locked(sim.research.unlocked)
+            and sim.stock.can_afford(kind_cost(build.selected))
+        ):
             build.enter_place()
 
     elif build.mode == BuildMode.PLACE:
+        if inp.was_pressed(frame, "X"):
+            result.layer = (
+                MapLayer.RESOURCES if layer == MapLayer.TERRAIN else MapLayer.TERRAIN
+            )
         if inp.was_pressed(frame, "A"):
             if build.try_place(world, sim.stock, cursor_x, cursor_y, sim.research.unlocked):
                 if build.selected != BuildKind.CABLE:

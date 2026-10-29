@@ -40,6 +40,7 @@ __all__ = [
     "draw_dev_debug",
     "draw_game_over",
     "draw_map",
+    "draw_mode_badge",
     "draw_panel",
     "draw_pause_modal",
     "module_debug_lines",
@@ -67,37 +68,59 @@ def draw_top_bar(
         pygame.draw.rect(surf, bar_border, rect, 2)
 
     title = f"{t('game.title')}  {t('planet.code')}"
-    surf.blit(font_sm.render(title, False, COL_TEXT), (8, 1))
+    surf.blit(font_sm.render(title, False, COL_TEXT), (8, 0))
     day = f"{t('hud.day', day=sim.day)} {t('hud.hour', hour=sim.hour)}"
     day_s = font_sm.render(day, False, COL_DIM)
-    surf.blit(day_s, (SCREEN_W - 8 - day_s.get_width(), 1))
+    surf.blit(day_s, (SCREEN_W - 8 - day_s.get_width(), 0))
 
     nc = network_caps(world, get_connected(world))
     x = 8
     vitals = (
-        ("o2", sim.resources.o2, nc.o2, ResourceId.O2),
-        ("water", sim.resources.water, nc.water, ResourceId.WATER),
-        ("food", sim.resources.food, nc.food, ResourceId.FOOD),
-        ("power", sim.resources.power, nc.power, ResourceId.POWER),
+        ("o2", t("resource.o2"), sim.resources.o2, nc.o2, ResourceId.O2),
+        ("water", t("resource.water"), sim.resources.water, nc.water, ResourceId.WATER),
+        ("food", t("resource.food"), sim.resources.food, nc.food, ResourceId.FOOD),
+        ("power", t("resource.power"), sim.resources.power, nc.power, ResourceId.POWER),
     )
-    for icon_name, amount, cap, resource in vitals:
-        text = f"{format_amount(amount)}/{format_amount(cap)}"
+    for icon_name, label, amount, cap, resource in vitals:
+        text = f"{label} {format_amount(amount)}/{format_amount(cap)}"
         level = sim.resources.alert_level(resource)
-        stats_s = font_sm.render(text, False, alert_color(level))
-        surf.blit(ui_assets.icon(icon_name), (x, 17))
-        surf.blit(stats_s, (x + 20, 17))
+        color = COL_TEXT if level == AlertLevel.OK else alert_color(level)
+        stats_s = font_sm.render(text, False, color)
+        surf.blit(ui_assets.icon(icon_name), (x, 16))
+        surf.blit(stats_s, (x + 20, 16))
         x += 20 + stats_s.get_width() + 8
 
-    materials = (
-        ("mineral", sim.stock.mineral, nc.mineral),
-        ("components", sim.stock.components, nc.components),
-    )
-    for icon_name, amount, cap in materials:
-        text = f"{format_amount(amount)}/{format_amount(cap)}"
-        stats_s = font_sm.render(text, False, COL_DIM)
-        surf.blit(ui_assets.icon(icon_name), (x, 17))
-        surf.blit(stats_s, (x + 20, 17))
-        x += 20 + stats_s.get_width() + 8
+
+def draw_mode_badge(
+    surf: pygame.Surface,
+    font_sm: pygame.font.Font,
+    sim: Simulation,
+    build,
+    layer: MapLayer,
+) -> None:
+    if sim.credits_open or sim.easter_egg_open:
+        return
+    label = None
+    color = COL_TEXT
+    if sim.user_paused:
+        label = t("mode.paused")
+        color = COL_WARN
+    elif build.mode == BuildMode.PLACE:
+        label = f"{t('mode.place')} · {t('mode.paused')}"
+        color = COL_WARN
+    elif build.mode == BuildMode.MENU:
+        label = f"{t('mode.build')} · {t('mode.paused')}"
+        color = COL_WARN
+    elif layer == MapLayer.RESOURCES:
+        label = t("mode.resources")
+    if label is None:
+        return
+    text = font_sm.render(label, False, color)
+    rect = map_rect()
+    badge = pygame.Rect(rect.x + 8, rect.y + 8, text.get_width() + 12, text.get_height() + 6)
+    pygame.draw.rect(surf, COL_PANEL, badge)
+    pygame.draw.rect(surf, COL_BORDER, badge, 1)
+    surf.blit(text, (badge.x + 6, badge.y + 3))
 
 
 def draw_bottom_bar(surf: pygame.Surface, font_sm: pygame.font.Font, text: str) -> None:
@@ -184,22 +207,32 @@ def draw_build_menu_modal(
             COL_DIM,
         ),
     ]
-    idx = 0
-    for category_key, kinds in BUILD_CATEGORIES:
-        lines.append(ModalLine(t(category_key), COL_WARN))
-        for kind in kinds:
-            selected = idx == build.menu_index
-            prefix = ">" if selected else " "
-            locked = kind_locked(kind, sim.research.unlocked)
-            text = f"{prefix} {_build_kind_label(kind)} ({format_amount(kind_cost(kind))})"
-            color = COL_TEXT if selected else COL_DIM
-            if locked:
-                tech_id = tech_for_module(module_kind_for(kind))
-                if tech_id is not None:
-                    text += f"  {t('build.locked', tech=t(tech_def(tech_id).name_key))}"
-                color = COL_WARN if selected else COL_DIM
-            lines.append(ModalLine(text, color))
-            idx += 1
+    tabs = "  ".join(
+        f"[{t(category_key)}]" if index == build.menu_category else t(category_key)
+        for index, (category_key, _kinds) in enumerate(BUILD_CATEGORIES)
+    )
+    lines.append(ModalLine(tabs, COL_WARN))
+
+    _category_key, kinds = BUILD_CATEGORIES[build.menu_category]
+    for kind in kinds:
+        selected = kind == build.selected
+        prefix = ">" if selected else " "
+        cost = kind_cost(kind)
+        locked = kind_locked(kind, sim.research.unlocked)
+        affordable = sim.stock.can_afford(cost)
+        text = f"{prefix} {_build_kind_label(kind)} ({format_amount(cost)})"
+        if locked:
+            tech_id = tech_for_module(module_kind_for(kind))
+            if tech_id is not None:
+                text += f"  {t('build.locked', tech=t(tech_def(tech_id).name_key))}"
+        elif not affordable:
+            text += f"  {t('build.missing', value=format_amount(cost - sim.stock.components))}"
+        unavailable = locked or not affordable
+        if unavailable:
+            color = COL_WARN if selected else COL_DIM
+        else:
+            color = COL_TEXT
+        lines.append(ModalLine(text, color))
     lines.append(ModalLine(t("build.hint_menu"), COL_DIM))
     draw_map_modal(surf, font, font_sm, lines, dim_map=True)
 

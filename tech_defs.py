@@ -27,8 +27,8 @@ TECHS: tuple[TechDef, ...] = (
         desc_key="tech.electrolisis_desc",
         branch_key="tech.branch.support",
         tier=1,
-        cost=6.0,
-        days=2.0,
+        cost=4.0,
+        days=1.5,
         unlock_kind=ModuleKind.ELECTROLYZER,
     ),
     TechDef(
@@ -37,8 +37,8 @@ TECHS: tuple[TechDef, ...] = (
         desc_key="tech.condensador_desc",
         branch_key="tech.branch.support",
         tier=1,
-        cost=6.0,
-        days=2.0,
+        cost=4.0,
+        days=1.5,
         unlock_kind=ModuleKind.CONDENSER,
     ),
 )
