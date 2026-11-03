@@ -40,11 +40,24 @@ _font_sm: pygame.font.Font | None = None
 _font_lg: pygame.font.Font | None = None
 _easter_egg: pygame.Surface | None = None
 
+# A/B de fuentes: VT323-Regular.ttf o PixelOperator.ttf / PixelOperator-Bold.ttf.
+FONT_BODY_FILE = "PixelOperator.ttf"
+FONT_TITLE_FILE = "PixelOperator-Bold.ttf"
+FONT_BODY_SIZE = 16
+FONT_TITLE_SIZE = 24
+
 
 def _load_image(path: Path) -> pygame.Surface:
     if not path.exists():
         raise FileNotFoundError(f"Falta el asset: {path}")
     return pygame.image.load(path).convert_alpha()
+
+
+def load_font(filename: str, size: int) -> pygame.font.Font:
+    path = ASSETS_DIR / "fonts" / filename
+    if not path.exists():
+        raise FileNotFoundError(f"Falta la fuente: {path}")
+    return pygame.font.Font(path, size)
 
 
 def load() -> None:
@@ -67,11 +80,8 @@ def load() -> None:
     for name in ICON_NAMES:
         _icons[name] = _load_image(ASSETS_DIR / "icons" / f"{name}.png")
 
-    font_path = ASSETS_DIR / "fonts" / "VT323-Regular.ttf"
-    if not font_path.exists():
-        raise FileNotFoundError(f"Falta la fuente: {font_path}")
-    _font_sm = pygame.font.Font(font_path, 16)
-    _font_lg = pygame.font.Font(font_path, 24)
+    _font_sm = load_font(FONT_BODY_FILE, FONT_BODY_SIZE)
+    _font_lg = load_font(FONT_TITLE_FILE, FONT_TITLE_SIZE)
 
     egg_path = ASSETS_DIR / "credits" / "gatos.png"
     _easter_egg = _load_image(egg_path) if egg_path.exists() else None

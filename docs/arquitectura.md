@@ -73,7 +73,7 @@ En PC, `--dev --2x` mantiene el render interno en 640×480 y escala la ventana a
 | `i18n.py` / `locales/es.json` | Textos. |
 | `ui_layout.py` | Regiones 640×480. |
 | `ui_theme.py` | Colores y formatos. |
-| `ui_assets.py` | Sprites, iconos, ruina y fuente VT323. |
+| `ui_assets.py` | Sprites, iconos, ruina, fuente Pixel Operator y fallback VT323. |
 | `ui_map.py` | Tiles, ruinas, cables, módulos, preview y dithering. |
 | `ui_minimap.py` | Minimapa cacheado. |
 | `ui_night.py` | Fuentes de luz visual y dithering por tile. |

@@ -85,7 +85,7 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 
 ## UI
 
-- 640×480, grilla de 16 px, fuente VT323 y sprites propios.
+- 640×480, grilla de 16 px, fuente Pixel Operator (con VT323 como fallback) y sprites propios.
 - Barra superior: O₂, agua, comida y energía, con nombre y `x/y`.
 - Modo recursos (X): los siete recursos con nombre y cantidad/cap.
 - Panel lateral: estado, descripción, producción/consumo, buffer, reserva, día de construcción y contadores del reciclador.

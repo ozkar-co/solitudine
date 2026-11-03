@@ -80,11 +80,13 @@ magick assets/gatos.jpg -auto-orient -resize '320x240^' -gravity center -extent 
   -dither None -colors 32 -filter point -resize 640x480 assets/credits/gatos.png
 ```
 
-### Fuente
+### Fuentes
 
-- `assets/fonts/VT323-Regular.ttf`, SIL Open Font License 1.1 (`assets/fonts/OFL.txt`).
-- Tamaños de uso: 16 px cuerpo, 24 px títulos; `antialias=False` al renderizar.
-- VT323 cubre acentos y ñ; se verificó con `áéíóú ñÑ ¿? ¡!`.
+- UI: `assets/fonts/PixelOperator.ttf` (cuerpo 16 px) y `assets/fonts/PixelOperator-Bold.ttf` (títulos 24 px), CC0 1.0 (`assets/fonts/PixelOperator-CC0.txt`).
+- `assets/fonts/VT323-Regular.ttf` se conserva como fallback/A-B, SIL Open Font License 1.1 (`assets/fonts/OFL.txt`).
+- Tamaños de uso: 16 px cuerpo, 24 px títulos; `antialias=False` al renderizar. El splash usa Pixel Operator Bold 48 / regular 24.
+- Pixel Operator cubre Latin-1 (acentos, ñ, ¿¡); se verificó con `áéíóú ñÑ ¿? ¡!`.
+- Para A/B, cambiar `FONT_BODY_FILE`, `FONT_TITLE_FILE`, `FONT_BODY_SIZE` y `FONT_TITLE_SIZE` en `ui_assets.py`.
 
 ## Regenerar un asset
 

@@ -45,6 +45,7 @@ from ui import (
 )
 from ui_input import input_policy
 from ui_minimap import draw_minimap
+from ui_tech import draw_tech_screen
 from world import generate_world
 
 

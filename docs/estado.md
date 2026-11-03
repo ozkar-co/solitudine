@@ -47,6 +47,7 @@ make dist                          # paquete PortMaster
 - Un módulo apagado no produce, no consume, no da visión, no suma cap de almacén y no emite luz.
 - Regla de recursos: 2 fuentes / 2 usos es una heurística, no una regla estricta. No se agrega un recurso sin un problema, una fuente y un uso definidos.
 - La barra superior muestra solo los cuatro vitales; el modo recursos muestra los siete recursos.
+- Fuente UI: Pixel Operator 16/24 (cuerpo regular, títulos bold); VT323 queda como fallback/A-B.
 - El menú de construcción usa pestañas por categoría y los módulos no disponibles se muestran en gris.
 
 ## Documentación

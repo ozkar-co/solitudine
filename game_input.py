@@ -202,13 +202,15 @@ def handle_frame_input(
                 result.select_x, result.select_y = cursor_x, cursor_y
                 result.layer = MapLayer.TERRAIN
             elif world.has_ruin(cursor_x, cursor_y):
-                caps = network_caps(world, get_connected(world))
-                space = max(0.0, caps[ResourceId.SCRAP] - sim.resources.scrap)
-                taken = world.take_ruin(cursor_x, cursor_y, space)
-                if taken > 0.0:
-                    sim.resources.add(ResourceId.SCRAP, taken)
-                    sim.stats.scrap_collected += taken
-                    result.save_requested = True
+                already_selected = select_x == cursor_x and select_y == cursor_y
+                if already_selected:
+                    caps = network_caps(world, get_connected(world))
+                    space = max(0.0, caps[ResourceId.SCRAP] - sim.resources.scrap)
+                    taken = world.take_ruin(cursor_x, cursor_y, space)
+                    if taken > 0.0:
+                        sim.resources.add(ResourceId.SCRAP, taken)
+                        sim.stats.scrap_collected += taken
+                        result.save_requested = True
                 result.select_x, result.select_y = cursor_x, cursor_y
             else:
                 mod = world.module_at(cursor_x, cursor_y)

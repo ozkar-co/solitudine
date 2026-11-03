@@ -44,7 +44,7 @@
   "panel.built": "Construido: día {day}",
   "panel.ruin": "RUINA",
   "panel.ruin_scrap": "Chatarra: {value}",
-  "panel.ruin_hint": "Pulsa A para recoger.",
+  "panel.ruin_hint": "Pulsa A para recolectar.",
   "panel.scrap_processed": "Chatarra procesada: {value}",
   "panel.scrap_mineral": "Mineral reciclado: {value}",
   "deposit.water": "Agua",

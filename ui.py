@@ -77,8 +77,8 @@ def draw_splash(surf: pygame.Surface, title: str, subtitle: str) -> None:
     pygame.draw.rect(surf, COL_PANEL, box)
     pygame.draw.rect(surf, COL_BORDER, box, 2)
 
-    font = pygame.font.Font(None, 48)
-    font_sm = pygame.font.Font(None, 24)
+    font = ui_assets.load_font(ui_assets.FONT_TITLE_FILE, 48)
+    font_sm = ui_assets.load_font(ui_assets.FONT_BODY_FILE, 24)
     title_s = font.render(title, False, COL_TEXT)
     sub_s = font_sm.render(subtitle, False, COL_DIM)
     surf.blit(title_s, (w // 2 - title_s.get_width() // 2, box.y + 28))
