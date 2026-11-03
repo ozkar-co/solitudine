@@ -22,4 +22,8 @@ Copiar a la SD:
 
 La consola monta el runtime pygame-ce (squashfs) incluido en `port/runtime/`; no se usa Nuitka/PyInstaller. **SELECT+START** cierra el juego.
 
+## Beta para testers (PC)
+
+Build temporal dev+2x para Windows/Linux; no afecta la distribución PortMaster. Instrucciones en [tools/dev_beta/README.md](tools/dev_beta/README.md).
+
 Más documentación en [docs/](docs/).

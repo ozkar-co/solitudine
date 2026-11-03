@@ -8,7 +8,7 @@
 - La simulación no dibuja; la UI no muta el mundo; `game.py` orquesta.
 - `module_defs.py` es la fuente única de módulos, flujos y costes.
 - Sin abstracciones “por si acaso”: primero la función, luego el helper si se repite.
-- Todo el `.py` está en la raíz; `main.py` es la única entrada.
+- Todo el `.py` del juego está en la raíz; `main.py` es la entrada. `tools/dev_beta/` es una entrada temporal de beta PC, aislada del juego.
 
 ## Flujo de un frame
 
@@ -85,6 +85,8 @@ En PC, `--dev --2x` mantiene el render interno en 640×480 y escala la ventana a
 | `credits.py` | Datos de créditos y secuencia Konami; sin lógica de UI. |
 | `test_sim.py` | Tests de regresión. |
 
+`tools/dev_beta/` queda fuera de esta arquitectura: es una entrada temporal de beta PC con PyInstaller, assets bundleados y saves/log junto al ejecutable. No se usa en PortMaster.
+
 ## Reglas de UI
 
 - Layout en `ui_layout.py`; nada de rects mágicos.
@@ -116,7 +118,7 @@ En PC, `--dev --2x` mantiene el render interno en 640×480 y escala la ventana a
 
 ## Guardado
 
-- `save.json` junto al ejecutable; ignorado por git.
+- `save.json` junto al ejecutable; ignorado por git. La beta PC define `SOLITUDINE_SAVE_DIR` y guarda en `saves/save.json` junto a su ejecutable.
 - `VERSION` 4. Guarda simulación, los siete recursos, `stats`, módulos/cables, `cost_paid`, `enabled`, investigación, ruinas y arrays del mundo comprimidos.
 - Sin migración: si el save no es v4, se borra al cargar y se empieza de cero.
 - Auto-save al pausar, cambiar de día o salir; carga al iniciar.

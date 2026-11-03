@@ -17,7 +17,10 @@ from simulation import Simulation
 from stats import Stats
 from world import Module, ModuleState, World, generate_world
 
-SAVE_PATH = Path(__file__).resolve().parent / "save.json"
+_SAVE_DIR = Path(
+    os.environ.get("SOLITUDINE_SAVE_DIR", Path(__file__).resolve().parent)
+)
+SAVE_PATH = _SAVE_DIR / "save.json"
 VERSION = 4
 
 

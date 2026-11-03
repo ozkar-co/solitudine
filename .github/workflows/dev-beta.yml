@@ -1,0 +1,35 @@
+name: dev-beta
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "beta-*"
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            artifact: SolitudineBeta-linux
+          - os: windows-latest
+            artifact: SolitudineBeta-windows
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt -r tools/dev_beta/requirements.txt
+      - name: Compilar beta
+        run: python tools/dev_beta/build.py
+      - name: Subir artefactos
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: tools/dev_beta/dist/

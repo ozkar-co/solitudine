@@ -1,0 +1,41 @@
+SOLITUDINE — BETA DEV (PC)
+==========================
+
+Esta es una build temporal de testing. No es la versión de consola.
+
+Requisitos
+----------
+- Windows 10/11 de 64 bits, o Linux x86_64.
+- No hace falta instalar Python ni pygame.
+
+Cómo ejecutar
+-------------
+Windows:  SolitudineBeta.exe
+Linux:    ./SolitudineBeta
+
+Abre una ventana de 1280x960 (render 2x) en modo dev. No tiene menú de opciones.
+
+Esta build no está firmada. En Windows puede aparecer SmartScreen:
+elegir "Más información" -> "Ejecutar de todas formas".
+En Linux, si no arranca: chmod +x SolitudineBeta
+
+Controles de teclado
+--------------------
+Z = A        X = B        C = X        V = Y
+Q = L1       E = R1       [ = L2       ] = R2
+1/2 = L2/R2  U = L3       O = R3       F = FN
+IJKL = DPAD  WASD = stick izquierdo   Flechas = stick derecho
+Enter = START             Bksp = SELECT
+Bksp + Enter = salir
+
+También acepta mando si el sistema lo detecta.
+
+Guardado y log
+--------------
+- Guardado:      saves/save.json (junto al ejecutable)
+- Log de la run: solitudine-beta.log (junto al ejecutable)
+
+Los saves son de beta y no migran entre versiones. Si el juego falla, enviá
+solitudine-beta.log junto con una descripción breve de lo que estabas haciendo.
+
+Gracias por probar.

@@ -1,4 +1,5 @@
 .venv/
+.venv-beta/
 dist/
 wheelhouse/
 __pycache__/
@@ -7,3 +8,7 @@ log.txt
 dev_log.txt
 .aider*
 save.json
+tools/dev_beta/build/
+tools/dev_beta/dist/
+tools/dev_beta/saves/
+tools/dev_beta/*.log

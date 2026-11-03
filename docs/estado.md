@@ -33,11 +33,13 @@ make test                          # tests de regresión
 .venv/bin/python main.py --dev     # PC, teclado como mando
 .venv/bin/python main.py --dev --2x  # PC, ventana 2x para depurar
 make dist                          # paquete PortMaster
+./tools/dev_beta/build.sh          # beta PC Linux (temporal)
+tools\dev_beta\build.ps1           # beta PC Windows (PowerShell)
 ```
 
 ## Decisiones vigentes
 
-- Todo el código `.py` vive en la raíz; `main.py` es la única entrada.
+- Todo el código `.py` del juego vive en la raíz; `main.py` es la entrada. `tools/dev_beta/` es una entrada temporal de beta PC, aislada del juego.
 - `module_defs.py` es la fuente única de flujos, costes y `module_active()`.
 - Recursos y costes: pool único (`ResourcePool`) y `Cost` multi-material; `Stockpile` ya no existe.
 - Chatarra: cap 30 (+40 por almacén), ruinas seleccionadas y recogidas con A; demolición/cancelación con B y confirmación A.

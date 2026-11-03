@@ -185,7 +185,7 @@ El playtest manda. Cualquier cambio se refleja en `config.py` y en [catalogo.md]
 - Generalizar un motor de recetas: cada módulo declara su flujo en `module_defs.py`.
 - Crear un framework de UI o pantallas con pestañas vacías.
 - Combatir/tower defense como próxima etapa.
-- Nuitka/PyInstaller: la distribución sigue siendo PortMaster + squashfs.
+- Nuitka/PyInstaller para la distribución de consola: sigue siendo PortMaster + squashfs. La beta PC temporal vive aislada en `tools/dev_beta/` y no cambia esa distribución.
 - Abrir un slice nuevo antes de cerrar el slice actual.
 
 ## Riesgos y decisiones
