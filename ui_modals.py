@@ -13,7 +13,11 @@ MODAL_PAD_X = 16
 MODAL_PAD_Y = 12
 MODAL_DIM_ALPHA = 100
 MODAL_HEIGHT = 256
-BUILD_MODAL_HEIGHT = 360
+BUILD_MODAL_WIDTH = 608
+BUILD_MODAL_HEIGHT = 404
+BUILD_CARD_HEIGHT = 58
+BUILD_CARD_GAP = 6
+BUILD_CARD_ICON = 32
 MODAL_FOOTER_GAP = 8
 MODAL_ITEM_GAP = 12
 MODAL_ICON_GAP = 4
@@ -72,6 +76,21 @@ def _render_segments(segments: tuple[ModalSegment, ...], font_sm: pygame.font.Fo
         row.blit(piece, (x, (height - piece.get_height()) // 2))
         x += piece.get_width()
     return row
+
+
+def render_items(
+    items: tuple[ModalItem, ...],
+    font_sm: pygame.font.Font,
+    gap: int = MODAL_ITEM_GAP,
+) -> pygame.Surface:
+    return _render_items(items, font_sm, gap)
+
+
+def render_segments(
+    segments: tuple[ModalSegment, ...],
+    font_sm: pygame.font.Font,
+) -> pygame.Surface:
+    return _render_segments(segments, font_sm)
 
 
 def _render_line(line: ModalLine, font: pygame.font.Font, font_sm: pygame.font.Font) -> pygame.Surface:

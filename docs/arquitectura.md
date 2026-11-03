@@ -81,7 +81,7 @@ En PC, `--dev --2x` mantiene el render interno en 640×480 y escala la ventana a
 | `ui_tech.py` | Pantalla de Tecnología mínima. |
 | `ui_modals.py` | Modales reutilizables (pausa, créditos, construcción, game over). |
 | `ui_input.py` / `game_help.py` | Política de input / texto contextual. |
-| `ui.py` | HUD, modales (incluida demolición), badges de modo y fachada de mapa/panel. |
+| `ui.py` | HUD, modales (incluida demolición), menú de construcción en tarjetas, badges de modo y fachada de mapa/panel. |
 | `credits.py` | Datos de créditos y secuencia Konami; sin lógica de UI. |
 | `test_sim.py` | Tests de regresión. |
 

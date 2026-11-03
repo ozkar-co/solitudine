@@ -740,7 +740,8 @@ class ScrapTests(unittest.TestCase):
         amount = world.ruin_amount(x, y)
         world.explored[world.idx(x, y)] = 1
         frame = FrameInput(frozenset({"A"}), frozenset({"A"}), frozenset())
-        result = handle_frame_input(
+
+        first = handle_frame_input(
             frame,
             Input(dev_mode=False),
             sim,
@@ -751,10 +752,25 @@ class ScrapTests(unittest.TestCase):
             select_x=None,
             select_y=None,
         )
+        self.assertEqual(sim.resources.scrap, 0.0)
+        self.assertTrue(world.has_ruin(x, y))
+        self.assertFalse(first.save_requested)
+
+        second = handle_frame_input(
+            frame,
+            Input(dev_mode=False),
+            sim,
+            world,
+            layer=MapLayer.TERRAIN,
+            cursor_x=x,
+            cursor_y=y,
+            select_x=first.select_x,
+            select_y=first.select_y,
+        )
         self.assertAlmostEqual(sim.resources.scrap, min(amount, 30.0))
         self.assertFalse(world.has_ruin(x, y))
         self.assertAlmostEqual(sim.stats.scrap_collected, min(amount, 30.0))
-        self.assertTrue(result.save_requested)
+        self.assertTrue(second.save_requested)
 
     def test_collect_respects_scrap_cap(self) -> None:
         world = generate_world()
@@ -763,7 +779,7 @@ class ScrapTests(unittest.TestCase):
         amount = world.ruin_amount(x, y)
         sim.resources.scrap = 29.0
         frame = FrameInput(frozenset({"A"}), frozenset({"A"}), frozenset())
-        handle_frame_input(
+        first = handle_frame_input(
             frame,
             Input(dev_mode=False),
             sim,
@@ -773,6 +789,17 @@ class ScrapTests(unittest.TestCase):
             cursor_y=y,
             select_x=None,
             select_y=None,
+        )
+        handle_frame_input(
+            frame,
+            Input(dev_mode=False),
+            sim,
+            world,
+            layer=MapLayer.TERRAIN,
+            cursor_x=x,
+            cursor_y=y,
+            select_x=first.select_x,
+            select_y=first.select_y,
         )
         self.assertAlmostEqual(sim.resources.scrap, 30.0)
         self.assertTrue(world.has_ruin(x, y))

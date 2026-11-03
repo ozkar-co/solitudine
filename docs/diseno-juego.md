@@ -43,7 +43,7 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 ## Chatarra, ruinas y reciclador
 
 - Las ruinas son tiles de 1×1 con 4-10 chatarra; hay 26 (2 garantizadas cerca del hábitat). Bloquean construcción y cables.
-- Se recogen con **A** y entran a la red con cap 30 (+40 por almacén).
+- Se seleccionan con **A** y se recogen con **A** otra vez; entran a la red con cap 30 (+40 por almacén).
 - **B** sobre un módulo/cable seleccionado abre la confirmación de demolición; el módulo deja una ruina con 0,6-0,9 de su equivalente mineral y el cable devuelve 1 Cmp.
 - Cancelar una obra devuelve chatarra por los componentes pagados y el progreso (cap 0,9).
 - El reciclador consume chatarra y agua para producir mineral; la tecnología `reciclaje` lo desbloquea.
@@ -68,7 +68,7 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 | Mover cursor | Flechas / WASD | L-stick / DPAD |
 | Mover cámara | Arrastrar con botón medio / right stick | R-stick |
 | Seleccionar celda | A / Enter | A |
-| Recoger chatarra de una ruina | A sobre la ruina | A sobre la ruina |
+| Recoger chatarra de una ruina | A para seleccionar, A otra vez para recoger | A para seleccionar, A otra vez para recoger |
 | Demoler módulo/cable o cancelar obra | B sobre la celda seleccionada | B sobre la celda seleccionada |
 | Confirmar demolición/cancelación | A | A |
 | Acción especial del módulo (Tecnología en laboratorio) | A otra vez sobre el módulo | A otra vez sobre el módulo |
@@ -90,7 +90,7 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 - Modo recursos (X): los siete recursos con nombre y cantidad/cap.
 - Panel lateral: estado, descripción, producción/consumo, buffer, reserva, día de construcción y contadores del reciclador.
 - Minimapa con región explorada, módulos, cables, ruinas y viewport.
-- Menú de construcción por pestañas (Energía, Extracción, Soporte, Logística, Ciencia); categorías vacías ocultas, no disponibles en gris con “Investigar”. Cada módulo muestra coste multi-material con icono/cantidad, faltantes por recurso, descripción y flujo produce/consume.
+- Menú de construcción por pestañas (Energía, Extracción, Soporte, Logística, Ciencia); categorías vacías ocultas. Cada módulo es una tarjeta horizontal con icono, borde/fondo propio, coste multi-material, faltantes, descripción y flujo produce/consume; la seleccionada se resalta en ámbar.
 - Ruinas dibujadas en el mapa y modal de demolición/cancelación con confirmación A/B.
 - Badges de modo/pausa y celda seleccionada; X cambia capa también en modo colocar.
 - Consola de tecnología: una pantalla simple, sin pestañas vacías.

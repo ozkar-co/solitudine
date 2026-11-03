@@ -41,7 +41,7 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 **Chatarra, ruinas y reciclador**
 
 - 26 ruinas (2 garantizadas cerca del hábitat, 24 procedurales), 1 tile y 4-10 chatarra; bloquean construcción y cable.
-- Recogida instantánea con **A**; cap de chatarra 30 (+40 por almacén); el remanente queda guardado.
+- Recogida con **A** sobre la ruina seleccionada (A para seleccionar, A otra vez para recoger); cap de chatarra 30 (+40 por almacén); el remanente queda guardado.
 - **Demolición:** con un módulo o cable seleccionado, **B** abre confirmación y **A** demuele. Un módulo deja una ruina con 0,6-0,9 del equivalente mineral; el cable devuelve 1 Cmp.
 - **Cancelar obra:** componentes pagados × `min(progreso, 0,9)` en chatarra; el resto de materiales se pierde.
 - **Reciclador:** 3 Cmp, 0,5 d, 1 E/d, 0,5 agua/d; 4 chatarra/d → 3,6 mineral/d + 0,2 Cmp/d; registra chatarra procesada y mineral reciclado.
@@ -67,7 +67,7 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 ### Chatarra, ruinas y reciclador
 
 - La chatarra entra a la red, tiene cap propio de **30** (+40 por almacén) y se muestra en modo recursos.
-- Se recoge de ruinas desde el día 0 con **A**; el monto es variable (4-10) y el remanente queda guardado.
+- Se recoge de ruinas desde el día 0 con **A** sobre la ruina seleccionada; el monto es variable (4-10) y el remanente queda guardado.
 - Ruinas: **26** (2 garantizadas cerca del hábitat, 24 procedurales), 1 tile; solo en zonas abiertas sin agua/mineral/árboles/cristales; bloquean construcción y cables; se guardan.
 - Demoler un módulo crea una ruina de su tamaño (hoy 1×1). La recogida es instantánea y sin coste.
 - Demolición con **B** sobre el módulo/cable seleccionado y confirmación con **A**; el módulo deja una ruina con 0,6-0,9 del equivalente mineral. El cable devuelve 1 Cmp íntegro.
@@ -110,7 +110,7 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 - Barra superior solo con los cuatro vitales, con nombres; si no caben, se decide en playtest.
 - Modo recursos: siete recursos con cantidad/cap; sin gasto diario ni días. A inspecciona y vuelve al terreno.
 - Panel del hábitat: solo consumo diario por vital y alertas; las cantidades/caps viven en modo recursos.
-- Menú de construcción por pestañas; categorías vacías ocultas; no disponibles en gris con “Investigar”; coste, faltante, descripción y flujo produce/consume visibles. Coste multi-material con un icono+cantidad por recurso y faltantes por recurso; modal amplio de altura fija con controles en pie separado; categoría seleccionada resaltada y entre `< >`.
+- Menú de construcción por pestañas; categorías vacías ocultas; no disponibles en gris con “Investigar”; coste, faltante, descripción y flujo produce/consume visibles. Cada módulo se muestra como tarjeta horizontal con icono, borde/fondo propio y la seleccionada resaltada en ámbar. Coste multi-material con un icono+cantidad por recurso y faltantes por recurso; modal amplio de altura fija con controles en pie separado; categoría seleccionada entre `< >`.
 - Panel de módulo: estado, descripción, producción/consumo con nombres y día de construcción. Los módulos mixtos muestran ambas cosas; el reciclador muestra chatarra procesada y mineral reciclado.
 - Ruinas: se dibujan en el mapa, se inspeccionan en el panel y se recogen con A. La demolición/cancelación abre un modal con confirmación A/B.
 - Acciones especiales: cada módulo declara `special_action`; con el módulo activo e inspeccionado, A ejecuta la acción y el panel muestra “Pulsa A para {acción}”. SELECT queda libre. Laboratorio: A otra vez abre Tecnología. El cable forma una red logística única que conecta módulos de cualquier tipo; el almacén no se puede apagar.

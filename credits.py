@@ -44,7 +44,8 @@ CREDITS_SECTIONS: tuple[tuple[str, tuple[CreditEntry, ...]], ...] = (
         (
             CreditEntry("credits.python_license_name", "credits.python_license_roles"),
             CreditEntry("credits.pygame_license_name", "credits.pygame_license_roles"),
-            CreditEntry("credits.font_name", "credits.font_roles"),
+            CreditEntry("credits.pixeloperator_name", "credits.pixeloperator_roles"),
+            CreditEntry("credits.vt323_name", "credits.vt323_roles"),
         ),
     ),
 )

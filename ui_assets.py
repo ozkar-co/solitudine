@@ -23,6 +23,7 @@ ICON_NAMES = (
     "components",
     "mineral",
     "scrap",
+    "cable",
     "biomass",
     "chitin",
     "alloy",

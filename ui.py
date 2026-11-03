@@ -25,16 +25,26 @@ from resources import (
 from simulation import Simulation
 from ui_map import MapLayer, draw_map
 from ui_modals import (
+    BUILD_CARD_GAP,
+    BUILD_CARD_HEIGHT,
+    BUILD_CARD_ICON,
     BUILD_MODAL_HEIGHT,
+    BUILD_MODAL_WIDTH,
+    MODAL_DIM_ALPHA,
     MODAL_FOOTER_GAP,
     MODAL_PAD_X,
     MODAL_PAD_Y,
     ModalLine,
     draw_map_modal,
+    render_items,
+    render_segments,
 )
 from ui_panel import draw_panel, module_debug_lines
 from ui_theme import (
     COL_BORDER,
+    COL_CARD,
+    COL_CARD_BORDER,
+    COL_CARD_SELECTED,
     COL_CRITICAL,
     COL_DIM,
     COL_PANEL,
@@ -295,6 +305,23 @@ def _category_segments(build) -> tuple[tuple[str, tuple[int, int, int]], ...]:
     return tuple(segments)
 
 
+_BUILD_ICON_CACHE: dict[BuildKind, pygame.Surface] = {}
+
+
+def _build_icon(kind: BuildKind) -> pygame.Surface:
+    cached = _BUILD_ICON_CACHE.get(kind)
+    if cached is not None:
+        return cached
+    if kind == BuildKind.CABLE:
+        icon = pygame.transform.scale(
+            ui_assets.icon("cable"), (BUILD_CARD_ICON, BUILD_CARD_ICON)
+        )
+    else:
+        icon = ui_assets.module(module_kind_for(kind), BUILD_CARD_ICON)
+    _BUILD_ICON_CACHE[kind] = icon
+    return icon
+
+
 def draw_build_menu_modal(
     surf: pygame.Surface,
     font: pygame.font.Font,
@@ -306,50 +333,118 @@ def draw_build_menu_modal(
     if build.mode != BuildMode.MENU:
         return
 
-    lines: list[ModalLine] = [
-        ModalLine(t("build.title"), COL_TEXT, large=True),
-        *_resource_modal_lines(sim),
-        ModalLine(segments=_category_segments(build)),
-    ]
+    overlay = pygame.Surface(surf.get_size(), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, MODAL_DIM_ALPHA))
+    surf.blit(overlay, (0, 0))
+
+    box = pygame.Rect(0, 0, BUILD_MODAL_WIDTH, BUILD_MODAL_HEIGHT)
+    box.center = (surf.get_width() // 2, surf.get_height() // 2)
+    pygame.draw.rect(surf, COL_PANEL, box)
+    pygame.draw.rect(surf, COL_BORDER, box, 2)
+
+    y = box.y + MODAL_PAD_Y
+    title = font.render(t("build.title"), False, COL_TEXT)
+    surf.blit(title, (box.centerx - title.get_width() // 2, y))
+    y += title.get_height() + 4
+
+    for line in _resource_modal_lines(sim):
+        row = render_items(line.items, font_sm, line.item_gap)
+        surf.blit(row, (box.centerx - row.get_width() // 2, y))
+        y += row.get_height() + 2
+
+    categories = render_segments(_category_segments(build), font_sm)
+    surf.blit(categories, (box.centerx - categories.get_width() // 2, y))
+    y += categories.get_height() + 6
+    pygame.draw.line(
+        surf,
+        COL_DIM,
+        (box.x + MODAL_PAD_X, y),
+        (box.right - MODAL_PAD_X, y),
+    )
+    y += 6
 
     _category_key, kinds = BUILD_CATEGORIES[build.menu_category]
+    card_x = box.x + MODAL_PAD_X
+    card_w = box.w - MODAL_PAD_X * 2
     for kind in kinds:
+        card = pygame.Rect(card_x, y, card_w, BUILD_CARD_HEIGHT)
         selected = kind == build.selected
-        prefix = ">" if selected else " "
         cost = kind_cost(kind)
         locked = kind_locked(kind, sim.research.unlocked)
         affordable = cost.can_afford(sim.resources)
         missing = cost.missing(sim.resources)
-        suffix = ""
-        if locked:
-            suffix = f"  {t('build.locked')}"
-        elif missing:
-            suffix = f"  {t('build.missing', value=format_cost_text(Cost(missing)))}"
         unavailable = locked or not affordable
-        if unavailable:
-            color = COL_WARN if selected else COL_DIM
-        else:
-            color = COL_TEXT
-        items = [("", f"{prefix} {_build_kind_label(kind)} ( ", color)]
+        color = (COL_WARN if selected else COL_DIM) if unavailable else COL_TEXT
+
+        pygame.draw.rect(
+            surf, COL_CARD_SELECTED if selected else COL_CARD, card
+        )
+        pygame.draw.rect(
+            surf,
+            COL_WARN if selected else COL_CARD_BORDER,
+            card,
+            2 if selected else 1,
+        )
+        if selected:
+            pygame.draw.rect(
+                surf, COL_WARN, (card.x + 2, card.y + 8, 3, card.h - 16)
+            )
+
+        icon = _build_icon(kind)
+        surf.blit(
+            icon,
+            (card.x + 9, card.y + (card.h - icon.get_height()) // 2),
+        )
+        text_x = card.x + 9 + BUILD_CARD_ICON + 10
+        text_y = card.y + 5
+
+        items = [("", f"{_build_kind_label(kind)} ( ", color)]
         for resource, amount in cost.items():
-            items.append((RESOURCE_BY_ID[resource].icon, format_amount(amount), color))
+            items.append(
+                (RESOURCE_BY_ID[resource].icon, format_amount(amount), color)
+            )
         items.append(("", ")", color))
-        if suffix:
-            items.append(("", suffix, color))
-        lines.append(ModalLine(items=tuple(items), item_gap=4))
-        lines.append(ModalLine(_build_kind_desc(kind), COL_DIM))
-        lines.append(_build_effect_line(kind, COL_DIM if unavailable else COL_TEXT))
-    draw_map_modal(
+        name_row = render_items(tuple(items), font_sm, 4)
+        surf.blit(name_row, (text_x, text_y))
+
+        status = ""
+        if locked:
+            status = t("build.locked")
+        elif missing:
+            status = t("build.missing", value=format_cost_text(Cost(missing)))
+        if status:
+            status_color = COL_WARN if selected else COL_DIM
+            status_s = font_sm.render(status, False, status_color)
+            status_x = card.right - 9 - status_s.get_width()
+            if status_x > text_x + name_row.get_width() + 8:
+                surf.blit(status_s, (status_x, text_y))
+            else:
+                surf.blit(
+                    status_s,
+                    (card.right - 9 - status_s.get_width(), card.bottom - 18),
+                )
+
+        desc = font_sm.render(_build_kind_desc(kind), False, COL_DIM)
+        surf.blit(desc, (text_x, text_y + 16))
+        effect = _build_effect_line(kind, color)
+        if effect.items:
+            effect_row = render_items(effect.items, font_sm, effect.item_gap)
+        else:
+            effect_row = font_sm.render(effect.text, False, effect.color)
+        surf.blit(effect_row, (text_x, text_y + 32))
+
+        y = card.bottom + BUILD_CARD_GAP
+
+    footer_h = font_sm.get_height() + 2
+    footer_top = box.bottom - MODAL_PAD_Y - footer_h
+    pygame.draw.line(
         surf,
-        font,
-        font_sm,
-        lines,
-        dim_map=True,
-        min_width=608,
-        fixed_height=BUILD_MODAL_HEIGHT,
-        footer=[ModalLine(t("build.hint_menu"), COL_DIM)],
-        wide=True,
+        COL_DIM,
+        (box.x + MODAL_PAD_X, footer_top - MODAL_FOOTER_GAP),
+        (box.right - MODAL_PAD_X, footer_top - MODAL_FOOTER_GAP),
     )
+    hint = font_sm.render(t("build.hint_menu"), False, COL_DIM)
+    surf.blit(hint, (box.centerx - hint.get_width() // 2, footer_top))
 
 
 def draw_demolish_modal(
@@ -467,6 +562,7 @@ def draw_credits_modal(
         + CREDITS_VISIBLE_LINES * line_h
         + footer_h
         + MODAL_FOOTER_GAP
+        + 6
     )
     min_width = (
         max(

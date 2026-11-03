@@ -40,7 +40,7 @@ make dist                          # paquete PortMaster
 - Todo el código `.py` vive en la raíz; `main.py` es la única entrada.
 - `module_defs.py` es la fuente única de flujos, costes y `module_active()`.
 - Recursos y costes: pool único (`ResourcePool`) y `Cost` multi-material; `Stockpile` ya no existe.
-- Chatarra: cap 30 (+40 por almacén), ruinas recogidas con A; demolición/cancelación con B y confirmación A.
+- Chatarra: cap 30 (+40 por almacén), ruinas seleccionadas y recogidas con A; demolición/cancelación con B y confirmación A.
 - La UI no muta la simulación; `game.py` orquesta.
 - Guardado JSON automático; `save.json` está ignorado por git. `VERSION` 4, sin migración: los saves anteriores se borran al cargar. Se guardan recursos, stats, `cost_paid` y ruinas.
 - La luz es visual: el hábitat ilumina desde el inicio y la lámpara consume energía solo de noche, proporcional a la oscuridad.
@@ -48,7 +48,7 @@ make dist                          # paquete PortMaster
 - Regla de recursos: 2 fuentes / 2 usos es una heurística, no una regla estricta. No se agrega un recurso sin un problema, una fuente y un uso definidos.
 - La barra superior muestra solo los cuatro vitales; el modo recursos muestra los siete recursos.
 - Fuente UI: Pixel Operator 16/24 (cuerpo regular, títulos bold); VT323 queda como fallback/A-B.
-- El menú de construcción usa pestañas por categoría y los módulos no disponibles se muestran en gris.
+- El menú de construcción usa pestañas por categoría y tarjetas horizontales por módulo; la seleccionada se resalta en ámbar y las no disponibles se muestran en gris.
 
 ## Documentación
 

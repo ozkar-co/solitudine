@@ -10,6 +10,9 @@ from ui_layout import map_rect, panel_rect
 
 COL_PANEL = (18, 28, 20)
 COL_BORDER = (50, 130, 70)
+COL_CARD = (12, 20, 14)
+COL_CARD_SELECTED = (28, 42, 28)
+COL_CARD_BORDER = (35, 80, 45)
 COL_TEXT = (80, 255, 120)
 COL_DIM = (45, 110, 60)
 COL_WARN = (255, 200, 60)

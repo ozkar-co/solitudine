@@ -59,6 +59,7 @@ La hoja RD Tile es 4 columnas × 5 filas de tiles de 16×16. Los índices no usa
 | `assets/icons/components.png` | `source/icons/components.png` | gear icon, steel and green, simple silhouette | 1305 |
 | `assets/icons/mineral.png` | `source/icons/mineral.png` | mineral ore chunk icon, brown and grey, simple silhouette | 1306 |
 | `assets/icons/scrap.png` | placeholder procedural | pila de chatarra, gris y marrón, 16×16 | — |
+| `assets/icons/cable.png` | placeholder procedural | cable y conectores, amarillo, 16×16 | — |
 | `assets/icons/biomass.png` | `source/icons/biomass.png` | green algae biomass icon, simple silhouette | 1307 |
 | `assets/icons/chitin.png` | `source/icons/chitin.png` | chitin plate icon, amber, simple silhouette | 1308 |
 | `assets/icons/alloy.png` | `source/icons/alloy.png` | metal alloy ingot icon, steel, simple silhouette | 1309 |
