@@ -115,8 +115,8 @@ def wait_for_start(
         pygame.time.wait(16)
 
 
-def create_display(handheld: bool, scale: int = 1) -> pygame.Surface:
-    size = (SCREEN_W * scale, SCREEN_H * scale)
+def create_display(handheld: bool, scale: float = 1.0) -> pygame.Surface:
+    size = (int(SCREEN_W * scale), int(SCREEN_H * scale))
     if handheld:
         for flags in (pygame.SCALED | pygame.NOFRAME, pygame.SCALED, 0):
             try:
@@ -132,9 +132,9 @@ def present(screen: pygame.Surface, display: pygame.Surface) -> None:
     pygame.display.flip()
 
 
-def run(dev: bool = False, handheld: bool = False, scale: int = 1) -> int:
+def run(dev: bool = False, handheld: bool = False, scale: float = 1.0) -> int:
     dev_mode = dev and not handheld
-    render_scale = 2 if dev_mode and scale == 2 else 1
+    render_scale = max(0.1, float(scale)) if dev_mode else 1.0
 
     if dev_mode:
         from dev_input import DEV_KEYMAP, setup_dev_display, setup_dev_env

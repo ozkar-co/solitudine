@@ -33,8 +33,8 @@ make test                          # tests de regresión
 .venv/bin/python main.py --dev     # PC, teclado como mando
 .venv/bin/python main.py --dev --2x  # PC, ventana 2x para depurar
 make dist                          # paquete PortMaster
-./tools/dev_beta/build.sh          # beta PC Linux (temporal)
-tools\dev_beta\build.ps1           # beta PC Windows (PowerShell)
+./tools/dev_beta/build.sh          # betas PC Linux 2x/1.5x (temporal)
+tools\dev_beta\build.ps1           # betas PC Windows 2x/1.5x (PowerShell)
 ```
 
 ## Decisiones vigentes
