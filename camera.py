@@ -26,10 +26,16 @@ def movement_rates(zoom: float) -> tuple[float, float]:
 
 
 class Camera:
-    def __init__(self, center_x: float, center_y: float) -> None:
+    def __init__(
+        self,
+        center_x: float,
+        center_y: float,
+        world_size: int = WORLD_SIZE,
+    ) -> None:
         self.x = center_x
         self.y = center_y
         self.zoom_level = DEFAULT_ZOOM_LEVEL
+        self.world_size = world_size
 
     @property
     def zoom_t(self) -> float:
@@ -152,8 +158,8 @@ class Camera:
         return (
             max(0, x0),
             max(0, y0),
-            min(WORLD_SIZE, x0 + cols),
-            min(WORLD_SIZE, y0 + rows),
+            min(self.world_size, x0 + cols),
+            min(self.world_size, y0 + rows),
         )
 
     def tile_to_screen(

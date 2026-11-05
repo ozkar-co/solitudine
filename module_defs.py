@@ -6,8 +6,14 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 
 from config import (
+    BIODIESEL_FOOD_DAILY,
+    BIODIESEL_FUEL_DAILY,
+    BIODIESEL_POWER_DAILY,
+    BIODIESEL_WATER_DAILY,
+    BUILD_DAYS_BIODIESEL,
     BUILD_DAYS_EXTRACTOR,
     BUILD_DAYS_FABRICATOR,
+    BUILD_DAYS_FISH_TRAP,
     BUILD_DAYS_CONDENSER,
     BUILD_DAYS_ELECTROLYZER,
     BUILD_DAYS_GREENHOUSE,
@@ -18,9 +24,11 @@ from config import (
     BUILD_DAYS_RECYCLER,
     BUILD_DAYS_SOLAR,
     BUILD_DAYS_STORAGE,
+    COST_BIODIESEL,
     COST_CABLE,
     COST_EXTRACTOR,
     COST_FABRICATOR,
+    COST_FISH_TRAP,
     COST_CONDENSER,
     COST_ELECTROLYZER,
     COST_GREENHOUSE,
@@ -39,6 +47,9 @@ from config import (
     FABRICATOR_COMPONENTS_DAILY,
     FABRICATOR_MINERAL_DAILY,
     FABRICATOR_POWER_DAILY,
+    FISH_TRAP_FOOD_PER_NIGHT,
+    FISH_TRAP_NIGHT_END,
+    FISH_TRAP_NIGHT_START,
     CONDENSER_POWER_DAILY,
     CONDENSER_WATER_DAILY,
     LABORATORY_POWER_DAILY,
@@ -70,7 +81,7 @@ from config import (
 )
 from module_kind import ModuleKind
 from resources import Cost
-from world import Deposit, Module, ModuleState, World
+from world import Deposit, Module, ModuleState, Tile, World
 from daylight import darkness
 
 
@@ -79,6 +90,7 @@ class BufferOutput(StrEnum):
     FOOD = "food"
     MINERAL = "mineral"
     COMPONENTS = "components"
+    FUEL = "fuel"
 
 
 @dataclass(frozen=True)
@@ -92,6 +104,10 @@ class ResourceFlow:
     mineral: float = 0.0
     components: float = 0.0
     scrap: float = 0.0
+    wood: float = 0.0
+    coal: float = 0.0
+    fuel: float = 0.0
+    crystal: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -103,7 +119,9 @@ class ModuleDef:
     has_buffer: bool = False
     buffer_output: BufferOutput | None = None
     placement_deposit: Deposit | None = None
+    placement_tile: Tile | None = None
     solar_producer: bool = False
+    night_producer: bool = False
     storage_cap_bonus: float = 0.0
     always_online: bool = False
     can_toggle: bool = True
@@ -230,6 +248,29 @@ MODULE_DEFS: dict[ModuleKind, ModuleDef] = {
         cost=Cost(COST_RECYCLER),
         build_days=BUILD_DAYS_RECYCLER,
     ),
+    ModuleKind.FISH_TRAP: ModuleDef(
+        kind=ModuleKind.FISH_TRAP,
+        nominal=ResourceFlow(food=FISH_TRAP_FOOD_PER_NIGHT),
+        cost=Cost(COST_FISH_TRAP),
+        build_days=BUILD_DAYS_FISH_TRAP,
+        has_buffer=True,
+        buffer_output=BufferOutput.FOOD,
+        placement_tile=Tile.WATER,
+        night_producer=True,
+    ),
+    ModuleKind.BIODIESEL: ModuleDef(
+        kind=ModuleKind.BIODIESEL,
+        nominal=ResourceFlow(
+            power=-BIODIESEL_POWER_DAILY,
+            water=-BIODIESEL_WATER_DAILY,
+            food=-BIODIESEL_FOOD_DAILY,
+            fuel=BIODIESEL_FUEL_DAILY,
+        ),
+        cost=Cost(COST_BIODIESEL),
+        build_days=BUILD_DAYS_BIODIESEL,
+        has_buffer=True,
+        buffer_output=BufferOutput.FUEL,
+    ),
 }
 
 BUILDABLE_KINDS: tuple[ModuleKind, ...] = (
@@ -245,6 +286,8 @@ BUILDABLE_KINDS: tuple[ModuleKind, ...] = (
     ModuleKind.ELECTROLYZER,
     ModuleKind.CONDENSER,
     ModuleKind.RECYCLER,
+    ModuleKind.FISH_TRAP,
+    ModuleKind.BIODIESEL,
 )
 
 CABLE_COST = Cost(COST_CABLE)
@@ -256,6 +299,10 @@ _FLOW_KEYS: tuple[tuple[str, str, str], ...] = (
     ("mineral", "flow.mineral", "flow.mineral_use"),
     ("components", "flow.components", "flow.components"),
     ("scrap", "flow.scrap", "flow.scrap_use"),
+    ("wood", "flow.wood", "flow.wood"),
+    ("coal", "flow.coal", "flow.coal"),
+    ("fuel", "flow.fuel", "flow.fuel"),
+    ("crystal", "flow.crystal", "flow.crystal"),
 )
 
 
@@ -295,9 +342,17 @@ def _has_deposit(mod: Module, ctx: ModuleContext) -> bool:
     if ctx.world is None:
         return True
     defn = module_def(mod.kind)
+    if defn.placement_tile is not None:
+        i = ctx.world.idx(mod.x, mod.y)
+        return Tile(ctx.world.tiles[i]) == defn.placement_tile
     if defn.placement_deposit is None:
         return True
     return ctx.world.patch_has_deposit(mod.x, mod.y, defn.placement_deposit)
+
+
+def _is_night(hour_float: float) -> bool:
+    hour = int(hour_float) % HOURS_PER_DAY
+    return hour >= FISH_TRAP_NIGHT_START or hour < FISH_TRAP_NIGHT_END
 
 
 def effective_flow(mod: Module, ctx: ModuleContext) -> ResourceFlow:
@@ -308,7 +363,9 @@ def effective_flow(mod: Module, ctx: ModuleContext) -> ResourceFlow:
     flow = defn.nominal
     if defn.solar_producer and not _solar_active(ctx.hour_float):
         return ResourceFlow()
-    if defn.placement_deposit is not None and not _has_deposit(mod, ctx):
+    if defn.night_producer and not _is_night(ctx.hour_float):
+        return ResourceFlow()
+    if (defn.placement_deposit is not None or defn.placement_tile is not None) and not _has_deposit(mod, ctx):
         return ResourceFlow()
     if mod.kind == ModuleKind.LAMP:
         return ResourceFlow(power=defn.nominal.power * darkness(ctx.hour_float / HOURS_PER_DAY))
@@ -323,6 +380,8 @@ def panel_flow_lines(mod: Module, ctx: ModuleContext) -> list[tuple[str, float]]
         if value == 0.0:
             continue
         key = pos_key if value > 0 else neg_key
+        if mod.kind == ModuleKind.FISH_TRAP and field == "food":
+            key = "flow.food_night"
         lines.append((key, value))
     return lines
 

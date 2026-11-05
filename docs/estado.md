@@ -14,8 +14,12 @@
 | Playtest | **Hecho** — PC y R36S; ajustes aplicados |
 | Fundación recursos/costes | **Hecho** — pool único, `Cost` multi-material, `cost_paid` y save v4 |
 | Chatarra/reciclador/demolición | **Hecho** — ruinas, recogida, reciclador, demolición y cancelación |
-| Trampa de peces + comida | **Siguiente** — placement sobre agua, producción nocturna con una tirada por hora (0 permitido, ~3/noche) y parada al agotarse el agua |
-| 5+ | **Backlog/planificado** — mundo 2048/anillos, UI de construcción, batería, bosques/carbón/cristales, recursos nuevos, eventos y combate |
+| Beta etapa 0 | **Hecho** — remapeo PC, tiempo dev, copy del laboratorio, créditos/layout, icono de agua, cables grises |
+| Beta etapa 1 | **Hecho** — mundo parametrizable 2048, arrays compactos, save size/seed, anillos difusos, bosques/carbón/cristales y recursos nuevos |
+| Beta etapa 2 | **Hecho** — scroll del menú, carrusel animado de categorías y nombres nuevos |
+| Beta etapa 3 | **Hecho** — trampa de peces, RNG nocturna, extractor/mina al 50%, invernadero 6/3 y procesador de biodiésel como sink |
+| 4 | **Siguiente** — cables libres, menú A+A, cámara, estación de monitoreo y rename de cable |
+| 5+ | **Backlog/planificado** — batería, extracción de carbón/cristal, combustible/combate, eventos y Mk II |
 
 El juego es jugable en PC y en R36S. La UI (grilla de 16 px, sprites, zoom, minimapa, día/noche, lámpara) está estable. El loop de chatarra (ruinas → reciclador → mineral) y la demolición ya funcionan.
 
@@ -23,11 +27,11 @@ El juego es jugable en PC y en R36S. La UI (grilla de 16 px, sprites, zoom, mini
 
 **Roadmap actual (plan.md):**
 
-1. **Trampa de peces + comida:** placement sobre agua, cable sobre agua, producción nocturna con una tirada por hora (0 permitido, ~3/noche) y parada al agotarse el agua; sin ruina.
+1. **Red y módulos (etapa 4):** cables de colocación libre, menú contextual A+A, cámara, estación de monitoreo y rename de cable.
 2. **Batería/almacén + energía:** almacén sin cap de energía y batería con cap.
-3. **Mundo 2048 + anillos:** tamaño parametrizable, generación nueva, bosques/carbón/cristales y recursos nuevos (ver [plan.md](plan.md)).
+3. **Etapa 5:** extracción/uso de carbón/cristal, combustible/combate, eventos y Mk II.
 
-**Secuencia propuesta para la beta:** quick fixes → mundo 2048 + anillos → UI de construcción → trampa/comida → red/UX. Detalle en [beta-txxt.md](beta-txxt.md).
+**Estado beta:** etapas 0-3 implementadas (66 tests). Detalle en [beta-txxt.md](beta-txxt.md).
 
 ## Comandos
 
@@ -36,6 +40,7 @@ make config                        # venv + wheelhouse
 make test                          # tests de regresión
 .venv/bin/python main.py --dev     # PC, teclado como mando
 .venv/bin/python main.py --dev --2x  # PC, ventana 2x para depurar
+.venv/bin/python main.py --dev --world-size 1024  # mapa más chico para probar
 make dist                          # paquete PortMaster
 ./tools/dev_beta/build.sh          # betas PC Linux 2x/1.5x (temporal)
 tools\dev_beta\build.ps1           # betas PC Windows 2x/1.5x (PowerShell)
@@ -48,13 +53,13 @@ tools\dev_beta\build.ps1           # betas PC Windows 2x/1.5x (PowerShell)
 - Recursos y costes: pool único (`ResourcePool`) y `Cost` multi-material; `Stockpile` ya no existe.
 - Chatarra: cap 30 (+40 por almacén), ruinas seleccionadas y recogidas con A; demolición/cancelación con B y confirmación A.
 - La UI no muta la simulación; `game.py` orquesta.
-- Guardado JSON automático; `save.json` está ignorado por git. `VERSION` 4, sin migración: los saves anteriores se borran al cargar. Se guardan recursos, stats, `cost_paid` y ruinas.
+- Guardado JSON automático; `save.json` está ignorado por git. `VERSION` 4, sin migración: los saves anteriores se borran al cargar. Se guardan recursos, stats, `cost_paid`, ruinas, `size` y `seed`.
 - La luz es visual: el hábitat ilumina desde el inicio y la lámpara consume energía solo de noche, proporcional a la oscuridad.
 - Un módulo apagado no produce, no consume, no da visión, no suma cap de almacén y no emite luz.
-- Regla de recursos: 2 fuentes / 2 usos es una heurística, no una regla estricta. No se agrega un recurso sin un problema, una fuente y un uso definidos.
-- La barra superior muestra solo los cuatro vitales; el modo recursos muestra los siete recursos.
+- Regla de recursos: 2 fuentes / 2 usos es una heurística, no una regla estricta. En beta se aceptan recursos sin uso completo (madera, carbón, combustible y cristales).
+- La barra superior muestra solo los cuatro vitales; el modo recursos muestra los once recursos.
 - Fuente UI: Pixel Operator 16/24 (cuerpo regular, títulos bold); VT323 queda como fallback/A-B.
-- El menú de construcción usa pestañas por categoría y tarjetas horizontales por módulo; la seleccionada se resalta en ámbar y las no disponibles se muestran en gris.
+- El menú de construcción usa scroll vertical animado, carrusel circular de categorías y tarjetas horizontales por módulo; la seleccionada se resalta en ámbar y las no disponibles se muestran en gris.
 
 ## Documentación
 

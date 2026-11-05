@@ -9,25 +9,22 @@ from gamepad import diff_actions
 DEV_JOY = 0
 
 KEY_TO_ACTION: dict[int, str] = {
-    pygame.K_z: "A",
-    pygame.K_x: "B",
-    pygame.K_c: "X",
-    pygame.K_v: "Y",
-    pygame.K_q: "L1",
-    pygame.K_e: "R1",
-    pygame.K_LEFTBRACKET: "L2",
-    pygame.K_RIGHTBRACKET: "R2",
-    pygame.K_1: "L2",
-    pygame.K_2: "R2",
+    pygame.K_e: "A",
+    pygame.K_ESCAPE: "B",
+    pygame.K_q: "X",
+    pygame.K_TAB: "Y",
+    pygame.K_1: "L1",
+    pygame.K_2: "L2",
+    pygame.K_3: "R2",
+    pygame.K_4: "R1",
+    pygame.K_j: "A",
+    pygame.K_k: "B",
+    pygame.K_t: "TIME",
     pygame.K_BACKSPACE: "SELECT",
     pygame.K_RETURN: "START",
     pygame.K_u: "L3",
     pygame.K_o: "R3",
     pygame.K_f: "FN",
-    pygame.K_i: "DPAD_UP",
-    pygame.K_k: "DPAD_DOWN",
-    pygame.K_j: "DPAD_LEFT",
-    pygame.K_l: "DPAD_RIGHT",
     pygame.K_w: "LJOY_UP",
     pygame.K_s: "LJOY_DOWN",
     pygame.K_a: "LJOY_LEFT",
@@ -42,9 +39,10 @@ ALL_DEV_KEYS = frozenset(KEY_TO_ACTION)
 
 DEV_KEYMAP = """
 DEV teclado -> mando
-Z=A  X=B  C=X  V=Y   Q=L1  E=R1  [=L2  ]=R2  1/2=L2/R2
+E=A  Esc=B  Q=X  Tab=Y  J=A  K=B
+1/2=zoom  3=minimapa  4=apagar/encender  T=tiempo
 Bksp=SELECT  Enter=START  U=L3  O=R3  F=FN
-IJKL=DPAD   WASD=LJOY   Flechas=RJOY
+WASD=cursor  Flechas=cámara
 SELECT+START (Bksp+Enter)=salir
 """.strip()
 

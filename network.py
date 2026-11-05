@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from collections import deque
 
-from config import HABITAT_X, HABITAT_Y
 from world import World
 
 _NEIGHBORS = ((0, -1), (0, 1), (-1, 0), (1, 0))
@@ -12,7 +11,7 @@ _NEIGHBORS = ((0, -1), (0, 1), (-1, 0), (1, 0))
 
 def compute_connected(world: World) -> set[tuple[int, int]]:
     """Tiles de módulo o cable alcanzables desde el hábitat."""
-    start = (HABITAT_X, HABITAT_Y)
+    start = (world.habitat_x, world.habitat_y)
     if start not in world.module_cells:
         return set()
 

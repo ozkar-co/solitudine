@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
+import math
 import random
 from array import array
 from dataclasses import dataclass, field
 from enum import IntEnum
 
 from config import (
-    HABITAT_X,
-    HABITAT_Y,
+    DEPOSIT_COAL_PER_TILE,
+    DEPOSIT_CRYSTAL_PER_TILE,
     INITIAL_VISION_RADIUS,
     RADAR_VISION_CLEAR,
     RUIN_GUARANTEED_SCRAP_MAX,
@@ -34,6 +35,7 @@ from config import (
     STARTER_WATER_X,
     STARTER_WATER_Y,
     SURFACE_WATER_PER_TILE,
+    WORLD_CHUNK_SIZE,
     WORLD_SEED,
     WORLD_SIZE,
 )
@@ -45,12 +47,16 @@ class Tile(IntEnum):
     GROUND = 0
     WATER = 1
     ROCK = 2
+    FOREST = 3
+    SPROUT = 4
 
 
 class Deposit(IntEnum):
     NONE = 0
     WATER = 1
     MINERAL = 2
+    COAL = 3
+    CRYSTAL = 4
 
 
 class ModuleState(IntEnum):
@@ -83,9 +89,9 @@ class Module:
 
 @dataclass
 class World:
-    tiles: list[int]
-    deposits: list[int]
-    deposit_amounts: list[float]
+    tiles: bytearray
+    deposits: bytearray
+    deposit_amounts: array
     explored: bytearray
     visible: bytearray
     visible_count: array
@@ -94,12 +100,21 @@ class World:
     cables: set[tuple[int, int]] = field(default_factory=set)
     ruins: dict[tuple[int, int], float] = field(default_factory=dict)
     size: int = WORLD_SIZE
+    seed: str = WORLD_SEED
     expl_min_x: int = WORLD_SIZE
     expl_min_y: int = WORLD_SIZE
     expl_max_x: int = 0
     expl_max_y: int = 0
     explored_version: int = 0
     _network_cache: set[tuple[int, int]] | None = field(default=None, repr=False, compare=False)
+
+    @property
+    def habitat_x(self) -> int:
+        return self.size // 2
+
+    @property
+    def habitat_y(self) -> int:
+        return self.size // 2
 
     def invalidate_network_cache(self) -> None:
         self._network_cache = None
@@ -239,12 +254,8 @@ class World:
     def camera_bounds(self, margin: int) -> tuple[int, int, int, int]:
         if self.expl_max_x < self.expl_min_x:
             r = INITIAL_VISION_RADIUS + margin
-            return (
-                HABITAT_X - r,
-                HABITAT_Y - r,
-                HABITAT_X + r,
-                HABITAT_Y + r,
-            )
+            hx, hy = self.habitat_x, self.habitat_y
+            return (hx - r, hy - r, hx + r, hy + r)
         return (
             max(0, self.expl_min_x - margin),
             max(0, self.expl_min_y - margin),
@@ -284,35 +295,23 @@ def _seed_int(text: str) -> int:
     return h
 
 
-def generate_world(seed: str = WORLD_SEED) -> World:
-    rng = random.Random(_seed_int(seed))
-    size = WORLD_SIZE
+def generate_world(seed: str = WORLD_SEED, size: int = WORLD_SIZE) -> World:
+    if size < 64:
+        raise ValueError("El mapa debe tener al menos 64 tiles por lado")
+    rng = random.Random(_seed_int(f"{seed}:{size}"))
     n = size * size
-    tiles = [Tile.GROUND] * n
-    deposits = [Deposit.NONE] * n
-    deposit_amounts = [0.0] * n
+    tiles = bytearray(n)
+    deposits = bytearray(n)
+    deposit_amounts = array("f", [0.0]) * n
     explored = bytearray(n)
     visible = bytearray(n)
     ruins: dict[tuple[int, int], float] = {}
 
-    for _ in range(55):
-        _paint_blob(
-            tiles,
-            deposit_amounts,
-            size,
-            rng,
-            Tile.WATER,
-            blob_r=rng.randint(4, 11),
-            amount_per_tile=SURFACE_WATER_PER_TILE,
-        )
-    for _ in range(40):
-        _paint_blob(tiles, deposit_amounts, size, rng, Tile.ROCK, blob_r=rng.randint(3, 8))
-    for _ in range(45):
-        _paint_deposit(deposits, deposit_amounts, tiles, size, rng, Deposit.WATER, blob_r=rng.randint(3, 9))
-    for _ in range(35):
-        _paint_deposit(deposits, deposit_amounts, tiles, size, rng, Deposit.MINERAL, blob_r=rng.randint(3, 8))
-
+    _generate_chunk_features(tiles, deposits, deposit_amounts, size, rng)
     _guarantee_starter_patches(tiles, deposits, deposit_amounts, size)
+    _guarantee_near_forest(tiles, deposits, deposit_amounts, size, rng)
+    _guarantee_edge_coal(tiles, deposits, deposit_amounts, size, rng)
+    _guarantee_crystal_cluster(tiles, deposits, deposit_amounts, size, rng)
     _generate_ruins(ruins, tiles, deposits, deposit_amounts, size, rng)
 
     from vision import init_habitat, make_visible_count
@@ -326,34 +325,131 @@ def generate_world(seed: str = WORLD_SEED) -> World:
         visible_count=make_visible_count(n),
         ruins=ruins,
         size=size,
+        seed=seed,
     )
-    hab = Module(ModuleKind.HABITAT, HABITAT_X, HABITAT_Y)
+    hx, hy = world.habitat_x, world.habitat_y
+    hab = Module(ModuleKind.HABITAT, hx, hy)
     world.modules.append(hab)
-    world.module_cells[(HABITAT_X, HABITAT_Y)] = hab
-    tiles[world.idx(HABITAT_X, HABITAT_Y)] = Tile.GROUND
+    world.module_cells[(hx, hy)] = hab
+    hi = world.idx(hx, hy)
+    tiles[hi] = Tile.GROUND
+    deposits[hi] = Deposit.NONE
+    deposit_amounts[hi] = 0.0
 
     init_habitat(world, hab)
     return world
 
 
-def _paint_blob(
-    tiles: list[int],
-    deposit_amounts: list[float],
+def _clamp(value: float, low: int, high: int) -> int:
+    return max(low, min(high, int(value)))
+
+
+def _distance_ratio(x: int, y: int, size: int) -> float:
+    hx = hy = size // 2
+    max_d = math.hypot(hx, hy)
+    if max_d <= 0.0:
+        return 0.0
+    return min(1.0, math.hypot(x - hx, y - hy) / max_d)
+
+
+def _generate_chunk_features(
+    tiles: bytearray,
+    deposits: bytearray,
+    deposit_amounts: array,
+    size: int,
+    rng: random.Random,
+) -> None:
+    chunk = WORLD_CHUNK_SIZE
+    for cy0 in range(0, size, chunk):
+        for cx0 in range(0, size, chunk):
+            jitter = max(1, chunk // 3)
+            cx = _clamp(cx0 + chunk // 2 + rng.randint(-jitter, jitter), 0, size - 1)
+            cy = _clamp(cy0 + chunk // 2 + rng.randint(-jitter, jitter), 0, size - 1)
+            d = _distance_ratio(cx, cy, size)
+
+            if rng.random() < 0.20 + 0.05 * d:
+                _paint_blob_at(
+                    tiles,
+                    deposit_amounts,
+                    size,
+                    rng,
+                    Tile.WATER,
+                    cx,
+                    cy,
+                    rng.randint(4, 11),
+                    amount_per_tile=SURFACE_WATER_PER_TILE,
+                )
+            if rng.random() < 0.15 + 0.05 * d:
+                _paint_blob_at(
+                    tiles,
+                    deposit_amounts,
+                    size,
+                    rng,
+                    Tile.ROCK,
+                    cx,
+                    cy,
+                    rng.randint(3, 8),
+                )
+            if rng.random() < 0.35 + 0.30 * d:
+                _paint_deposit_at(
+                    deposits,
+                    deposit_amounts,
+                    tiles,
+                    size,
+                    rng,
+                    Deposit.WATER,
+                    cx,
+                    cy,
+                    rng.randint(3, 9),
+                )
+            if rng.random() < 0.30 + 0.35 * d:
+                _paint_deposit_at(
+                    deposits,
+                    deposit_amounts,
+                    tiles,
+                    size,
+                    rng,
+                    Deposit.MINERAL,
+                    cx,
+                    cy,
+                    rng.randint(3, 8),
+                )
+            if rng.random() < 0.15 + 0.20 * d:
+                _paint_forest(
+                    tiles,
+                    deposits,
+                    size,
+                    rng,
+                    cx,
+                    cy,
+                    rng.randint(2, 4),
+                )
+            if rng.random() < 0.015 + 0.035 * d:
+                _paint_coal_vein(tiles, deposits, deposit_amounts, size, rng, cx, cy, rng.randint(4, 10))
+            if rng.random() < 0.004 + 0.020 * d * d:
+                _paint_crystal_cluster(tiles, deposits, deposit_amounts, size, rng, cx, cy)
+
+
+def _paint_blob_at(
+    tiles: bytearray,
+    deposit_amounts: array,
     size: int,
     rng: random.Random,
     kind: Tile,
+    cx: int,
+    cy: int,
     blob_r: int,
     *,
     amount_per_tile: float = 0.0,
 ) -> None:
-    cx = rng.randint(blob_r, size - blob_r - 1)
-    cy = rng.randint(blob_r, size - blob_r - 1)
     r2 = blob_r * blob_r
     for dy in range(-blob_r, blob_r + 1):
         for dx in range(-blob_r, blob_r + 1):
             if dx * dx + dy * dy > r2:
                 continue
             x, y = cx + dx, cy + dy
+            if not (0 <= x < size and 0 <= y < size):
+                continue
             i = y * size + x
             if tiles[i] == Tile.GROUND:
                 tiles[i] = kind
@@ -361,9 +457,182 @@ def _paint_blob(
                     deposit_amounts[i] = amount_per_tile * rng.uniform(0.7, 1.3)
 
 
+def _paint_deposit_at(
+    deposits: bytearray,
+    deposit_amounts: array,
+    tiles: bytearray,
+    size: int,
+    rng: random.Random,
+    kind: Deposit,
+    cx: int,
+    cy: int,
+    blob_r: int,
+) -> None:
+    per_tile = {
+        Deposit.WATER: DEPOSIT_WATER_PER_TILE,
+        Deposit.MINERAL: DEPOSIT_MINERAL_PER_TILE,
+        Deposit.COAL: DEPOSIT_COAL_PER_TILE,
+        Deposit.CRYSTAL: DEPOSIT_CRYSTAL_PER_TILE,
+    }.get(kind, 0.0)
+    r2 = blob_r * blob_r
+    for dy in range(-blob_r, blob_r + 1):
+        for dx in range(-blob_r, blob_r + 1):
+            if dx * dx + dy * dy > r2:
+                continue
+            x, y = cx + dx, cy + dy
+            if not (0 <= x < size and 0 <= y < size):
+                continue
+            i = y * size + x
+            if tiles[i] == Tile.GROUND and deposits[i] == Deposit.NONE:
+                deposits[i] = kind
+                deposit_amounts[i] = per_tile * rng.uniform(0.7, 1.3)
+
+
+def _paint_forest(
+    tiles: bytearray,
+    deposits: bytearray,
+    size: int,
+    rng: random.Random,
+    cx: int,
+    cy: int,
+    blob_r: int,
+) -> None:
+    r2 = blob_r * blob_r
+    for dy in range(-blob_r, blob_r + 1):
+        for dx in range(-blob_r, blob_r + 1):
+            if dx * dx + dy * dy > r2:
+                continue
+            x, y = cx + dx, cy + dy
+            if not (0 <= x < size and 0 <= y < size):
+                continue
+            i = y * size + x
+            if tiles[i] == Tile.GROUND and deposits[i] == Deposit.NONE:
+                tiles[i] = Tile.FOREST
+
+
+def _paint_coal_vein(
+    tiles: bytearray,
+    deposits: bytearray,
+    deposit_amounts: array,
+    size: int,
+    rng: random.Random,
+    cx: int,
+    cy: int,
+    length: int,
+) -> None:
+    x, y = cx, cy
+    for _ in range(length):
+        if 0 <= x < size and 0 <= y < size:
+            i = y * size + x
+            if tiles[i] == Tile.GROUND and deposits[i] == Deposit.NONE:
+                deposits[i] = Deposit.COAL
+                deposit_amounts[i] = DEPOSIT_COAL_PER_TILE * rng.uniform(0.8, 1.2)
+        x = _clamp(x + rng.choice((-1, 0, 1)), 0, size - 1)
+        y = _clamp(y + rng.choice((-1, 0, 1)), 0, size - 1)
+
+
+def _paint_crystal_cluster(
+    tiles: bytearray,
+    deposits: bytearray,
+    deposit_amounts: array,
+    size: int,
+    rng: random.Random,
+    cx: int,
+    cy: int,
+) -> None:
+    count = rng.randint(4, 5) if rng.random() < 0.2 else rng.randint(2, 3)
+    placed: list[tuple[int, int]] = []
+    for _ in range(count * 30):
+        if len(placed) >= count:
+            break
+        x = cx + rng.randint(-4, 4)
+        y = cy + rng.randint(-4, 4)
+        if not (0 <= x < size and 0 <= y < size):
+            continue
+        if max(abs(x - cx), abs(y - cy)) < 2:
+            continue
+        if any(max(abs(x - px), abs(y - py)) < 2 for px, py in placed):
+            continue
+        i = y * size + x
+        if tiles[i] != Tile.GROUND or deposits[i] != Deposit.NONE:
+            continue
+        placed.append((x, y))
+        deposits[i] = Deposit.CRYSTAL
+        deposit_amounts[i] = DEPOSIT_CRYSTAL_PER_TILE * rng.uniform(0.8, 1.2)
+
+
+def _find_ground_near(
+    tiles: bytearray,
+    deposits: bytearray,
+    size: int,
+    rng: random.Random,
+    radius_min: int,
+    radius_max: int,
+) -> tuple[int, int] | None:
+    hx = hy = size // 2
+    for _ in range(240):
+        angle = rng.uniform(0.0, math.tau)
+        radius = rng.uniform(radius_min, radius_max)
+        x = int(hx + math.cos(angle) * radius)
+        y = int(hy + math.sin(angle) * radius)
+        if not (0 <= x < size and 0 <= y < size):
+            continue
+        i = y * size + x
+        if tiles[i] == Tile.GROUND and deposits[i] == Deposit.NONE:
+            return x, y
+    return None
+
+
+def _guarantee_near_forest(
+    tiles: bytearray,
+    deposits: bytearray,
+    deposit_amounts: array,
+    size: int,
+    rng: random.Random,
+) -> None:
+    spot = _find_ground_near(tiles, deposits, size, rng, 8, 14)
+    if spot is None:
+        return
+    cx, cy = spot
+    _paint_forest(tiles, deposits, size, rng, cx, cy, rng.randint(2, 3))
+
+
+def _guarantee_edge_coal(
+    tiles: bytearray,
+    deposits: bytearray,
+    deposit_amounts: array,
+    size: int,
+    rng: random.Random,
+) -> None:
+    spot = _find_ground_near(tiles, deposits, size, rng, INITIAL_VISION_RADIUS + 4, INITIAL_VISION_RADIUS + 10)
+    if spot is None:
+        return
+    x, y = spot
+    i = y * size + x
+    deposits[i] = Deposit.COAL
+    deposit_amounts[i] = DEPOSIT_COAL_PER_TILE
+
+
+def _guarantee_crystal_cluster(
+    tiles: bytearray,
+    deposits: bytearray,
+    deposit_amounts: array,
+    size: int,
+    rng: random.Random,
+) -> None:
+    max_radius = int(math.hypot(size // 2, size // 2))
+    low = max(1, int(max_radius * 0.65))
+    high = max(low + 1, int(max_radius * 0.85))
+    spot = _find_ground_near(tiles, deposits, size, rng, low, high)
+    if spot is None:
+        return
+    _paint_crystal_cluster(tiles, deposits, deposit_amounts, size, rng, spot[0], spot[1])
+
+
 def _paint_disc_tile(
-    tiles: list[int],
-    deposit_amounts: list[float],
+    tiles: bytearray,
+    deposits: bytearray,
+    deposit_amounts: array,
     size: int,
     cx: int,
     cy: int,
@@ -383,14 +652,15 @@ def _paint_disc_tile(
             i = y * size + x
             if tiles[i] != Tile.ROCK:
                 tiles[i] = kind
-                if kind == Tile.WATER and amount_per_tile > 0:
-                    deposit_amounts[i] = amount_per_tile
+                if kind == Tile.WATER:
+                    deposits[i] = Deposit.NONE
+                    deposit_amounts[i] = amount_per_tile if amount_per_tile > 0 else 0.0
 
 
 def _paint_disc_deposit(
-    deposits: list[int],
-    deposit_amounts: list[float],
-    tiles: list[int],
+    deposits: bytearray,
+    deposit_amounts: array,
+    tiles: bytearray,
     size: int,
     cx: int,
     cy: int,
@@ -423,7 +693,7 @@ def _ruin_tile_ok(
 ) -> bool:
     if not (0 <= x < size and 0 <= y < size):
         return False
-    if (x, y) == (HABITAT_X, HABITAT_Y):
+    if (x, y) == (size // 2, size // 2):
         return False
     i = y * size + x
     return tiles[i] == Tile.GROUND and deposits[i] == Deposit.NONE and deposit_amounts[i] <= 0.0
@@ -457,8 +727,9 @@ def _generate_ruins(
     size: int,
     rng: random.Random,
 ) -> None:
+    hx = hy = size // 2
     for _ in range(2):
-        spot = _find_ruin_near(ruins, tiles, deposits, deposit_amounts, size, HABITAT_X, HABITAT_Y)
+        spot = _find_ruin_near(ruins, tiles, deposits, deposit_amounts, size, hx, hy)
         if spot is None:
             break
         ruins[spot] = rng.uniform(RUIN_GUARANTEED_SCRAP_MIN, RUIN_GUARANTEED_SCRAP_MAX)
@@ -481,10 +752,12 @@ def _guarantee_starter_patches(
     size: int,
 ) -> None:
     """Reservas pequeñas cerca del hábitat para arrancar la partida."""
-    wx = HABITAT_X + STARTER_WATER_X
-    wy = HABITAT_Y + STARTER_WATER_Y
+    hx = hy = size // 2
+    wx = hx + STARTER_WATER_X
+    wy = hy + STARTER_WATER_Y
     _paint_disc_tile(
         tiles,
+        deposits,
         deposit_amounts,
         size,
         wx,
@@ -500,8 +773,8 @@ def _guarantee_starter_patches(
         deposit_amounts,
         tiles,
         size,
-        HABITAT_X + STARTER_DEP_WATER_X,
-        HABITAT_Y + STARTER_DEP_WATER_Y,
+        hx + STARTER_DEP_WATER_X,
+        hy + STARTER_DEP_WATER_Y,
         STARTER_DEP_WATER_R,
         Deposit.WATER,
         amount_per_tile=starter_amt,
@@ -511,37 +784,13 @@ def _guarantee_starter_patches(
         deposit_amounts,
         tiles,
         size,
-        HABITAT_X + STARTER_DEP_MINERAL_X,
-        HABITAT_Y + STARTER_DEP_MINERAL_Y,
+        hx + STARTER_DEP_MINERAL_X,
+        hy + STARTER_DEP_MINERAL_Y,
         STARTER_DEP_MINERAL_R,
         Deposit.MINERAL,
         amount_per_tile=mineral_amt,
     )
-    tiles[HABITAT_Y * size + HABITAT_X] = Tile.GROUND
-    hi = HABITAT_Y * size + HABITAT_X
+    hi = hy * size + hx
+    tiles[hi] = Tile.GROUND
     deposits[hi] = Deposit.NONE
     deposit_amounts[hi] = 0.0
-
-
-def _paint_deposit(
-    deposits: list[int],
-    deposit_amounts: list[float],
-    tiles: list[int],
-    size: int,
-    rng: random.Random,
-    kind: Deposit,
-    blob_r: int,
-) -> None:
-    cx = rng.randint(blob_r, size - blob_r - 1)
-    cy = rng.randint(blob_r, size - blob_r - 1)
-    per_tile = DEPOSIT_WATER_PER_TILE if kind == Deposit.WATER else DEPOSIT_MINERAL_PER_TILE
-    r2 = blob_r * blob_r
-    for dy in range(-blob_r, blob_r + 1):
-        for dx in range(-blob_r, blob_r + 1):
-            if dx * dx + dy * dy > r2:
-                continue
-            x, y = cx + dx, cy + dy
-            i = y * size + x
-            if tiles[i] == Tile.GROUND and deposits[i] == Deposit.NONE:
-                deposits[i] = kind
-                deposit_amounts[i] = per_tile * rng.uniform(0.7, 1.3)

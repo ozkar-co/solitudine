@@ -9,8 +9,8 @@
 
 | Categoría | Módulos |
 |-----------|---------|
-| Energía | Panel solar, Batería* |
-| Extracción | Extractor de agua, Mina, Trampa de peces* |
+| Energía | Panel solar, Procesador de biodiésel, Batería* |
+| Extracción | Extractor de agua, Mina, Trampa de peces |
 | Soporte Vital | Invernadero, Lámpara, Electrolizador, Condensador |
 | Red Logística | Cable, Fabricador, Almacén, Reciclador, Estación de monitoreo* |
 | Investigación | Radar, Laboratorio |
@@ -35,7 +35,8 @@
 | `laboratory` | Laboratorio | Investigación | hecho | — | — |
 | `electrolyzer` | Electrolizador | Soporte Vital | hecho | `electrolisis` | Agua + energía → O₂ |
 | `condenser` | Condensador | Soporte Vital | hecho | `condensador` | Energía → agua |
-| `fish_trap` | Trampa de peces | Extracción | backlog | — | 2 Cmp, 0,5 d; noche: 1 tirada/hora, 0 permitido, ~3 comida/noche; sobre agua; se detiene si el agua se agota; sin ruina, da chatarra directa |
+| `fish_trap` | Trampa de peces | Extracción | hecho | — | 2 Cmp, 0,5 d; noche: 1 tirada/hora, 0 permitido, ~3 comida/noche; sobre agua; sin ruina, da chatarra directa |
+| `biodiesel` | Procesador de biodiésel | Energía | hecho | — | 4 Cmp, 1 d; 2 E/d + 2 agua/d + 4 comida/d → 1 combustible/d |
 | `recycler` | Reciclador | Red Logística | hecho | `reciclaje` | Chatarra → mineral (ratio 0,9; 5% componentes) |
 | `battery` | Batería | Energía | backlog | `bateria` | Cap de energía; el almacén deja de dar cap de energía |
 | `monitor` | Estación de monitoreo | Red Logística | backlog | — | Desbloquea la pantalla de red (consumo/producción por recurso); coste/energía a definir |
@@ -43,7 +44,7 @@
 
 El cable forma una **red logística única**: conecta módulos de cualquier tipo, sin redes separadas. El almacén no se puede apagar.
 
-## Números implementados (2026-10-29)
+## Números implementados (2026-11-05)
 
 | Módulo | Coste | Obra | Energía | Entrada | Salida |
 |--------|-------|------|---------|---------|--------|
@@ -51,7 +52,7 @@ El cable forma una **red logística única**: conecta módulos de cualquier tipo
 | Panel solar | 5 Cmp | 1 d | — | — | 12 E/d (solo 6-18 h) |
 | Extractor de agua | 6 Cmp | 1 d | 2 E/d | — | 12 agua/d |
 | Mina | 4 Cmp | 1,5 d | 3 E/d | — | 8 mineral/d |
-| Invernadero | 8 Cmp | 1,5 d | 3 E/d | 4 agua/d | 10 comida/d + 2 O₂/d (O₂ requiere agua) |
+| Invernadero | 10 Cmp | 1,5 d | 3 E/d | 4 agua/d | 6 comida/d + 3 O₂/d (O₂ requiere agua) |
 | Fabricador | 5 Cmp + 2 mineral | 2 d | 4 E/d | 6 mineral/d | 4 componentes/d |
 | Almacén | 5 Cmp | 1 d | — | — | +40 a los caps de red (hoy incluye energía; planificado: solo no-energía) |
 | Radar | 8 Cmp | 1,5 d | 12 E/d | — | Exploración permanente |
@@ -60,16 +61,20 @@ El cable forma una **red logística única**: conecta módulos de cualquier tipo
 | Electrolizador | 6 Cmp | 1 d | 4 E/d | 6 agua/d | 8 O₂/d |
 | Condensador | 8 Cmp | 1,5 d | 6 E/d | — | 8 agua/d |
 | Reciclador | 3 Cmp | 0,5 d | 1 E/d | 4 chatarra/d · 0,5 agua/d | 3,6 mineral/d + 0,2 Cmp/d |
+| Trampa de peces | 2 Cmp | 0,5 d | — | — | ~3 comida/noche (1 tirada/hora, 0 permitido) |
+| Procesador de biodiésel | 4 Cmp | 1 d | 2 E/d | 4 comida/d · 2 agua/d | 1 combustible/d |
 
 Valores actuales de playtest. Cualquier ajuste se refleja en `config.py` y en esta tabla.
 
 > **Coste multi-material activo:** el Fabricador cuesta **5 Cmp + 2 mineral**; la mina sigue en componentes para no bloquear el arranque. La chatarra tiene cap 30 (+40 por almacén) y las ruinas dan 4-10 por tile.
 >
-> **Trampa de peces (planificada, feedback beta 2026-11-05):** 2 Cmp, 0,5 d, sin energía; solo de noche, una tirada por hora (0 permitido), ~3 comida/noche; sin ruina, da chatarra directa; categoría **Extracción**. Falta afinar distribución y ventana exacta.
+> **Trampa de peces (implementada 2026-11-05):** 2 Cmp, 0,5 d, sin energía; solo de noche, una tirada por hora (0 permitido), ~3 comida/noche; sin ruina, da chatarra directa; categoría **Extracción**. La distribución y la ventana quedan para tuning.
 >
-> **Invernadero (decisión beta 2026-11-05, pendiente de implementar):** **6 comida/d** y **3 O₂/d**; coste propuesto **10 Cmp**; agua/energía sin cambios (4 agua/d, 3 E/d).
+> **Invernadero (implementado 2026-11-05):** **6 comida/d** y **3 O₂/d**; coste **10 Cmp**; agua/energía sin cambios (4 agua/d, 3 E/d).
 >
-> **Categorías (decisión beta 2026-11-05):** los nombres visibles pasan a **Energía, Extracción, Soporte Vital, Red Logística, Investigación y Defensa**; el código se actualiza en la etapa de UI.
+> **Categorías (implementadas 2026-11-05):** **Energía, Extracción, Soporte Vital, Red Logística, Investigación y Defensa**.
+>
+> **Mundo (implementado 2026-11-05):** mapa parametrizable con default 2048; generación por anillos difusos; bosques, carbón y cristales; recursos de madera, carbón, combustible y cristales.
 
 ## Tecnologías
 

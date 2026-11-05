@@ -5,6 +5,8 @@ from __future__ import annotations
 import pygame
 
 from config import (
+    FISH_TRAP_NIGHT_END,
+    FISH_TRAP_NIGHT_START,
     HOURS_PER_DAY,
     SOLAR_HOUR_END,
     SOLAR_HOUR_START,
@@ -175,6 +177,23 @@ def _module_status_key(mod, sim: Simulation, world: World, caps) -> str:
             return "status.no_output"
         return "status.recycling"
 
+    if kind == ModuleKind.FISH_TRAP:
+        if Tile(world.tiles[world.idx(mod.x, mod.y)]) != Tile.WATER:
+            return "status.no_water"
+        hour = sim.day_progress * HOURS_PER_DAY
+        if not (hour >= FISH_TRAP_NIGHT_START or hour < FISH_TRAP_NIGHT_END):
+            return "status.idle"
+        return "status.producing"
+
+    if kind == ModuleKind.BIODIESEL:
+        if sim.resources.water <= 0.0:
+            return "status.no_water"
+        if sim.resources.food <= 0.0:
+            return "status.no_food"
+        if _output_space(sim.resources.fuel, caps[ResourceId.FUEL], mod) <= 0.0:
+            return "status.no_output"
+        return "status.producing"
+
     if kind == ModuleKind.SOLAR:
         hour = sim.day_progress * HOURS_PER_DAY
         if not (SOLAR_HOUR_START <= hour < SOLAR_HOUR_END):
@@ -196,9 +215,7 @@ def _module_status_key(mod, sim: Simulation, world: World, caps) -> str:
 
 
 def _status_color(key: str) -> tuple[int, int, int]:
-    if key == "status.no_power":
-        return COL_CRITICAL
-    if key in ("status.offline",):
+    if key in ("status.no_power", "status.offline", "status.no_deposit"):
         return COL_CRITICAL
     if key in (
         "status.waiting",
@@ -206,8 +223,8 @@ def _status_color(key: str) -> tuple[int, int, int]:
         "status.low_power",
         "status.no_water",
         "status.no_mineral",
+        "status.no_food",
         "status.no_scrap",
-        "status.no_deposit",
         "status.o2_only",
     ):
         return COL_WARN
@@ -440,8 +457,9 @@ def _draw_module_inspection(
     if mod.kind in (ModuleKind.EXTRACTOR, ModuleKind.MINE):
         dep = Deposit.WATER if mod.kind == ModuleKind.EXTRACTOR else Deposit.MINERAL
         total = world.patch_deposit_total(mod.x, mod.y, dep)
-        _panel_line(surf, font_sm, x, y, t("panel.patch_reserve", value=format_amount(total)), COL_DIM)
-        y += 16
+        if total > 0:
+            _panel_line(surf, font_sm, x, y, t("panel.patch_reserve", value=format_amount(total)), COL_DIM)
+            y += 16
     if mod.state == ModuleState.BUILDING and mod.build_total > 0:
         pct = 100.0 * mod.build_progress / mod.build_total
         _panel_line(surf, font_sm, x, y, t("panel.build_pct", pct=f"{pct:.0f}"))

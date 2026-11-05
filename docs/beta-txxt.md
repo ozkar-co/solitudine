@@ -3,9 +3,19 @@
 **Fecha:** 2026-11-05
 **Tester:** TxxT
 **Build:** beta PC 2x/1.5x (`tools/dev_beta/`)
-**Estado:** registro de entrada y triage. Nada de esto está implementado todavía.
+**Estado:** etapas 0-3 implementadas (2026-11-05); etapa 4 en triage.
 
-> Este archivo conserva el feedback crudo y las decisiones acordadas. Las decisiones de las rondas 1 y 2 ya se reflejan en `plan.md`, `catalogo.md` y `diseno-juego.md`; la implementación queda pendiente.
+> Este archivo conserva el feedback crudo y las decisiones acordadas. La tabla de implementación de abajo es el estado real; las secciones de feedback conservan el texto original.
+
+## Implementación (2026-11-05)
+
+| Etapa | Implementado | Pendiente |
+|-------|--------------|-----------|
+| 0 | B04/B05 (remapeo PC), B07 (copy), B09 (tiempo dev), B12 (gota), B13 (cables grises), B30 (créditos/layout), créditos TxxT/JuanDi | Verificar B03 en la próxima build |
+| 1 | D5 (2048 parametrizable, arrays, save size/seed), D6 (anillos, bosques/carbón/cristales), D10, B19 (seed) | B18 reproducir el caso del tester; benchmark R36S |
+| 2 | B31 (scroll), B32 (carrusel animado), D8 (nombres), D11 (animaciones) | Ajustes de tuning visual |
+| 3 | B17/D1 (trampa RNG nocturna), B16/D2 (extractor/mina 50%), B15/D9 (invernadero 6/3), sink de comida (biodiésel) | B14: más usos para la comida |
+| 4 | — | B01, B02, B06, B08, B11 (red, A+A, cámara, monitoreo, rename) |
 
 ## Resumen
 
@@ -59,17 +69,17 @@ Nuevo mapa para la beta de PC, reemplazando el esquema actual `Z/X/C/V` + `IJKL`
 | Recursos (capa) | `Q` |
 | Zoom in | `1` |
 | Zoom out | `2` |
-| Otros botones L/R que no son zoom | `3` y `4` |
+| Otros botones L/R que no son zoom | `3` (minimapa) y `4` (apagar/encender temporal) |
 | Duplicado de A | `J` |
 | Duplicado de B | `K` |
 
-Notas de implementación:
+Notas de implementación (2026-11-05):
 
-- Hoy `1` está mapeado a `L2` y `2` a `R2`; el zoom real usa `L1/L2` y `R2` abre el minimapa. Por eso los atajos actuales no coinciden.
-- `J` y `K` hoy son `DPAD_LEFT` y `DPAD_DOWN`. Al pasar a A/B, el DPAD de teclado debe quedar en las flechas o reasignarse.
-- `3` pasa a minimapa y `4` queda libre (reservado para overlay de red/estación de monitoreo); `R1` (apagar/encender) se elimina por el menú contextual.
-- `E` y `Q` hoy son `R1` y `L1`; el remapeo mueve esas acciones a `3/4` y al zoom.
-- Actualizar también `DEV_KEYMAP`, los hints y la ayuda contextual.
+- `1`/`2` = `L1`/`L2` (zoom in/out); `3` = `R2` (minimapa); `4` = `R1` (apagar/encender temporal, hasta el menú A+A de la etapa 4).
+- `J`/`K` = A/B; se elimina el DPAD de teclado: WASD mueve el cursor y las flechas mueven la cámara.
+- `E` = A; `Q` = X (recursos); `Tab` = Y (construir); `Esc` = B.
+- `T` acelera el tiempo en modo dev.
+- `DEV_KEYMAP`, los hints y la ayuda contextual están actualizados.
 
 ### Acciones de módulos
 
@@ -115,8 +125,8 @@ Notas de implementación:
 
 **B05 — Remapeo de PC**
 - Feedback: ver tabla de “Controles PC (beta)”.
-- Estado: decidido; pendiente de implementar.
-- Archivos: `dev_input.py`, `game_input.py`, `game.py`, `game_help.py`, `ui_input.py`, `locales/es.json`, tests de input.
+- Estado: **implementado (2026-11-05)**. `3` minimapa, `4` apagar/encender temporal; `T` tiempo dev.
+- Archivos: `dev_input.py`, `game.py`, `ui.py`, locales.
 
 **B06 — Menú A+A por módulo**
 - Feedback: “para destruir y apagar no una tecla dedicada sino desde el menú de A de cada módulo; todos los módulos tienen menú con A+A (seleccionar y abrir menú)”.
@@ -199,20 +209,20 @@ Notas de implementación:
 
 **B16 — Extractores sin agua**
 - Feedback: “revisar los extractores de agua sin agua; deberían consumir por estar encendidos”.
-- Estado: **decidido (D2)**. No se auto-apagan; consumen **50% de su energía nominal** sin recursos y muestran **“sin recursos disponibles” en rojo**. Aplica a la mina y a futuros extractores.
-- Implementación: extractor 2 E/d → 1 E/d; mina 3 E/d → 1,5 E/d; actualizar `test_depleted_extractor_does_not_consume_power` y el panel.
+- Estado: **implementado (2026-11-05)**. No se auto-apagan; consumen **50% de su energía nominal** sin recursos y muestran **“sin recursos disponibles” en rojo**. Aplica a la mina y a futuros extractores.
+- Implementación: extractor 2 E/d → 1 E/d; mina 3 E/d → 1,5 E/d; test actualizado.
 
 **B17 — Trampa de peces**
 - Feedback: ver “Decisiones generales”.
-- Estado: decidido; pendiente de implementar en el slice actual.
-- Requisitos: placement sobre agua, cable sobre agua, sin energía, 2 Cmp, 0,5 d, producción nocturna con tirada por hora (0 permitido, ~3/noche), parada al agotarse el agua, sin ruina y chatarra directa.
-- Abierto: noche vs día, distribución RNG y fórmula exacta de chatarra.
+- Estado: **implementado (2026-11-05)**.
+- Requisitos cumplidos: placement sobre agua, cable sobre agua, sin energía, 2 Cmp, 0,5 d, producción nocturna con tirada por hora (0 permitido, ~3/noche), parada al agotarse el agua, sin ruina y chatarra directa.
+- Pendiente: tuning de distribución/ventana y fórmula exacta de chatarra.
 
 ### 4. Mundo y cámara
 
 **B18 — Depósitos extra en el resto del mapa**
 - Feedback: “no se están generando recursos en el mapa; revisar la generación de mundo”. Aclaración: no son los depósitos iniciales; el tester exploró todo el mapa y no encontró los depósitos extra/procedurales.
-- Estado: **a reproducir con save nuevo**. El generador actual sí crea blobs procedurales (5.272 tiles de depósito de agua + 3.377 de mineral), pero la cobertura es muy despareja: **164 de 256 chunks de 64×64 (64%) no tienen ningún depósito**. Eso explica la sensación de mapa vacío.
+- Estado: **implementado con anillos difusos (2026-11-05)**. Antes, el generador creaba blobs procedurales con cobertura despareja (164 de 256 chunks de 64×64 sin depósitos); ahora hay cuota por región y más densidad hacia los bordes. Falta reproducir el save/build exacto del tester.
 - Causa probable: 45+35 blobs aleatorios de radio 3-9 sobre 1M de tiles; no hay cuota mínima por región ni control de densidad por distancia. También puede influir un save viejo que conserva un mundo generado antes de un cambio.
 - Otra hipótesis: el overlay de recursos solo se dibuja en tiles visibles, no en niebla explorada. Si el tester “exploró” con radar y miró la capa de recursos, las zonas en niebla se ven vacías aunque tengan depósitos.
 - Acción: reproducir con save nuevo, seed y build; confirmar si miró en niebla o en zona visible; reemplazar la dispersión aleatoria por el esquema de anillos difusos (ver propuesta) y agregar tests de cobertura.
@@ -282,18 +292,15 @@ Estas ideas dependen de combate/late game y no entran en el slice actual:
 - **B28 — Fabricador Mk II con recetas**: elegir qué produce y convertir minerales en distintos materiales (a definir). Requiere sistema de recetas y nuevos materiales.
 - **B29 — Eventos aleatorios desde el día 25** que puedan destruir módulos. Requiere sistema de eventos, probabilidades, avisos y guardado.
 
-## Triage propuesto
+## Triage
 
-> Propuesta de orden; no es una decisión cerrada.
+> Estado al 2026-11-05.
 
 | Bucket | Items |
 |--------|-------|
-| **Antes de la próxima beta** | B03 (verificar), B04 (bug), B05 (remapeo PC), B07 (texto laboratorio), B09 (tiempo dev), B12 (icono agua), B13 (cables grises), B18 (reproducir), B30 (créditos) |
-| **Slice trampa + comida** | B17 (trampa), B14 (sink de comida), B15 (rebalance invernadero), B02 (solo cable sobre agua) |
-| **Siguiente: UI de construcción** | B31 (scroll), B32 (selector circular), B10 (categorías) |
-| **Siguiente: red y UX** | B01 (nombre), B02 (colocación libre/recálculo), B06 (menú A+A), B08 (cámara), B11 (monitoreo) |
-| **Mundo** | B18 (anillos difusos), B19 (mundos aleatorios), B20 (mapa/chunks), B21 (bosques/cristales) |
-| **Backlog** | B22-B29 (combate/late game) |
+| **Hecho (etapas 0-3)** | B04, B05, B07, B09, B12, B13, B30, B18, B19, B20, B21, B31, B32, B10, B17, B16, B15, B14 (biodiésel), créditos |
+| **Etapa 4** | B01 (rename cable), B02 (cables libres/recálculo), B06 (menú A+A), B08 (cámara), B11 (monitoreo), D7 |
+| **Etapa 5 / backlog** | extracción/uso de carbón/cristal, combustible/combate, B22-B29 |
 
 ## Decisiones explicadas (ronda 2)
 
@@ -306,7 +313,7 @@ Estas ideas dependen de combate/late game y no entran en el slice actual:
 | D1 | Nocturna, una tirada por hora, 0 permitido, ~3/noche | Afinar distribución y ventana exacta |
 | D2 | Sin auto-apagado; 50% de energía sin recursos; aviso rojo “sin recursos disponibles” | Confirmar textos/estado para mina y futuros extractores |
 | D3 | Colocación libre de cables, con estado conectado/desconectado | Definir overlay y reglas de visión |
-| D4 | 3=minimapa, 4=libre; DPAD solo flechas | Confirmar acción futura de 4 |
+| D4 | 3=minimapa, 4=apagar/encender temporal; WASD cursor, flechas cámara | Reasignar 4 en la etapa 4 (A+A) |
 | D5 | Tamaño parametrizable; default 2048 ahora | Benchmark de memoria en R36S |
 | D6 | Anillos difusos + rareza por distancia + bosques/carbón/cristales ahora | Algoritmos, curvas y visibilidad subterránea |
 | D7 | Híbrido: módulo desbloquea pantalla de red | Coste/energía/tecnología |
@@ -363,7 +370,7 @@ Estas ideas dependen de combate/late game y no entran en el slice actual:
 - `Q`: recursos.
 - `Esc`: B / volver.
 - `J`: duplicado de A; `K`: duplicado de B.
-- **DPAD de teclado:** solo flechas; J/K dejan de ser DPAD_LEFT/DOWN.
+- **DPAD de teclado:** se elimina; WASD=mueve cursor y flechas=mueven cámara. J/K dejan de ser DPAD_LEFT/DOWN.
 - Enter/START y Backspace/SELECT se mantienen.
 **Contexto:** hoy J/K son DPAD_LEFT/DOWN, E/Q son R1/L1 y 3/4 serían R1/R2. El menú A+A elimina R1 (apagar), así que 3 pasa a minimapa y 4 queda libre.
 **Impacto:** `dev_input`, `DEV_KEYMAP`, ayuda y tests.
@@ -451,25 +458,23 @@ Estas ideas dependen de combate/late game y no entran en el slice actual:
 **Pendiente:** si el scroll/carrusel hace wrap en los extremos y cuánto dura la animación.
 **Impacto:** `ui.py`, `ui_modals.py`, `BuildController` y tests.
 
-## Siguiente etapa propuesta
+## Etapas
 
-> Secuencia sugerida para destrabar la beta y después seguir con el slice. No es una decisión cerrada; se puede reordenar.
+> Secuencia actualizada al 2026-11-05.
 
-| Etapa | Contenido | Por qué |
-|-------|-----------|---------|
-| **0. Quick fixes beta** | B04/B05 (remapeo PC), B07 (copy laboratorio), B12 (gota), B13 (cables grises), B30 (créditos layout), créditos TxxT/JuanDi, B09 (tiempo dev) | Cambios acotados que mejoran la próxima build sin tocar el loop. |
-| **1. Mundo 2048 + generación** | D5 (tamaño parametrizable, default 2048, arrays compactos, save size/seed), D6 (anillos difusos, rareza por distancia), D10 (bosques/carbón/cristales/madera/carbón/combustible/cristal), tests de cobertura/memoria | Es el problema más visible del tester y condiciona exploración, balance y contenido. |
-| **2. UI de construcción** | B31 (scroll), B32 (selector circular), D8 (aplicar nombres), D11 (animaciones) | Desbloquea agregar módulos y DLCs sin romper el modal. |
-| **3. Trampa + comida + extractores** | B17, D1 (RNG nocturna), D2 (extractor/mina 50% y aviso rojo), D9 (invernadero 6/3 + sink), tests | Cierra el slice actual y el problema de comida/energía. |
-| **4. Red y módulos** | B01 (nombre), B02 (cables libres), B06 (menú A+A), B08 (cámara), D7 (estación de monitoreo híbrida) | Mejora la UX de la red y prepara más módulos. |
-| **5. Contenido/late game** | B22-B29 (combate, biodiésel/combustible, eventos, Mk II) y extracción/uso de carbón/cristal | Requiere sistemas nuevos; no antes de estabilizar lo anterior. |
+| Etapa | Estado |
+|-------|--------|
+| **0. Quick fixes beta** | **Hecho** — remapeo PC, créditos/layout, icono de agua, cables grises, copy del laboratorio, tiempo dev |
+| **1. Mundo 2048 + generación** | **Hecho** — tamaño parametrizable, arrays compactos, save size/seed, anillos difusos, bosques/carbón/cristales y recursos nuevos |
+| **2. UI de construcción** | **Hecho** — scroll, carrusel animado, nombres y animaciones |
+| **3. Trampa + comida + extractores** | **Hecho** — RNG nocturna, extractor/mina al 50%, invernadero 6/3, biodiésel como sink |
+| **4. Red y módulos** | **Siguiente** — rename de cable, cables libres, menú A+A, cámara y estación de monitoreo |
+| **5. Contenido/late game** | **Backlog** — extracción/uso de carbón/cristal, combustible/combate, eventos y Mk II |
 
-**Notas de secuencia:**
-- La etapa 1 es la más riesgosa por memoria/tiempo en R36S; conviene cerrar el benchmark antes de sumar contenido.
-- La etapa 2 desbloquea agregar módulos/DLCs; no depende de la generación.
-- La etapa 3 se afina después de la etapa 1 porque la disponibilidad de agua/comida cambia con el mapa nuevo.
+**Notas:**
+- Benchmark 2048 en PC: ~60 ms de generación, ~40 MB de arrays y ~3,9 ms por frame de mapa; falta medir en R36S.
 - La etapa 4 depende del menú A+A y del rename de cable.
-- La etapa 5 no debería abrirse antes de estabilizar 1-4.
+- La etapa 5 no debería abrirse antes de estabilizar la 4.
 
 ## Archivos probablemente afectados
 

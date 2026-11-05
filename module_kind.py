@@ -17,3 +17,5 @@ class ModuleKind(StrEnum):
     ELECTROLYZER = "electrolyzer"
     CONDENSER = "condenser"
     RECYCLER = "recycler"
+    FISH_TRAP = "fish_trap"
+    BIODIESEL = "biodiesel"

@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum, auto
 
+from config import BUILD_MENU_VISIBLE_CARDS
 from module_defs import CABLE_COST, ModuleKind, module_def
 from network import get_connected, invalidate_network_cache, is_adjacent_to_network
 from resources import Cost, ResourcePool
@@ -27,11 +28,13 @@ class BuildKind(Enum):
     ELECTROLYZER = auto()
     CONDENSER = auto()
     RECYCLER = auto()
+    FISH_TRAP = auto()
+    BIODIESEL = auto()
 
 
 BUILD_CATEGORIES: tuple[tuple[str, tuple[BuildKind, ...]], ...] = (
-    ("category.energy", (BuildKind.SOLAR,)),
-    ("category.extraction", (BuildKind.EXTRACTOR, BuildKind.MINE)),
+    ("category.energy", (BuildKind.SOLAR, BuildKind.BIODIESEL)),
+    ("category.extraction", (BuildKind.EXTRACTOR, BuildKind.MINE, BuildKind.FISH_TRAP)),
     (
         "category.support",
         (BuildKind.GREENHOUSE, BuildKind.LAMP, BuildKind.ELECTROLYZER, BuildKind.CONDENSER),
@@ -86,6 +89,8 @@ BUILD_TO_MODULE: dict[BuildKind, ModuleKind] = {
     BuildKind.ELECTROLYZER: ModuleKind.ELECTROLYZER,
     BuildKind.CONDENSER: ModuleKind.CONDENSER,
     BuildKind.RECYCLER: ModuleKind.RECYCLER,
+    BuildKind.FISH_TRAP: ModuleKind.FISH_TRAP,
+    BuildKind.BIODIESEL: ModuleKind.BIODIESEL,
 }
 
 
@@ -118,6 +123,10 @@ class BuildController:
     selected: BuildKind = BuildKind.CABLE
     menu_category: int = 0
     menu_item: int = 0
+    menu_scroll: float = 0.0
+    menu_scroll_target: float = 0.0
+    category_visual: float = 0.0
+    category_visual_target: float = 0.0
     cable_chain: list[tuple[int, int]] = field(default_factory=list)
 
     def _current_kinds(self) -> tuple[BuildKind, ...]:
@@ -126,10 +135,40 @@ class BuildController:
     def _sync_selected(self) -> None:
         self.selected = self._current_kinds()[self.menu_item]
 
+    def _update_menu_scroll_target(self) -> None:
+        count = len(self._current_kinds())
+        visible = BUILD_MENU_VISIBLE_CARDS
+        if count <= visible:
+            self.menu_scroll_target = 0.0
+            return
+        half = (visible - 1) / 2
+        target = self.menu_item - half
+        self.menu_scroll_target = max(0.0, min(float(count - visible), target))
+
+    def _move_category(self, delta: int) -> None:
+        count = len(BUILD_CATEGORIES)
+        old = self.menu_category
+        new = (old + delta) % count
+        step = new - old
+        if step > count / 2:
+            step -= count
+        elif step < -count / 2:
+            step += count
+        self.menu_category = new
+        self.menu_item = 0
+        self.menu_scroll = 0.0
+        self.menu_scroll_target = 0.0
+        self.category_visual_target = self.category_visual + step
+        self._sync_selected()
+
     def enter_menu(self) -> None:
         self.mode = BuildMode.MENU
         self.menu_category = 0
         self.menu_item = 0
+        self.menu_scroll = 0.0
+        self.menu_scroll_target = 0.0
+        self.category_visual = 0.0
+        self.category_visual_target = 0.0
         self._sync_selected()
         self.cable_chain.clear()
 
@@ -142,26 +181,36 @@ class BuildController:
             return
         self.menu_item = (self.menu_item - 1) % len(self._current_kinds())
         self._sync_selected()
+        self._update_menu_scroll_target()
 
     def menu_down(self) -> None:
         if self.mode != BuildMode.MENU:
             return
         self.menu_item = (self.menu_item + 1) % len(self._current_kinds())
         self._sync_selected()
+        self._update_menu_scroll_target()
 
     def menu_left(self) -> None:
         if self.mode != BuildMode.MENU:
             return
-        self.menu_category = (self.menu_category - 1) % len(BUILD_CATEGORIES)
-        self.menu_item = 0
-        self._sync_selected()
+        self._move_category(-1)
 
     def menu_right(self) -> None:
         if self.mode != BuildMode.MENU:
             return
-        self.menu_category = (self.menu_category + 1) % len(BUILD_CATEGORIES)
-        self.menu_item = 0
-        self._sync_selected()
+        self._move_category(1)
+
+    def update(self, dt: float) -> None:
+        speed = min(1.0, dt * 14.0)
+        self.menu_scroll += (self.menu_scroll_target - self.menu_scroll) * speed
+        if abs(self.menu_scroll_target - self.menu_scroll) < 0.001:
+            self.menu_scroll = self.menu_scroll_target
+        self.category_visual += (self.category_visual_target - self.category_visual) * speed
+        if abs(self.category_visual_target - self.category_visual) < 0.001:
+            self.category_visual = self.category_visual_target
+            count = len(BUILD_CATEGORIES)
+            self.category_visual %= count
+            self.category_visual_target = self.category_visual
 
     def enter_place(self) -> None:
         if self.mode != BuildMode.MENU:
@@ -190,9 +239,15 @@ class BuildController:
             return BuildPreview.RUIN
         tile = Tile(world.tiles[world.idx(x, y)])
         if kind == BuildKind.CABLE:
-            return BuildPreview.OK if tile == Tile.GROUND else BuildPreview.BAD_TERRAIN
+            return (
+                BuildPreview.OK
+                if tile in (Tile.GROUND, Tile.WATER)
+                else BuildPreview.BAD_TERRAIN
+            )
         mod_kind = BUILD_TO_MODULE[kind]
         defn = module_def(mod_kind)
+        if defn.placement_tile is not None:
+            return BuildPreview.OK if tile == defn.placement_tile else BuildPreview.BAD_TERRAIN
         if defn.placement_deposit == Deposit.WATER:
             return BuildPreview.OK if world.patch_has_deposit(x, y, Deposit.WATER) else BuildPreview.NO_WATER_DEPOSIT
         if defn.placement_deposit == Deposit.MINERAL:

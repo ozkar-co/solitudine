@@ -2,23 +2,23 @@
 
 > Fuente única del roadmap. Catálogo de módulos/tecnologías: [catalogo.md](catalogo.md). Estado: [estado.md](estado.md). Código: [arquitectura.md](arquitectura.md). Juego: [diseno-juego.md](diseno-juego.md).
 >
-> Regla: un slice a la vez. 4B/4C, UI/balance, playtest, fundación de recursos/costes y chatarra/reciclador/demolición están cerrados. Ahora toca la **trampa de peces + comida** (slice 4). El análisis temporal quedó absorbido acá y en el catálogo/diseño; fue eliminado el 2026-10-29.
+> Regla: un slice a la vez. 4B/4C, UI/balance, playtest, fundación de recursos/costes y chatarra/reciclador/demolición están cerrados. **Beta etapas 0-3 (2026-11-05)** implementadas: remapeo/créditos/iconos, mundo 2048 con anillos, UI de construcción y trampa/comida. Ahora toca la **etapa 4: red y módulos**.
 >
-> Feedback beta de TxxT (2026-11-05): [beta-txxt.md](beta-txxt.md). Las decisiones de la ronda 2 ya están reflejadas acá; la implementación queda pendiente. La secuencia propuesta para la beta está en ese documento y puede ir antes del slice 4.
+> Feedback beta de TxxT (2026-11-05): [beta-txxt.md](beta-txxt.md). Las decisiones de las etapas 0-3 ya están implementadas; la etapa 4 queda en triage.
 
 ## Norte
 
-Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y mantenimiento desde la consola del astronauta. La base es jugable, el playtest cerró y el loop de chatarra/reciclador ya está implementado. El problema inmediato es la **generación de mundo/exploración** y la **comida recurrente** (trampa de peces); después, energía y contenido.
+Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y mantenimiento desde la consola del astronauta. La base es jugable, el playtest cerró y el loop de chatarra/reciclador ya está implementado. El próximo foco es la **UX de red y módulos** (etapa 4); después, energía y contenido.
 
 ## Estado actual (hecho)
 
-- Mapa parametrizable (actual 1024×1024; el próximo pase pasa a default 2048×2048), cámara, niebla, cables, módulos, buffers, depósitos finitos y muerte por O₂/agua/comida.
+- Mapa parametrizable con default 2048×2048 (`--world-size`/`SOLITUDINE_WORLD_SIZE`), arrays compactos, cámara, niebla, cables, módulos, buffers, depósitos finitos y muerte por O₂/agua/comida.
 - UI 640×480 en grilla de 16 px, sprites, zoom, minimapa, día/noche y lámpara.
 - **4B:** laboratorio, investigación de un nodo a la vez, pantalla de Tecnología y desbloqueos.
 - **4C:** electrolizador y condensador; O₂ y agua tienen dos fuentes.
 - **UI/balance (2026-10-29):**
   - Barra superior con O₂, agua, comida y energía, nombre y `x/y`; mineral/componentes fuera de la barra.
-  - Modo recursos (X/C) con los siete recursos, nombre, cap, tendencia y días de los vitales.
+  - Modo recursos (X/C) con los once recursos, nombre, cap, tendencia y días de los vitales.
   - Menú de construcción con pestañas por categoría, navegación izquierda/derecha, categorías vacías filtradas, bloqueados/no pagables en gris y faltantes por recurso.
   - Panel de módulo con estado real, descripción, producción/consumo con nombre de recurso y día de construcción; buffer, reserva y progreso.
   - Badges de modo/pausa (`RECURSOS`, `CONSTRUIR`, `COLOCAR`, `PAUSA`), celda seleccionada marcada y X disponible en modo colocar.
@@ -28,13 +28,13 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
   - **Arranque (2026-10-29):** splash de texto best-effort en el lanzador antes del runtime; splash con pygame que se mantiene durante assets/guardado/mundo; joystick e inicialización pesada diferidos; al terminar pide START.
   - **Playtest UI (2026-10-29):** red logística única para cualquier módulo; almacén no apagable; menú de construcción con descripción y flujos produce/consume; bloqueos dicen “Investigar”; modales de menú más grandes; TxxT en créditos.
 - **Playtest (2026-10-29):** cerrado; los ajustes aplicados quedaron absorbidos por la pasada de UI/balance.
-- Guardado `VERSION` 4; sin migración (los saves viejos se borran). 49 tests de regresión.
+- Guardado `VERSION` 4; sin migración (los saves viejos se borran). 66 tests de regresión.
 
 ## Hecho: fundación de recursos/costes + chatarra (2026-10-29)
 
 **Fundación**
 
-- Pool único con siete recursos (O₂, agua, comida, energía, mineral, componentes y chatarra); `ResourceId`/`ResourceDef` y caps por recurso.
+- Pool único (originalmente siete recursos: O₂, agua, comida, energía, mineral, componentes y chatarra; hoy once con madera, carbón, combustible y cristales); `ResourceId`/`ResourceDef` y caps por recurso.
 - `Cost` multi-material con pago atómico, `missing`, reembolso y `Module.cost_paid`.
 - Fabricador: **5 Cmp + 2 mineral**; la mina sigue solo con componentes para no bloquear el arranque.
 - Save `VERSION` 4 **sin migración**: al cargar un save viejo se borra y se empieza de cero.
@@ -48,13 +48,19 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 - **Cancelar obra:** componentes pagados × `min(progreso, 0,9)` en chatarra; el resto de materiales se pierde.
 - **Reciclador:** 3 Cmp, 0,5 d, 1 E/d, 0,5 agua/d; 4 chatarra/d → 3,6 mineral/d + 0,2 Cmp/d; registra chatarra procesada y mineral reciclado.
 - **Tecnología `reciclaje`:** T1 provisional (el árbol T2 se armará después), 5 chatarra + 2 Cmp + 1 mineral, 2 d; requiere laboratorio.
-- 49 tests de regresión; `make test` verde.
+- 66 tests de regresión; `make test` verde.
 
-## Ahora: trampa de peces + comida (slice 4)
+## Hecho: beta etapas 0-3 (2026-11-05)
 
-- Módulo `fish_trap`: 2 Cmp, 0,5 d, placement sobre agua, cable sobre agua, sin energía; producción nocturna con una tirada por hora, 0 permitido, ~3 comida/noche en promedio.
-- Se detiene si el agua se agota; al demoler no deja ruina y devuelve chatarra directa.
-- Criterio: placement sobre agua, cable sobre agua, producción nocturna con RNG (~3/noche; tirada por hora, 0 permitido), parada al agotarse el agua y guardado.
+- **Etapa 0:** remapeo PC (1/2 zoom, Tab construir, E aceptar, Q recursos, Esc B, J/K A/B; 3 minimapa, 4 apagar/encender), tiempo dev con `T`, copy del laboratorio, créditos y layout, icono de agua y cables grises.
+- **Etapa 1:** mundo parametrizable default 2048, arrays compactos (40 MB), save con `size`/`seed`, generación por anillos difusos, bosques/carbón/cristales y recursos de madera/carbón/combustible/cristales.
+- **Etapa 2:** scroll vertical y carrusel animado de categorías; nombres Energía/Extracción/Soporte Vital/Red Logística/Investigación/Defensa.
+- **Etapa 3:** trampa de peces (RNG nocturna, sin ruina), extractor/mina al 50% sin recursos, invernadero 6 comida/3 O₂ y procesador de biodiésel como sink de comida.
+- Criterio cumplido: placement sobre agua, cable sobre agua, producción nocturna con RNG, parada al agotarse el agua y guardado.
+
+## Ahora: etapa 4 — red y módulos
+
+- Cables de colocación libre, menú contextual A+A, cámara, estación de monitoreo y rename de cable.
 - No entra la trampa de defensa.
 
 ## Decisiones cerradas
@@ -62,8 +68,8 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 ### Recursos
 
 - La regla de **2 fuentes / 2 usos** es una heurística, no una regla estricta. Se acepta una excepción si resuelve un problema claro y no deja un recurso de un solo uso.
-- Recursos actuales: O₂, agua, comida, energía, mineral, componentes y **chatarra**.
-- Recursos planificados (feedback beta 2026-11-05): **madera**, **carbón**, **combustible/biodiésel** (producido) y **cristales**. Madera sale de árboles; carbón/cristal/combustible todavía no tienen extractor/producción.
+- Recursos actuales: O₂, agua, comida, energía, mineral, componentes, **chatarra**, **madera**, **carbón**, **combustible** y **cristales**.
+- Recursos incorporados (2026-11-05): **madera**, **carbón**, **combustible/biodiésel** (producido) y **cristales**. Madera sale de árboles; el combustible se produce en el procesador de biodiésel; carbón/cristal todavía no tienen extractor.
 - La matriz completa vive en este plan; el catálogo define módulos/tecnologías.
 
 ### Chatarra, ruinas y reciclador
@@ -81,7 +87,7 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 ### Comida, trampas y biodiésel
 
 - La comida es un problema recurrente. Se gastará en fabricar biodiésel/combustible y en la fabricación de trampas.
-- **Invernadero** (feedback beta 2026-11-05, pendiente): 10 Cmp propuesto, 1,5 d, 3 E/d, 4 agua/d → **6 comida/d + 3 O₂/d**.
+- **Invernadero** (implementado 2026-11-05): 10 Cmp, 1,5 d, 3 E/d, 4 agua/d → **6 comida/d + 3 O₂/d**.
 - **Trampa de peces** (inicial): 2 Cmp, 0,5 d; se coloca sobre agua y se conecta a la red aunque no consuma energía; produce solo de noche, con una tirada por hora (0 permitido) y ~3 comida/noche en promedio; no es fuente primaria salvo en cantidad; si el agua se agota, queda inútil para siempre y se puede demoler para recuperar chatarra. No deja ruina: la demolición da chatarra directa.
 - El cable puede ir sobre agua. La trampa es un módulo aparte y no comparte tile con el extractor.
 - La **trampa de defensa** queda para cuando exista combate.
@@ -90,8 +96,8 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 ### Agua y exploración
 
 - **Generación por anillos difusos** (feedback beta 2026-11-05): la densidad de recursos crece con la distancia al hábitat; los raros (cristales) son escasos cerca y aumentan hacia los bordes; cuota mínima por región para evitar zonas vacías. Ver [beta-txxt.md](beta-txxt.md).
-- **Mapa parametrizable** con default **2048×2048** en el próximo pase; el save guarda `size` y `seed`; usar arrays compactos para que entre en R36S. Chunks/dinámico queda para después.
-- El agua tiene un depósito garantizado; los depósitos extra usan la generación anterior. Es finita y no se regenera.
+- **Mapa parametrizable** con default **2048×2048**; el save guarda `size` y `seed`; arrays compactos para que entre en R36S. Chunks/dinámico queda para después.
+- El agua tiene un depósito garantizado; los depósitos extra usan generación por anillos difusos. Es finita y no se regenera.
 - El radar es la única exploración permanente y encuentra todo (incluidos ruinas, bosques y cristales).
 - Quedarse sin energía puede matar por sed a través del condensador; se acepta.
 - Cuando un depósito se agota, el tile vuelve a suelo; extractor y trampa quedan inútiles.
@@ -107,17 +113,17 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 ### Bosques y cristales
 
 - Son contenido base, no DLC; su implementación debe servir para probar la creación parametrizable de recursos para un DLC.
-- **Se agregan ya** (feedback beta 2026-11-05), aunque todavía no se puedan extraer/usar: bosques, carbón subterráneo y cristales.
-- **Bosque cercano garantizado:** pequeño, bloquea construcción, se destruye manualmente y da **madera** directamente; deja **brotes**. Los brotes se pueden destruir y no dan nada. Regrow posterior.
-- **Carbón:** yacimientos subterráneos; se garantiza uno en el borde de lo explorado, aunque no se pueda usar todavía.
-- **Cristales:** yacimientos subterráneos finitos; se generan como **puntos dispersos**: grupos de 2-3, y los más grandes de 4-5; no son un parche continuo.
-- Recursos nuevos: **madera, carbón, combustible y cristales**. Madera tiene fuente; los otros quedan sin uso hasta sus extractores/producción.
-- Pendiente: interacción exacta de árboles/brotes, visibilidad de yacimientos subterráneos, cantidad de madera por árbol y curvas de rareza por distancia.
+- **Implementados 2026-11-05:** bosques, carbón subterráneo y cristales; los recursos existen aunque carbón/cristal todavía no se puedan extraer.
+- **Bosque cercano garantizado:** pequeño, bloquea construcción; **A** tala y da 6-10 de **madera** directamente; deja **brotes**. **A** sobre un brote lo quita sin dar nada. Regrow queda pendiente.
+- **Carbón:** yacimientos subterráneos; se garantiza uno en el borde del área explorada inicial, aunque no se pueda usar todavía.
+- **Cristales:** yacimientos subterráneos finitos; se generan como **puntos dispersos**: grupos de 2-3, y los más grandes de 4-5; no son un parche continuo. Se garantiza al menos un grupo hacia los bordes.
+- Recursos nuevos: **madera, carbón, combustible y cristales**. Madera tiene fuente; el combustible se produce en el procesador de biodiésel; carbón/cristal quedan sin uso hasta sus extractores.
+- Pendiente: regrow de brotes, visibilidad de yacimientos subterráneos y curvas de rareza por distancia.
 
 ### UI
 
 - Barra superior solo con los cuatro vitales, con nombres; si no caben, se decide en playtest.
-- Modo recursos: siete recursos actuales; planificado 11 con madera, carbón, combustible y cristales; sin gasto diario ni días. A inspecciona y vuelve al terreno.
+- Modo recursos: once recursos (incluye madera, carbón, combustible y cristales); sin gasto diario ni días. A inspecciona y vuelve al terreno.
 - Panel del hábitat: solo consumo diario por vital y alertas; las cantidades/caps viven en modo recursos.
 - Menú de construcción por pestañas; categorías vacías ocultas; no disponibles en gris con “Investigar”; coste, faltante, descripción y flujo produce/consume visibles. Cada módulo se muestra como tarjeta horizontal con icono, borde/fondo propio y la seleccionada resaltada en ámbar. Coste multi-material con un icono+cantidad por recurso y faltantes por recurso; **modal con scroll vertical animado para N tarjetas** y controles en pie separado; **selector de categorías circular con slide/fade**, selección centrada y etiquetas difuminadas hacia los bordes (feedback beta 2026-11-05).
 - Panel de módulo: estado, descripción, producción/consumo con nombres y día de construcción. Los módulos mixtos muestran ambas cosas; el reciclador muestra chatarra procesada y mineral reciclado.
@@ -134,13 +140,15 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 1. ~~Playtest y correcciones.~~ Cerrado (2026-10-29).
 2. ~~Fundación de recursos/costes.~~ Cerrado (2026-10-29).
 3. ~~Chatarra/reciclador/demolición.~~ Cerrado (2026-10-29).
-4. **Trampa de peces + comida (actual).** Criterio: placement sobre agua, cable sobre agua, producción nocturna con RNG (~3/noche; tirada por hora, 0 permitido) y parada al agotarse el agua.
-5. **Batería/almacén + energía.** Criterio: almacén sin cap de energía, batería con cap, tecnología y rebalance.
-6. **Mundo 2048 + generación.** Criterio: tamaño parametrizable, anillos difusos con cobertura mínima, seed guardada, bosques/carbón/cristales, recursos de madera/carbón/combustible/cristal y radar relevante; benchmark de memoria en R36S.
-7. **Extracción/uso de carbón/cristal y combustible.** Criterio: al menos un uso concreto por recurso y paso por el estándar de recursos.
-8. **Eventos, expansión y combate.** Backlog; no abrir antes de cerrar los slices anteriores.
+4. ~~Trampa de peces + comida.~~ Cerrado (2026-11-05).
+5. ~~Mundo 2048 + generación.~~ Cerrado (2026-11-05).
+6. ~~UI de construcción (scroll/carrusel/nombres).~~ Cerrado (2026-11-05).
+7. **Red y módulos (actual).** Criterio: cables libres, menú A+A, cámara, estación de monitoreo y rename de cable.
+8. **Batería/almacén + energía.** Criterio: almacén sin cap de energía, batería con cap, tecnología y rebalance.
+9. **Extracción/uso de carbón/cristal y combustible.** Criterio: al menos un uso concreto por recurso y paso por el estándar de recursos.
+10. **Eventos, expansión y combate.** Backlog; no abrir antes de cerrar los slices anteriores.
 
-> La retroalimentación beta 2026-11-05 propone una etapa 0 de quick fixes y adelantar la generación de mundo y la UI de construcción; ver [beta-txxt.md](beta-txxt.md).
+> La retroalimentación beta 2026-11-05 se ejecutó en las etapas 0-3; ver [beta-txxt.md](beta-txxt.md).
 
 ## Matriz de recursos
 
@@ -149,14 +157,14 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 | O₂ | Reserva inicial, invernadero (con agua), electrolizador | Soporte vital | Hecho |
 | Agua | Extractor, condensador | Soporte vital, invernadero, electrólisis | Hecho |
 | Energía | Panel solar | Casi todos los módulos | Hecho |
-| Comida | Invernadero; trampa de peces (planificada) | Soporte vital; biodiésel y fabricación de trampas (planificado) | Hecho / trampa planificada |
+| Comida | Invernadero; trampa de peces | Soporte vital; biodiésel | Hecho |
 | Mineral | Mina; reciclador | Fabricador | Hecho |
 | Componentes | Fabricador | Construcción, investigación | Hecho |
 | Chatarra | Ruinas, demolición | Reciclador, investigación | Hecho |
-| Madera | Bosques (árboles) | Construcción/combustible por definir | Planificado (generación ahora) |
-| Carbón | Yacimientos subterráneos | Combustible/energía por definir | Planificado (generación ahora) |
-| Cristales | Yacimientos subterráneos | Tecnología/módulos avanzados por definir | Planificado (generación ahora) |
-| Combustible/biodiésel | Producción (módulo por definir) | Energía/consumibles por definir | Planificado |
+| Madera | Bosques (árboles) | Construcción/combustible por definir | Fuente hecha; usos pendientes |
+| Carbón | Yacimientos subterráneos | Combustible/energía por definir | Generado; extractor pendiente |
+| Cristales | Yacimientos subterráneos | Tecnología/módulos avanzados por definir | Generado; extractor pendiente |
+| Combustible/biodiésel | Procesador de biodiésel | Combustible/consumibles por definir | Hecho; usos pendientes |
 
 > 2 fuentes / 2 usos es deseable, no obligatorio. **Excepción de beta (2026-11-05):** se aceptan recursos sin fuente/uso completo (madera, carbón, combustible y cristales) para dejar la infraestructura y el contenido de mundo listos; se completan en etapas posteriores.
 
@@ -165,7 +173,7 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 | Parámetro | Valor |
 |-----------|-------|
 | Reservas iniciales | 12 O₂ / 9 agua / 7 comida / 10 energía (días) |
-| Caps iniciales | 140 O₂ / 100 agua / 80 comida / 100 energía / 40 mineral / 80 Cmp / 30 chatarra |
+| Caps iniciales | 140 O₂ / 100 agua / 80 comida / 100 energía / 40 mineral / 80 Cmp / 30 chatarra / 60 madera / 60 carbón / 60 combustible / 40 cristales |
 | Componentes iniciales / cap | 60 / 80 |
 | Chatarra inicial / cap | 0 / 30 (+40 por almacén) |
 | Ruinas | 26 (2 garantizadas + 24 procedurales), 4-10 chatarra |
@@ -177,7 +185,10 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 | Electrolizador | 6 Cmp, 1 d, 4 E/d, 6 agua/d → 8 O₂/d |
 | Condensador | 8 Cmp, 1,5 d, 6 E/d → 8 agua/d |
 | Radar | 8 Cmp, 1,5 d, 12 E/d |
-| Invernadero | 8 Cmp, 1,5 d, 3 E/d, 4 agua/d → 10 comida/d + 2 O₂/d (O₂ requiere agua) |
+| Invernadero | 10 Cmp, 1,5 d, 3 E/d, 4 agua/d → 6 comida/d + 3 O₂/d (O₂ requiere agua) |
+| Trampa de peces | 2 Cmp, 0,5 d, sin energía; ~3 comida/noche (1 tirada/hora, 0 permitido) |
+| Procesador de biodiésel | 4 Cmp, 1 d, 2 E/d, 2 agua/d, 4 comida/d → 1 combustible/d |
+| Mundo | Default 2048×2048, arrays compactos (~40 MB), generación por anillos difusos |
 | Núcleo estable | 2 solar + 2 extractores + invernadero + laboratorio + electrolizador |
 
 El playtest manda. Cualquier cambio se refleja en `config.py` y en [catalogo.md](catalogo.md). El Fabricador queda en **5 Cmp + 2 mineral**; la mina sigue en componentes para no bloquear el arranque.

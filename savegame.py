@@ -10,12 +10,13 @@ from array import array
 from dataclasses import asdict
 from pathlib import Path
 
+from config import WORLD_SEED, WORLD_SIZE
 from module_defs import module_def
 from module_kind import ModuleKind
 from resources import Cost, ResourcePool
 from simulation import Simulation
 from stats import Stats
-from world import Module, ModuleState, World, generate_world
+from world import Module, ModuleState, World
 
 _SAVE_DIR = Path(
     os.environ.get("SOLITUDINE_SAVE_DIR", Path(__file__).resolve().parent)
@@ -51,6 +52,7 @@ def _save_data(world: World, sim: Simulation) -> dict:
         },
         "world": {
             "size": world.size,
+            "seed": world.seed,
             "expl_min_x": world.expl_min_x,
             "expl_min_y": world.expl_min_y,
             "expl_max_x": world.expl_max_x,
@@ -107,14 +109,28 @@ def load_game(path: Path = SAVE_PATH) -> tuple[World, Simulation] | None:
         return None
 
     wd = data["world"]
-    world = generate_world()
-    if wd["size"] != world.size:
+    size = int(wd.get("size", WORLD_SIZE))
+    seed = str(wd.get("seed", WORLD_SEED))
+    if size < 64:
         raise ValueError("Tamaño de mapa incompatible")
-    n = world.size * world.size
+    from vision import make_visible_count
 
-    tiles = list(_unpack(wd["tiles"]))
-    deposits = list(_unpack(wd["deposits"]))
-    amounts = list(array("f", _unpack(wd["amounts"])))
+    n = size * size
+    world = World(
+        tiles=bytearray(n),
+        deposits=bytearray(n),
+        deposit_amounts=array("f", [0.0]) * n,
+        explored=bytearray(n),
+        visible=bytearray(n),
+        visible_count=make_visible_count(n),
+        size=size,
+        seed=seed,
+    )
+
+    tiles = bytearray(_unpack(wd["tiles"]))
+    deposits = bytearray(_unpack(wd["deposits"]))
+    amounts = array("f")
+    amounts.frombytes(_unpack(wd["amounts"]))
     explored = bytearray(_unpack(wd["explored"]))
     visible = bytearray(_unpack(wd["visible"]))
     visible_count = array("H")

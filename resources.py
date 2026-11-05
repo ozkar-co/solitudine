@@ -9,11 +9,15 @@ from typing import Mapping
 from config import (
     ALERT_CRITICAL_DAYS,
     ALERT_WARNING_DAYS,
+    HABITAT_COAL_CAP,
     HABITAT_COMPONENTS_CAP,
+    HABITAT_CRYSTAL_CAP,
     HABITAT_FOOD_CAP,
     HABITAT_FOOD_DAILY,
     HABITAT_FOOD_START,
+    HABITAT_FUEL_CAP,
     HABITAT_MINERAL_CAP,
+    HABITAT_WOOD_CAP,
     HABITAT_O2_CAP,
     HABITAT_O2_DAILY,
     HABITAT_O2_START,
@@ -39,6 +43,10 @@ class ResourceId(StrEnum):
     MINERAL = "mineral"
     COMPONENTS = "components"
     SCRAP = "scrap"
+    WOOD = "wood"
+    COAL = "coal"
+    FUEL = "fuel"
+    CRYSTAL = "crystal"
 
 
 @dataclass(frozen=True)
@@ -62,6 +70,10 @@ RESOURCES: tuple[ResourceDef, ...] = (
     ResourceDef(ResourceId.MINERAL, "resource.mineral", "resource.mineral.short", "mineral", HABITAT_MINERAL_CAP),
     ResourceDef(ResourceId.COMPONENTS, "resource.components", "resource.components.short", "components", HABITAT_COMPONENTS_CAP),
     ResourceDef(ResourceId.SCRAP, "resource.scrap", "resource.scrap.short", "scrap", HABITAT_SCRAP_CAP),
+    ResourceDef(ResourceId.WOOD, "resource.wood", "resource.wood.short", "wood", HABITAT_WOOD_CAP),
+    ResourceDef(ResourceId.COAL, "resource.coal", "resource.coal.short", "coal", HABITAT_COAL_CAP),
+    ResourceDef(ResourceId.FUEL, "resource.fuel", "resource.fuel.short", "fuel", HABITAT_FUEL_CAP),
+    ResourceDef(ResourceId.CRYSTAL, "resource.crystal", "resource.crystal.short", "crystal", HABITAT_CRYSTAL_CAP),
 )
 
 RESOURCE_BY_ID: dict[ResourceId, ResourceDef] = {defn.id: defn for defn in RESOURCES}
@@ -154,6 +166,10 @@ class ResourcePool:
     mineral: float = 0.0
     components: float = 0.0
     scrap: float = 0.0
+    wood: float = 0.0
+    coal: float = 0.0
+    fuel: float = 0.0
+    crystal: float = 0.0
     # Cambio neto por día (solo vitales): positivo = sube, negativo = baja.
     o2_daily: float = 0.0
     power_daily: float = 0.0

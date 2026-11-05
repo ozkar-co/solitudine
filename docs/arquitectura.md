@@ -119,7 +119,7 @@ En PC, `--dev --2x` mantiene el render interno en 640×480 y escala la ventana a
 ## Guardado
 
 - `save.json` junto al ejecutable; ignorado por git. La beta PC define `SOLITUDINE_SAVE_DIR` y guarda en `saves/save.json` junto a su ejecutable.
-- `VERSION` 4. Guarda simulación, los siete recursos, `stats`, módulos/cables, `cost_paid`, `enabled`, investigación, ruinas y arrays del mundo comprimidos.
+- `VERSION` 4. Guarda simulación, los once recursos, `stats`, módulos/cables, `cost_paid`, `enabled`, investigación, ruinas y arrays del mundo comprimidos, más `size` y `seed`. El mundo usa `bytearray` para tiles/depósitos y `array('f')` para cantidades (~40 MB a 2048).
 - Sin migración: si el save no es v4, se borra al cargar y se empieza de cero.
 - Auto-save al pausar, cambiar de día o salir; carga al iniciar.
 - Si cambia el esquema, subir `VERSION` en `savegame.py`.

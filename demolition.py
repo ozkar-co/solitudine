@@ -89,7 +89,12 @@ def _cancel_site(world: World, sim: "Simulation", mod: Module) -> bool:
 def _demolish_module(world: World, sim: "Simulation", mod: Module) -> bool:
     scrap = random.uniform(*scrap_range(mod))
     _remove_module(world, mod)
-    world.add_ruin(mod.x, mod.y, scrap)
+    if mod.kind == ModuleKind.FISH_TRAP:
+        added = _add_with_cap(sim, world, ResourceId.SCRAP, scrap)
+        if added > 0.0:
+            sim.stats.scrap_collected += added
+    else:
+        world.add_ruin(mod.x, mod.y, scrap)
     sim.build.refresh_network(world)
     return True
 

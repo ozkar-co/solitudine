@@ -14,6 +14,7 @@ from daylight import natural_light
 from ui_night import dither_pattern, light_sources, tile_level
 from ui_theme import (
     COL_BORDER,
+    COL_BUILD_BAR,
     COL_CABLE,
     COL_CRITICAL,
     COL_CURSOR,
@@ -21,6 +22,7 @@ from ui_theme import (
     COL_FOG,
     COL_PREVIEW_BAD,
     COL_PREVIEW_OK,
+    COL_SELECT,
     DEPOSIT_OVERLAY,
     DEPOSIT_OVERLAY_ALPHA,
     map_rect,
@@ -111,7 +113,7 @@ def _draw_module(surf: pygame.Surface, tile_rect: pygame.Rect, mod) -> None:
     if mod.state == ModuleState.BUILDING and mod.build_total > 0:
         h = max(1, int(tile_rect.h * (mod.build_progress / mod.build_total)))
         bar = pygame.Rect(tile_rect.x, tile_rect.bottom - h, tile_rect.w, h)
-        pygame.draw.rect(surf, COL_CABLE, bar)
+        pygame.draw.rect(surf, COL_BUILD_BAR, bar)
         pygame.draw.rect(surf, COL_DIM, tile_rect, 1)
         return
 
@@ -203,7 +205,7 @@ def draw_map(
 
             h = (tx * 374761393 + ty * 668265263) & 0xFFFFFFFF
             h = ((h ^ (h >> 13)) * 1274126177) & 0xFFFFFFFF
-            rotation = ((h >> 8) & 3) * 90
+            rotation = ((h >> 8) & 3) * 90 if tile in (Tile.GROUND, Tile.ROCK, Tile.WATER) else 0
             surf.blit(ui_assets.tile(tile, h, tile_rect.w, rotation), tile_rect.topleft)
 
             if layer == MapLayer.RESOURCES:
@@ -253,7 +255,7 @@ def draw_map(
         )
         sr = _tile_draw_rect(ssx, ssy, px)
         if rect.colliderect(sr):
-            pygame.draw.rect(surf, COL_CABLE, sr, 2)
+            pygame.draw.rect(surf, COL_SELECT, sr, 2)
 
     if world.in_bounds(cursor_x, cursor_y):
         csx, csy = camera.tile_to_screen(

@@ -26,6 +26,8 @@ Los perfiles solo permiten override de `seed`. No hay `negative_prompt` en RD+; 
 | `assets/tiles/water_00.png` | `source/terrain/water.png` | (2,1) índice 6 | alien planet water, dark teal liquid with gentle ripples, seamless top-down terrain | 1102 |
 | `assets/tiles/rock_00.png` | `source/terrain/rock.png` | (2,1) índice 6 | alien planet rock, grey stone with cracks and patches of moss, seamless top-down terrain | 1103 |
 | `assets/tiles/rock_01.png` | `source/terrain/rock.png` | (0,3) índice 12 | ídem | 1103 |
+| `assets/tiles/forest_00.png` | placeholder procedural | — | bosque, árbol alienígena verde oscuro, 16×16 | — |
+| `assets/tiles/sprout_00.png` | placeholder procedural | — | brote, tallo y hojas pequeñas, 16×16 | — |
 | `assets/tiles/coast_n.png` | manual (no Genkit) | — | overlay 16×16 con línea guía azul claro en el borde norte | — |
 | `assets/tiles/coast_e.png` | manual (no Genkit) | — | overlay 16×16 con línea guía azul claro en el borde este | — |
 | `assets/tiles/coast_s.png` | manual (no Genkit) | — | overlay 16×16 con línea guía azul claro en el borde sur | — |
@@ -55,19 +57,25 @@ La hoja RD Tile es 4 columnas × 5 filas de tiles de 16×16. Los índices no usa
 | `assets/modules/electrolyzer.png` | `source/modules/electrolyzer.png` | electrolysis machine, water tank and electrodes, dark metal, cyan bubbles, top-down | 1216 |
 | `assets/modules/condenser.png` | `source/modules/condenser.png` | atmospheric condenser, coils and fan, dark metal, blue, top-down | 1217 |
 | `assets/modules/recycler.png` | placeholder procedural | reciclador industrial, caja metálica y símbolo verde de reciclaje, 16×16 | — |
+| `assets/modules/fish_trap.png` | placeholder procedural | trampa de peces, marco de madera y red, 16×16 | — |
+| `assets/modules/biodiesel.png` | placeholder procedural | procesador de biodiésel, tanque y válvula, 16×16 | — |
 
 ### Iconos
 
 | Archivo final | Fuente 32×32 | Prompt | Seed |
 |---------------|--------------|--------|------|
 | `assets/icons/o2.png` | `source/icons/o2.png` | oxygen tank icon, cyan and white, simple silhouette | 1301 |
-| `assets/icons/water.png` | `source/icons/water.png` | water drop icon, blue, simple silhouette | 1302 |
+| `assets/icons/water.png` | placeholder procedural (gota) | gota de agua azul con brillo, 16×16 | — |
 | `assets/icons/food.png` | `source/icons/food.png` | food ration icon, green and amber, simple silhouette | 1303 |
 | `assets/icons/power.png` | `source/icons/power.png` | lightning bolt icon, yellow, simple silhouette | 1304 |
 | `assets/icons/components.png` | `source/icons/components.png` | gear icon, steel and green, simple silhouette | 1305 |
 | `assets/icons/mineral.png` | `source/icons/mineral.png` | mineral ore chunk icon, brown and grey, simple silhouette | 1306 |
 | `assets/icons/scrap.png` | placeholder procedural | pila de chatarra, gris y marrón, 16×16 | — |
-| `assets/icons/cable.png` | placeholder procedural | cable y conectores, amarillo, 16×16 | — |
+| `assets/icons/cable.png` | placeholder procedural | cable y conectores, gris, 16×16 | — |
+| `assets/icons/wood.png` | placeholder procedural | tronco de madera, marrón, 16×16 | — |
+| `assets/icons/coal.png` | placeholder procedural | trozo de carbón, gris oscuro, 16×16 | — |
+| `assets/icons/fuel.png` | placeholder procedural | bidón de combustible, naranja, 16×16 | — |
+| `assets/icons/crystal.png` | placeholder procedural | cristal cian, 16×16 | — |
 | `assets/icons/biomass.png` | `source/icons/biomass.png` | green algae biomass icon, simple silhouette | 1307 |
 | `assets/icons/chitin.png` | `source/icons/chitin.png` | chitin plate icon, amber, simple silhouette | 1308 |
 | `assets/icons/alloy.png` | `source/icons/alloy.png` | metal alloy ingot icon, steel, simple silhouette | 1309 |
@@ -75,7 +83,7 @@ La hoja RD Tile es 4 columnas × 5 filas de tiles de 16×16. Los índices no usa
 
 Los finales de módulos e iconos son **16×16**: se bajan desde el PNG 32×32 con `pygame.transform.scale` (nearest). El source 32 se conserva para editar.
 
-> `recycler.png`, `scrap.png` y `ruin_00.png` son placeholders procedurales de la fase pre-alfa; se regenerarán con Genkit y se actualizarán seed/prompt en esta tabla.
+> `recycler.png`, `scrap.png`, `ruin_00.png`, `forest_00.png`, `sprout_00.png`, `fish_trap.png`, `biodiesel.png`, `water.png`, `cable.png`, `wood.png`, `coal.png`, `fuel.png` y `crystal.png` son placeholders procedurales; se pueden regenerar o editar a mano y actualizar seed/prompt en esta tabla.
 
 ### Créditos / easter egg
 

@@ -8,14 +8,7 @@ import time
 import pygame
 
 from camera import Camera, movement_rates
-from config import (
-    CAMERA_MARGIN,
-    FPS,
-    HABITAT_X,
-    HABITAT_Y,
-    SCREEN_H,
-    SCREEN_W,
-)
+from config import CAMERA_MARGIN, FPS, SCREEN_H, SCREEN_W
 from construction import BuildMode
 from game_help import context_help
 from game_input import handle_frame_input
@@ -47,6 +40,9 @@ from ui_input import input_policy
 from ui_minimap import draw_minimap
 from ui_tech import draw_tech_screen
 from world import generate_world
+
+
+TIME_SCALES = (1.0, 2.0, 5.0, 10.0)
 
 
 def _axis_active(held: frozenset[str], pressed: frozenset[str], *names: str) -> tuple[bool, bool]:
@@ -175,12 +171,13 @@ def run(dev: bool = False, handheld: bool = False, scale: float = 1.0) -> int:
         world, sim = loaded
     gen_ms = (time.perf_counter() - t0) * 1000.0
 
-    camera = Camera(float(HABITAT_X), float(HABITAT_Y))
+    hx, hy = world.habitat_x, world.habitat_y
+    camera = Camera(float(hx), float(hy), world.size)
     pygame.joystick.init()
     inp = Input(dev_mode)
     inp.open_joysticks()
 
-    cursor_x, cursor_y = HABITAT_X, HABITAT_Y
+    cursor_x, cursor_y = hx, hy
     select_x: int | None = None
     select_y: int | None = None
     layer = MapLayer.TERRAIN
@@ -189,6 +186,7 @@ def run(dev: bool = False, handheld: bool = False, scale: float = 1.0) -> int:
     cursor_acc_x = 0.0
     cursor_acc_y = 0.0
     minimap_on = True
+    time_scale = 1.0
 
     def save_now() -> None:
         try:
@@ -197,14 +195,15 @@ def run(dev: bool = False, handheld: bool = False, scale: float = 1.0) -> int:
             print(f"No se pudo guardar: {exc}", file=sys.stderr)
 
     def reset_session() -> None:
-        nonlocal world, sim, camera, cam_bounds, cursor_x, cursor_y
+        nonlocal world, sim, camera, cam_bounds, cursor_x, cursor_y, hx, hy
         nonlocal select_x, select_y, layer, cursor_acc_x, cursor_acc_y
         savegame.delete_save()
         world = generate_world()
         sim = Simulation()
-        camera = Camera(float(HABITAT_X), float(HABITAT_Y))
+        hx, hy = world.habitat_x, world.habitat_y
+        camera = Camera(float(hx), float(hy), world.size)
         cam_bounds = world.camera_bounds(CAMERA_MARGIN)
-        cursor_x, cursor_y = HABITAT_X, HABITAT_Y
+        cursor_x, cursor_y = hx, hy
         select_x, select_y = None, None
         layer = MapLayer.TERRAIN
         cursor_acc_x, cursor_acc_y = 0.0, 0.0
@@ -226,6 +225,10 @@ def run(dev: bool = False, handheld: bool = False, scale: float = 1.0) -> int:
             inp.process_event(event)
 
         frame = inp.poll()
+
+        if inp.was_pressed(frame, "TIME"):
+            index = (TIME_SCALES.index(time_scale) + 1) % len(TIME_SCALES)
+            time_scale = TIME_SCALES[index]
 
         if "R2" in frame.pressed:
             minimap_on = not minimap_on
@@ -272,7 +275,8 @@ def run(dev: bool = False, handheld: bool = False, scale: float = 1.0) -> int:
 
         previous_day = sim.day
         was_game_over = sim.game_over
-        sim.update(dt, world)
+        sim.build.update(dt)
+        sim.update(dt * time_scale, world)
         if sim.game_over and not was_game_over:
             save_now()
         elif sim.day != previous_day:
@@ -366,6 +370,7 @@ def run(dev: bool = False, handheld: bool = False, scale: float = 1.0) -> int:
                 held=frame.held,
                 keymap=DEV_KEYMAP,
                 zoom_px=camera.tile_px,
+                time_scale=time_scale,
                 debug_lines=debug_lines,
             )
 

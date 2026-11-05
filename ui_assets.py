@@ -14,6 +14,8 @@ TILE_FILES = {
     Tile.GROUND: "ground",
     Tile.WATER: "water",
     Tile.ROCK: "rock",
+    Tile.FOREST: "forest",
+    Tile.SPROUT: "sprout",
 }
 COAST_DIRECTIONS = ("n", "e", "s", "w")
 ICON_NAMES = (
@@ -25,6 +27,10 @@ ICON_NAMES = (
     "mineral",
     "scrap",
     "cable",
+    "wood",
+    "coal",
+    "fuel",
+    "crystal",
     "biomass",
     "chitin",
     "alloy",

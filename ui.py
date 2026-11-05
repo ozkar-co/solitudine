@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import math
+
 import pygame
 
 import demolition
 import ui_assets
-from config import SCREEN_W
+from config import BUILD_MENU_VISIBLE_CARDS, SCREEN_W
 from ui_layout import bottom_bar_rect, top_bar_rect
 from construction import BUILD_CATEGORIES, BuildKind, BuildMode, kind_cost, kind_locked, module_kind_for
 from credits import CREDITS_SECTIONS, CREDITS_VISIBLE_LINES
@@ -185,13 +187,14 @@ def draw_dev_debug(
     held: frozenset[str],
     keymap: str,
     zoom_px: int,
+    time_scale: float = 1.0,
     debug_lines: list[str] | None = None,
 ) -> None:
     from gamepad import format_actions
 
     rect = map_rect()
     lines = [
-        f"FPS {fps:4.1f}  frame {frame_ms:5.1f}ms  celdas {tiles_drawn}  zoom {zoom_px}px",
+        f"FPS {fps:4.1f}  frame {frame_ms:5.1f}ms  celdas {tiles_drawn}  zoom {zoom_px}px  tiempo x{time_scale:g}",
         f"gen {gen_ms:.0f}ms  held: {format_actions(held)}",
     ]
     y = rect.y + 4
@@ -226,6 +229,8 @@ def _build_kind_label(kind: BuildKind) -> str:
         BuildKind.ELECTROLYZER: t("build.electrolyzer"),
         BuildKind.CONDENSER: t("build.condenser"),
         BuildKind.RECYCLER: t("build.recycler"),
+        BuildKind.FISH_TRAP: t("build.fish_trap"),
+        BuildKind.BIODIESEL: t("build.biodiesel"),
     }[kind]
 
 
@@ -243,6 +248,10 @@ _BUILD_FLOW_FIELDS = (
     ("mineral", "mineral"),
     ("components", "components"),
     ("scrap", "scrap"),
+    ("wood", "wood"),
+    ("coal", "coal"),
+    ("fuel", "fuel"),
+    ("crystal", "crystal"),
 )
 
 
@@ -294,15 +303,28 @@ def _resource_modal_lines(sim: Simulation) -> list[ModalLine]:
     return [ModalLine(items=tuple(items[i : i + 4])) for i in range(0, len(items), 4)]
 
 
-def _category_segments(build) -> tuple[tuple[str, tuple[int, int, int]], ...]:
-    segments: list[tuple[str, tuple[int, int, int]]] = []
-    for index, (category_key, _kinds) in enumerate(BUILD_CATEGORIES):
-        label = t(category_key)
-        if index == build.menu_category:
-            segments.append((f"< {label} >", COL_WARN))
-        else:
-            segments.append((f"  {label}  ", COL_DIM))
-    return tuple(segments)
+def _draw_category_carousel(
+    surf: pygame.Surface,
+    font_sm: pygame.font.Font,
+    box: pygame.Rect,
+    y: int,
+    build,
+) -> None:
+    count = len(BUILD_CATEGORIES)
+    spacing = (box.w - MODAL_PAD_X * 2) / 5.0
+    for offset in range(-2, 3):
+        idx_float = build.category_visual + offset
+        idx = int(round(idx_float)) % count
+        pos = idx_float - build.category_visual
+        selected = idx == build.menu_category
+        label = t(BUILD_CATEGORIES[idx][0])
+        text = f"< {label} >" if selected else label
+        color = COL_WARN if selected else COL_DIM
+        alpha = 255 if selected else max(55, int(255 * (1.0 - min(1.0, abs(pos)) * 0.55)))
+        rendered = font_sm.render(text, False, color)
+        rendered.set_alpha(alpha)
+        x = int(box.centerx + pos * spacing - rendered.get_width() / 2)
+        surf.blit(rendered, (x, y))
 
 
 _BUILD_ICON_CACHE: dict[BuildKind, pygame.Surface] = {}
@@ -352,9 +374,8 @@ def draw_build_menu_modal(
         surf.blit(row, (box.centerx - row.get_width() // 2, y))
         y += row.get_height() + 2
 
-    categories = render_segments(_category_segments(build), font_sm)
-    surf.blit(categories, (box.centerx - categories.get_width() // 2, y))
-    y += categories.get_height() + 6
+    _draw_category_carousel(surf, font_sm, box, y, build)
+    y += font_sm.get_height() + 8
     pygame.draw.line(
         surf,
         COL_DIM,
@@ -366,8 +387,28 @@ def draw_build_menu_modal(
     _category_key, kinds = BUILD_CATEGORIES[build.menu_category]
     card_x = box.x + MODAL_PAD_X
     card_w = box.w - MODAL_PAD_X * 2
-    for kind in kinds:
-        card = pygame.Rect(card_x, y, card_w, BUILD_CARD_HEIGHT)
+    step = BUILD_CARD_HEIGHT + BUILD_CARD_GAP
+    content_top = y
+    footer_h = font_sm.get_height() + 2
+    footer_top = box.bottom - MODAL_PAD_Y - footer_h
+    content_bottom = footer_top - MODAL_FOOTER_GAP
+    clip = pygame.Rect(
+        card_x,
+        content_top,
+        card_w,
+        max(0, content_bottom - content_top),
+    )
+    prev_clip = surf.get_clip()
+    surf.set_clip(clip)
+    start = max(0, int(math.floor(build.menu_scroll)) - 1)
+    end = min(
+        len(kinds),
+        int(math.ceil(build.menu_scroll)) + BUILD_MENU_VISIBLE_CARDS + 1,
+    )
+    for index in range(start, end):
+        kind = kinds[index]
+        card_y = content_top + (index - build.menu_scroll) * step
+        card = pygame.Rect(card_x, round(card_y), card_w, BUILD_CARD_HEIGHT)
         selected = kind == build.selected
         cost = kind_cost(kind)
         locked = kind_locked(kind, sim.research.unlocked)
@@ -433,10 +474,20 @@ def draw_build_menu_modal(
             effect_row = font_sm.render(effect.text, False, effect.color)
         surf.blit(effect_row, (text_x, text_y + 32))
 
-        y = card.bottom + BUILD_CARD_GAP
+    surf.set_clip(prev_clip)
 
-    footer_h = font_sm.get_height() + 2
-    footer_top = box.bottom - MODAL_PAD_Y - footer_h
+    if len(kinds) > BUILD_MENU_VISIBLE_CARDS:
+        track_x = box.right - 8
+        track_top = content_top
+        track_h = max(1, content_bottom - content_top)
+        max_scroll = max(1.0, len(kinds) - BUILD_MENU_VISIBLE_CARDS)
+        thumb_h = max(10, int(track_h * BUILD_MENU_VISIBLE_CARDS / len(kinds)))
+        thumb_y = track_top + int(
+            (track_h - thumb_h) * min(1.0, build.menu_scroll / max_scroll)
+        )
+        pygame.draw.rect(surf, COL_DIM, (track_x, track_top, 2, track_h))
+        pygame.draw.rect(surf, COL_TEXT, (track_x, thumb_y, 2, thumb_h))
+
     pygame.draw.line(
         surf,
         COL_DIM,
@@ -554,16 +605,7 @@ def draw_credits_modal(
     lines = [title] + window
 
     title_h = font.get_height() + 4
-    line_h = font_sm.get_height() + 2
-    footer_h = font_sm.get_height() + 2
-    fixed_height = (
-        MODAL_PAD_Y * 2
-        + title_h
-        + CREDITS_VISIBLE_LINES * line_h
-        + footer_h
-        + MODAL_FOOTER_GAP
-        + 6
-    )
+    footer_h = font_sm.get_height() + 3
     min_width = (
         max(
             font.render(title.text, False, title.color).get_width(),
@@ -579,7 +621,6 @@ def draw_credits_modal(
         lines,
         dim_map=True,
         min_width=min_width,
-        fixed_height=fixed_height,
         footer=[ModalLine(t("help.credits"), COL_DIM)],
     )
 

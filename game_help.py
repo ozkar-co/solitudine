@@ -8,7 +8,7 @@ from module_defs import module_def
 from module_kind import ModuleKind
 from simulation import Simulation
 from ui_map import MapLayer
-from world import World
+from world import Tile, World
 
 
 def context_help(
@@ -38,6 +38,11 @@ def context_help(
         return t("help.resources")
     if select_x is not None:
         if select_y is not None and world is not None:
+            tile = Tile(world.tiles[world.idx(select_x, select_y)])
+            if tile == Tile.FOREST:
+                return t("help.forest")
+            if tile == Tile.SPROUT:
+                return t("help.sprout")
             mod = world.module_at(select_x, select_y)
             if mod is not None and mod.kind == ModuleKind.HABITAT:
                 return t("help.selected_habitat")

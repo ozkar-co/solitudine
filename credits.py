@@ -24,9 +24,14 @@ CREDITS_SECTIONS: tuple[tuple[str, tuple[CreditEntry, ...]], ...] = (
         ),
     ),
     (
-        "credits.section_support",
+        "credits.section_beta",
         (
             CreditEntry("credits.juanka_name", "credits.juanka_roles"),
+        ),
+    ),
+    (
+        "credits.section_support",
+        (
             CreditEntry("credits.neo_cleo_name", "credits.neo_cleo_roles"),
         ),
     ),

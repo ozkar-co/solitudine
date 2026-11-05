@@ -3,14 +3,32 @@
 from __future__ import annotations
 
 import json
+import math
+import random
 import tempfile
 import unittest
+from array import array
 from pathlib import Path
 from unittest.mock import patch
 
 import demolition
 import game
-from config import HABITAT_X, HABITAT_Y
+from config import (
+    BIODIESEL_FOOD_DAILY,
+    BIODIESEL_FUEL_DAILY,
+    BIODIESEL_WATER_DAILY,
+    COST_FISH_TRAP,
+    FISH_TRAP_MAX_PER_HOUR,
+    FISH_TRAP_ZERO_CHANCE,
+    GREENHOUSE_FOOD_DAILY,
+    GREENHOUSE_O2_DAILY,
+    HABITAT_FOOD_DAILY,
+    HABITAT_O2_DAILY,
+    HABITAT_WATER_DAILY,
+    HABITAT_X,
+    HABITAT_Y,
+    SECONDS_PER_DAY,
+)
 from construction import BuildController, BuildKind, BuildMode, BuildPreview, kind_locked
 from credits import CREDITS_SCROLL_STEP
 from game_input import handle_frame_input
@@ -57,6 +75,28 @@ def prepare_tile(world, x: int, y: int) -> None:
     world.ruins.pop((x, y), None)
 
 
+def prepare_water(world, x: int, y: int) -> None:
+    prepare_tile(world, x, y)
+    i = world.idx(x, y)
+    world.tiles[i] = Tile.WATER
+
+
+def add_module_at(world, kind: ModuleKind, x: int, y: int, *, enabled: bool = True) -> Module:
+    mod = Module(
+        kind,
+        x,
+        y,
+        state=ModuleState.ONLINE,
+        enabled=enabled,
+        buffer_cap=buffer_cap(kind),
+    )
+    world.modules.append(mod)
+    world.module_cells[(x, y)] = mod
+    on_module_built(world, mod)
+    world._network_cache = {(x, y)}
+    return mod
+
+
 def run(sim: Simulation, world, seconds: float) -> None:
     for _ in range(int(seconds * 60)):
         sim.update(1 / 60, world)
@@ -80,7 +120,7 @@ class ResourceRateTests(unittest.TestCase):
 
 
 class DepletedExtractorTests(unittest.TestCase):
-    def test_depleted_extractor_does_not_consume_power(self) -> None:
+    def test_depleted_extractor_consumes_half_power(self) -> None:
         world = generate_world()
         sim = Simulation()
         sim.day_progress = 0.5
@@ -95,7 +135,21 @@ class DepletedExtractorTests(unittest.TestCase):
 
         before = sim.resources.power
         run(sim, world, 1.0)
-        self.assertAlmostEqual(before - sim.resources.power, 8.0 / 48.0, places=4)
+        self.assertAlmostEqual(before - sim.resources.power, 9.0 / 48.0, places=4)
+
+    def test_depleted_mine_consumes_half_power(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        sim.day_progress = 0.5
+        for dy in range(-1, 2):
+            for dx in range(-1, 2):
+                i = world.idx(HABITAT_X + 1 + dx, HABITAT_Y + dy)
+                world.deposit_amounts[i] = 0.0
+                world.deposits[i] = Deposit.NONE
+        add_module(world, ModuleKind.MINE, 1)
+        before = sim.resources.power
+        run(sim, world, 1.0)
+        self.assertAlmostEqual(before - sim.resources.power, 9.5 / 48.0, places=4)
 
 
 class EnabledTests(unittest.TestCase):
@@ -410,6 +464,10 @@ class SaveTests(unittest.TestCase):
         sim.day_progress = 0.42
         sim.resources.components = 31.0
         sim.resources.scrap = 12.0
+        sim.resources.wood = 4.0
+        sim.resources.coal = 5.0
+        sim.resources.fuel = 6.0
+        sim.resources.crystal = 7.0
         sim.stats.scrap_collected = 3.0
         sim.stats.scrap_processed = 2.0
         fab = add_module(world, ModuleKind.FABRICATOR, 1, enabled=False)
@@ -431,7 +489,13 @@ class SaveTests(unittest.TestCase):
             self.assertAlmostEqual(sim2.day_progress, 0.42)
             self.assertEqual(sim2.resources.components, 31.0)
             self.assertEqual(sim2.resources.scrap, 12.0)
+            self.assertEqual(sim2.resources.wood, 4.0)
+            self.assertEqual(sim2.resources.coal, 5.0)
+            self.assertEqual(sim2.resources.fuel, 6.0)
+            self.assertEqual(sim2.resources.crystal, 7.0)
             self.assertEqual(sim2.resources.power, 33.0)
+            self.assertEqual(world2.seed, world.seed)
+            self.assertEqual(world2.size, world.size)
             self.assertEqual(sim2.stats.scrap_collected, 3.0)
             self.assertEqual(sim2.stats.scrap_processed, 2.0)
             self.assertEqual(world2.ruins, world.ruins)
@@ -447,6 +511,20 @@ class SaveTests(unittest.TestCase):
             self.assertAlmostEqual(sim2.research.progress, 0.5)
             delete_save(path)
             self.assertIsNone(load_game(path))
+
+    def test_size_and_seed_roundtrip(self) -> None:
+        world = generate_world(seed="CUSTOM", size=256)
+        sim = Simulation()
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "save.json"
+            save_game(world, sim, path)
+            loaded = load_game(path)
+            self.assertIsNotNone(loaded)
+            world2, _ = loaded
+            self.assertEqual(world2.size, 256)
+            self.assertEqual(world2.seed, "CUSTOM")
+            self.assertEqual(len(world2.tiles), 256 * 256)
+            delete_save(path)
 
     def test_death_state_roundtrip(self) -> None:
         world = generate_world()
@@ -951,3 +1029,244 @@ class RecyclerTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FishTrapTests(unittest.TestCase):
+    def _trap(self, water: bool = True):
+        world = generate_world()
+        sim = Simulation()
+        x, y = HABITAT_X + 1, HABITAT_Y
+        prepare_tile(world, x, y)
+        if water:
+            world.tiles[world.idx(x, y)] = Tile.WATER
+        mod = add_module_at(world, ModuleKind.FISH_TRAP, x, y)
+        return world, sim, mod
+
+    def test_placement_only_on_water(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        x, y = HABITAT_X + 1, HABITAT_Y
+        prepare_tile(world, x, y)
+        sim.build.selected = BuildKind.FISH_TRAP
+        self.assertEqual(
+            sim.build.preview(world, sim.resources, x, y),
+            BuildPreview.BAD_TERRAIN,
+        )
+        world.tiles[world.idx(x, y)] = Tile.WATER
+        self.assertEqual(
+            sim.build.preview(world, sim.resources, x, y),
+            BuildPreview.OK,
+        )
+
+    def test_cable_can_be_placed_on_water(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        x, y = HABITAT_X + 1, HABITAT_Y
+        prepare_water(world, x, y)
+        sim.build.selected = BuildKind.CABLE
+        self.assertTrue(sim.build.try_place(world, sim.resources, x, y))
+        self.assertIn((x, y), world.cables)
+
+    def test_hourly_roll_only_at_night(self) -> None:
+        world, sim, mod = self._trap()
+        sim.day = 1
+        sim.day_progress = 20.9 / 24
+        sim.last_hour_index = 20
+        with patch.object(sim.rng, "random", return_value=0.9), patch.object(
+            sim.rng, "uniform", return_value=1.0
+        ):
+            sim.update((0.2 / 24) * SECONDS_PER_DAY, world)
+        self.assertGreater(mod.buffer + sim.resources.food, 56.5)
+
+    def test_daytime_and_no_water_do_not_roll(self) -> None:
+        world, sim, mod = self._trap()
+        sim.day = 1
+        sim.day_progress = 12.9 / 24
+        sim.last_hour_index = 12
+        with patch.object(sim.rng, "random", return_value=0.9), patch.object(
+            sim.rng, "uniform", return_value=1.0
+        ):
+            sim.update((0.2 / 24) * SECONDS_PER_DAY, world)
+        self.assertEqual(mod.buffer, 0.0)
+
+        world2, sim2, mod2 = self._trap(water=False)
+        sim2.day = 1
+        sim2.day_progress = 20.9 / 24
+        sim2.last_hour_index = 20
+        with patch.object(sim2.rng, "random", return_value=0.9), patch.object(
+            sim2.rng, "uniform", return_value=1.0
+        ):
+            sim2.update((0.2 / 24) * SECONDS_PER_DAY, world2)
+        self.assertEqual(mod2.buffer, 0.0)
+
+    def test_rng_average_is_about_three_per_night(self) -> None:
+        world, sim, mod = self._trap()
+        sim.rng = random.Random(7)
+        total = 0.0
+        for _ in range(2000):
+            sim.resources.food = 0.0
+            mod.buffer = 0.0
+            sim._roll_fish_traps(world)
+            total += sim.resources.food + mod.buffer
+        self.assertGreater(total / 2000.0, 0.30)
+        self.assertLess(total / 2000.0, 0.45)
+
+    def test_demolition_returns_scrap_without_ruin(self) -> None:
+        world, sim, mod = self._trap()
+        x, y = mod.x, mod.y
+        self.assertTrue(demolition.demolish(world, sim, x, y))
+        self.assertNotIn((x, y), world.ruins)
+        self.assertGreater(sim.resources.scrap, 0.0)
+
+
+class BiodieselTests(unittest.TestCase):
+    def test_biodiesel_consumes_food_and_water_and_makes_fuel(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        sim.day_progress = 0.5
+        sim.resources.food = 50.0
+        sim.resources.water = 20.0
+        sim.resources.power = 100.0
+        add_module(world, ModuleKind.BIODIESEL, 1)
+        run(sim, world, 1.0)
+        self.assertGreater(sim.resources.fuel, 0.0)
+        self.assertAlmostEqual(50.0 - sim.resources.food, (HABITAT_FOOD_DAILY + BIODIESEL_FOOD_DAILY) / 48.0, places=4)
+        self.assertAlmostEqual(20.0 - sim.resources.water, (HABITAT_WATER_DAILY + BIODIESEL_WATER_DAILY) / 48.0, places=4)
+
+
+class GreenhouseBalanceTests(unittest.TestCase):
+    def test_greenhouse_produces_six_food_and_three_o2(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        sim.day_progress = 0.5
+        sim.resources.food = 50.0
+        sim.resources.o2 = 40.0
+        sim.resources.water = 100.0
+        sim.resources.power = 100.0
+        add_module(world, ModuleKind.GREENHOUSE, 1)
+        run(sim, world, 1.0)
+        self.assertAlmostEqual(50.0 - sim.resources.food, (HABITAT_FOOD_DAILY - GREENHOUSE_FOOD_DAILY) / 48.0, places=4)
+        self.assertAlmostEqual(sim.resources.o2 - 40.0, (GREENHOUSE_O2_DAILY - HABITAT_O2_DAILY) / 48.0, places=4)
+
+
+class ForestTests(unittest.TestCase):
+    def test_harvest_forest_leaves_sprout_and_gives_wood(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        x, y = HABITAT_X + 1, HABITAT_Y
+        prepare_tile(world, x, y)
+        world.tiles[world.idx(x, y)] = Tile.FOREST
+        frame = FrameInput(frozenset({"A"}), frozenset({"A"}), frozenset())
+        result = handle_frame_input(
+            frame,
+            Input(dev_mode=False),
+            sim,
+            world,
+            layer=MapLayer.TERRAIN,
+            cursor_x=x,
+            cursor_y=y,
+            select_x=None,
+            select_y=None,
+        )
+        self.assertGreater(sim.resources.wood, 0.0)
+        self.assertEqual(Tile(world.tiles[world.idx(x, y)]), Tile.SPROUT)
+        self.assertTrue(result.save_requested)
+
+        wood = sim.resources.wood
+        handle_frame_input(
+            frame,
+            Input(dev_mode=False),
+            sim,
+            world,
+            layer=MapLayer.TERRAIN,
+            cursor_x=x,
+            cursor_y=y,
+            select_x=x,
+            select_y=y,
+        )
+        self.assertEqual(Tile(world.tiles[world.idx(x, y)]), Tile.GROUND)
+        self.assertEqual(sim.resources.wood, wood)
+
+
+class WorldGenerationTests(unittest.TestCase):
+    def test_parameterized_size_seed_and_compact_arrays(self) -> None:
+        world = generate_world(seed="TEST", size=256)
+        self.assertEqual(world.size, 256)
+        self.assertEqual(world.seed, "TEST")
+        self.assertEqual(len(world.tiles), 256 * 256)
+        self.assertIsInstance(world.tiles, bytearray)
+        self.assertIsInstance(world.deposits, bytearray)
+        self.assertIsInstance(world.deposit_amounts, array)
+
+    def test_deterministic_seed(self) -> None:
+        a = generate_world(seed="A", size=128)
+        b = generate_world(seed="A", size=128)
+        c = generate_world(seed="B", size=128)
+        self.assertEqual(bytes(a.tiles), bytes(b.tiles))
+        self.assertEqual(bytes(a.deposits), bytes(b.deposits))
+        self.assertNotEqual(bytes(a.tiles), bytes(c.tiles))
+
+    def test_new_content_guarantees(self) -> None:
+        world = generate_world(seed="TEST", size=512)
+        hx, hy = world.habitat_x, world.habitat_y
+        forest_near = False
+        coal_edge = False
+        crystal = False
+        for y in range(world.size):
+            for x in range(world.size):
+                i = world.idx(x, y)
+                if Tile(world.tiles[i]) == Tile.FOREST and math.hypot(x - hx, y - hy) <= 20:
+                    forest_near = True
+                dep = Deposit(world.deposits[i])
+                if dep == Deposit.COAL:
+                    d = math.hypot(x - hx, y - hy)
+                    if 18 <= d <= 30:
+                        coal_edge = True
+                if dep == Deposit.CRYSTAL:
+                    crystal = True
+        self.assertTrue(forest_near)
+        self.assertTrue(coal_edge)
+        self.assertTrue(crystal)
+
+    def test_deposit_coverage_is_not_empty(self) -> None:
+        world = generate_world(seed="TEST", size=512)
+        chunk = 64
+        covered = 0
+        total = 0
+        for cy in range(0, world.size, chunk):
+            for cx in range(0, world.size, chunk):
+                total += 1
+                found = False
+                for y in range(cy, min(world.size, cy + chunk)):
+                    for x in range(cx, min(world.size, cx + chunk)):
+                        dep = Deposit(world.deposits[world.idx(x, y)])
+                        if dep in (Deposit.WATER, Deposit.MINERAL):
+                            found = True
+                            break
+                    if found:
+                        break
+                if found:
+                    covered += 1
+        self.assertGreater(covered / total, 0.25)
+
+
+class BuildModalTests(unittest.TestCase):
+    def test_category_carousel_animates_to_target(self) -> None:
+        build = BuildController()
+        build.enter_menu()
+        build.menu_right()
+        self.assertEqual(build.menu_category, 1)
+        self.assertEqual(build.category_visual_target, 1.0)
+        build.update(1.0)
+        self.assertAlmostEqual(build.category_visual, 1.0)
+
+    def test_scroll_target_keeps_selection_visible(self) -> None:
+        build = BuildController()
+        with patch(
+            "construction.BUILD_CATEGORIES",
+            (("category.test", (BuildKind.SOLAR,) * 6),),
+        ):
+            build.enter_menu()
+            for _ in range(5):
+                build.menu_down()
+            self.assertGreater(build.menu_scroll_target, 0.0)

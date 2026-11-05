@@ -6,6 +6,10 @@ from dataclasses import dataclass
 from typing import Callable
 
 from config import (
+    BIODIESEL_FOOD_DAILY,
+    BIODIESEL_FUEL_DAILY,
+    BIODIESEL_POWER_DAILY,
+    BIODIESEL_WATER_DAILY,
     FABRICATOR_COMPONENTS_DAILY,
     FABRICATOR_MINERAL_DAILY,
     GREENHOUSE_FOOD_DAILY,
@@ -171,6 +175,12 @@ def collect_power_jobs(ctx: TickContext) -> list[PowerJob]:
             job = _job_recycler(ctx)
             if job:
                 jobs.append(job)
+            continue
+
+        if mod.kind == ModuleKind.BIODIESEL:
+            job = _job_biodiesel(ctx, mod)
+            if job:
+                jobs.append(job)
 
     return jobs
 
@@ -178,7 +188,7 @@ def collect_power_jobs(ctx: TickContext) -> list[PowerJob]:
 def _job_extractor(ctx: TickContext, mod: Module) -> PowerJob | None:
     rate = module_def(ModuleKind.EXTRACTOR).nominal
     if not ctx.world.patch_has_deposit(mod.x, mod.y, Deposit.WATER):
-        return None
+        return PowerJob(abs(rate.power) * ctx.scale * 0.5, lambda _f: None)
     space = _output_space(mod, ctx.resources.water, ctx.caps[ResourceId.WATER])
     if space <= 0:
         return None
@@ -203,7 +213,7 @@ def _job_extractor(ctx: TickContext, mod: Module) -> PowerJob | None:
 def _job_mine(ctx: TickContext, mod: Module) -> PowerJob | None:
     rate = module_def(ModuleKind.MINE).nominal
     if not ctx.world.patch_has_deposit(mod.x, mod.y, Deposit.MINERAL):
-        return None
+        return PowerJob(abs(rate.power) * ctx.scale * 0.5, lambda _f: None)
     space = _output_space(mod, ctx.resources.mineral, ctx.caps[ResourceId.MINERAL])
     if space <= 0:
         return None
@@ -367,6 +377,34 @@ def _job_recycler(ctx: TickContext) -> PowerJob | None:
     return PowerJob(power, run)
 
 
+def _job_biodiesel(ctx: TickContext, mod: Module) -> PowerJob | None:
+    rate = module_def(ModuleKind.BIODIESEL).nominal
+    fuel_space = _output_space(mod, ctx.resources.fuel, ctx.caps[ResourceId.FUEL])
+    if fuel_space <= 0 or ctx.resources.food <= 0 or ctx.resources.water <= 0:
+        return None
+    power = abs(rate.power) * ctx.scale
+
+    def run(f: float, m=mod, sp=fuel_space) -> None:
+        if f <= 0 or ctx.scale <= 0:
+            return
+        food_rate = BIODIESEL_FOOD_DAILY * ctx.scale
+        water_rate = BIODIESEL_WATER_DAILY * ctx.scale
+        factor = min(f, ctx.resources.food / food_rate, ctx.resources.water / water_rate)
+        if factor <= 0:
+            return
+        ctx.resources.food = max(0.0, ctx.resources.food - food_rate * factor)
+        ctx.resources.water = max(0.0, ctx.resources.water - water_rate * factor)
+        fuel = min(BIODIESEL_FUEL_DAILY * ctx.scale * factor, sp)
+        in_buf = _try_add_buffer(m, fuel)
+        overflow = fuel - in_buf
+        if overflow > 0:
+            ctx.resources.fuel, _ = _push(
+                ctx.resources.fuel, ctx.caps[ResourceId.FUEL], overflow
+            )
+
+    return PowerJob(power, run)
+
+
 def apply_power_jobs(ctx: TickContext, jobs: list[PowerJob]) -> float:
     total = sum(j.power for j in jobs)
     if total <= 0:
@@ -401,6 +439,10 @@ def flush_module_buffers(ctx: TickContext) -> None:
         elif out == BufferOutput.COMPONENTS:
             ctx.resources.components, moved = _push(
                 ctx.resources.components, ctx.caps[ResourceId.COMPONENTS], mod.buffer
+            )
+        elif out == BufferOutput.FUEL:
+            ctx.resources.fuel, moved = _push(
+                ctx.resources.fuel, ctx.caps[ResourceId.FUEL], mod.buffer
             )
         else:
             continue

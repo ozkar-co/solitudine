@@ -18,7 +18,9 @@ COL_DIM = (45, 110, 60)
 COL_WARN = (255, 200, 60)
 COL_CRITICAL = (255, 80, 70)
 COL_CURSOR = (255, 255, 180)
-COL_CABLE = (255, 230, 80)
+COL_CABLE = (150, 155, 160)
+COL_SELECT = (255, 200, 60)
+COL_BUILD_BAR = (255, 200, 60)
 COL_FOG = (20, 32, 24)
 COL_PREVIEW_OK = (120, 255, 160)
 COL_PREVIEW_BAD = (255, 100, 90)
@@ -27,11 +29,15 @@ TILE_COLORS = {
     Tile.GROUND: (55, 85, 45),
     Tile.WATER: (35, 75, 130),
     Tile.ROCK: (85, 88, 92),
+    Tile.FOREST: (30, 95, 45),
+    Tile.SPROUT: (65, 145, 65),
 }
 
 DEPOSIT_OVERLAY = {
     Deposit.WATER: (40, 90, 160),
     Deposit.MINERAL: (120, 95, 55),
+    Deposit.COAL: (65, 65, 72),
+    Deposit.CRYSTAL: (80, 220, 235),
 }
 
 DEPOSIT_OVERLAY_ALPHA = 0.55

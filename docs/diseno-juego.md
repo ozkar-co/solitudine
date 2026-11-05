@@ -17,7 +17,7 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 
 ## Mapa y módulos
 
-- Mapa parametrizable (actual 1024×1024; el próximo pase pasa a default 2048×2048); cámara con zoom entero (16/32/48 px).
+- Mapa parametrizable con default **2048×2048** (`--world-size`/`SOLITUDINE_WORLD_SIZE`); cámara con zoom entero (16/32/48 px).
 - Los módulos y sus categorías están en [catalogo.md](catalogo.md).
 - Todo se conecta por cables desde el hábitat. Sin conexión, el módulo queda offline.
 - **R1** apaga/enciende el módulo seleccionado (excepto el hábitat).
@@ -26,7 +26,7 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 ## Recursos y supervivencia
 
 - Recursos actuales: O₂, energía, agua, comida, mineral, componentes y chatarra.
-- Planificados: madera, carbón, combustible/biodiésel (producido) y cristales; se agregan a la generación ya, aunque no se puedan usar.
+- Nuevos (2026-11-05): madera, carbón, combustible/biodiésel (producido) y cristales; ya están en la generación y en el pool, aunque carbón/cristal todavía no se puedan extraer.
 - O₂, agua y comida son letales al llegar a cero; la energía es una restricción, pero puede matar indirectamente si falta agua para el condensador.
 - Los depósitos son finitos; el agua tiene un depósito garantizado. La generación usa **anillos difusos**: densidad creciente con la distancia, rareza por recurso y cuota mínima por región; la seed se guarda. Bosques, carbón y cristales se generan ya. Detalle en [beta-txxt.md](beta-txxt.md).
 - La regla de 2 fuentes / 2 usos es una heurística, no una obligación. La matriz completa está en [plan.md](plan.md).
@@ -58,38 +58,39 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 ## Exploración e investigación
 
 - Solo el radar explora de forma permanente; el resto da visión local.
-- La investigación desbloquea módulos; el laboratorio y las tecnologías de soporte/reciclaje ya están implementados. El próximo paso es la trampa de peces y la comida recurrente.
+- La investigación desbloquea módulos; el laboratorio y las tecnologías de soporte/reciclaje ya están implementados. La trampa de peces y la comida recurrente ya están implementadas; el próximo paso es la UX de red y módulos (etapa 4).
 - Exploración avanzada, alimañas, botín y combate están en backlog.
 
 ## Controles
 
 | Acción | PC (`--dev`) | Mando |
 |--------|--------------|-------|
-| Mover cursor | Flechas / WASD | L-stick / DPAD |
-| Mover cámara | Arrastrar con botón medio / right stick | R-stick |
-| Seleccionar celda | A / Enter | A |
-| Recoger chatarra de una ruina | A para seleccionar, A otra vez para recoger | A para seleccionar, A otra vez para recoger |
-| Demoler módulo/cable o cancelar obra | B sobre la celda seleccionada | B sobre la celda seleccionada |
-| Confirmar demolición/cancelación | A | A |
-| Acción especial del módulo (Tecnología en laboratorio) | A otra vez sobre el módulo | A otra vez sobre el módulo |
-| Construir | Y | Y |
-| Cambiar capa | X | X |
-| Cancelar | B / Esc | B |
-| Cambiar categoría (menú de construcción) | Izquierda/Derecha | DPAD / L-stick |
-| Zoom | L1/L2 (teclas Q/E o [/]) | L1/L2 |
-| Apagar/encender (excepto hábitat/almacén) | R1 | R1 |
-| Minimapa | R2 | R2 |
-| Iniciar partida (pantalla de carga) | START | START |
-| Pausa / créditos | START, luego menú | START, luego menú |
-| Salir | SELECT+START | SELECT+START |
+| Mover cursor | WASD | L-stick / DPAD |
+| Mover cámara | Flechas | R-stick |
+| Seleccionar / aceptar | E o J | A |
+| Recoger chatarra de una ruina | E para seleccionar, E otra vez | A para seleccionar, A otra vez |
+| Demoler módulo/cable o cancelar obra | Esc o K sobre la celda seleccionada | B sobre la celda seleccionada |
+| Confirmar demolición/cancelación | E | A |
+| Acción especial del módulo (Tecnología en laboratorio) | E otra vez sobre el módulo | A otra vez sobre el módulo |
+| Construir | Tab | Y |
+| Cambiar capa | Q | X |
+| Cancelar | Esc o K | B |
+| Cambiar categoría (menú de construcción) | A/D (o L-stick) | DPAD / L-stick |
+| Zoom | 1 / 2 | L1/L2 |
+| Apagar/encender (excepto hábitat/almacén) | 4 (temporal) | R1 |
+| Minimapa | 3 | R2 |
+| Acelerar tiempo (dev) | T | — |
+| Iniciar partida (pantalla de carga) | Enter | START |
+| Pausa / créditos | Enter, luego menú | START, luego menú |
+| Salir | Backspace+Enter | SELECT+START |
 
-> **Feedback beta 2026-11-05 (pendiente de implementar):** en PC, `1/2` zoom, `Tab` construir, `E` aceptar, `Q` recursos, `Esc` B, `J/K` duplicados de A/B; `3` minimapa y `4` libre. Apagar y demoler pasan al menú contextual A+A de cada módulo, sin teclas dedicadas. Ver [beta-txxt.md](beta-txxt.md).
+> **Remapeo PC implementado (2026-11-05):** `1/2` zoom, `Tab` construir, `E` aceptar, `Q` recursos, `Esc` B, `J/K` duplicados de A/B; `3` minimapa, `4` apagar/encender (temporal hasta el menú A+A), `T` acelera el tiempo en dev. Apagar/demoler pasan al menú A+A en la etapa 4. Ver [beta-txxt.md](beta-txxt.md).
 
 ## UI
 
 - 640×480, grilla de 16 px, fuente Pixel Operator (con VT323 como fallback) y sprites propios. El terreno alterna `ground_00`/`ground_01` y rotaciones de 90° por hash de coordenada; la costa usa overlays direccionales con guía azul claro.
 - Barra superior: O₂, agua, comida y energía, con nombre y `x/y`.
-- Modo recursos (X): los siete recursos actuales con nombre y cantidad/cap; planificado incorporar madera, carbón, combustible y cristales (11 en total).
+- Modo recursos (X): los once recursos con nombre y cantidad/cap, incluidos madera, carbón, combustible y cristales.
 - Panel lateral: estado, descripción, producción/consumo, buffer, reserva, día de construcción y contadores del reciclador.
 - Minimapa con región explorada, módulos, cables, ruinas y viewport.
 - Menú de construcción por pestañas (**Energía, Extracción, Soporte Vital, Red Logística, Investigación**; Defensa se oculta hasta combate); categorías vacías ocultas. Cada módulo es una tarjeta horizontal con icono, borde/fondo propio, coste multi-material, faltantes, descripción y flujo produce/consume; la seleccionada se resalta en ámbar. El modal tiene scroll vertical animado para N tarjetas y el selector de categorías es circular, con slide/fade, la selección centrada y las etiquetas difuminadas hacia los bordes.
@@ -98,16 +99,18 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 - Consola de tecnología: una pantalla simple, sin pestañas vacías.
 - Menú de pausa con Continuar/Créditos; créditos con scroll y easter egg.
 
-## Planificado
+## Implementado / planificado
 
-- **Trampa de peces:** módulo barato sobre agua, conectado por cable; produce solo de noche, con una tirada por hora (0 permitido) y ~3 comida/noche en promedio, y se detiene si el agua se agota. Al demoler no deja ruina: da chatarra directa.
-- **Batería:** el almacén deja de dar cap de energía; la batería pasa a ser el reservorio de energía.
-- **Agua y radar:** depósito garantizado + anillos difusos finitos; el radar encuentra todo y es la exploración permanente.
-- **Bosques y cristales:** se agregan ya en la beta, aunque no se puedan usar. Bosque cercano garantizado (bloquea construcción, da madera al destruirse y deja brotes), carbón en el borde de lo explorado y cristales en grupos de 2-3 puntos dispersos (4-5 los más grandes). Sus usos se definirán después.
+- **Trampa de peces (implementada):** módulo barato sobre agua, conectado por cable; produce solo de noche, con una tirada por hora (0 permitido) y ~3 comida/noche en promedio, y se detiene si el agua se agota. Al demoler no deja ruina: da chatarra directa.
+- **Invernadero (implementado):** 10 Cmp; 6 comida/d + 3 O₂/d.
+- **Procesador de biodiésel (implementado):** 4 Cmp; 4 comida/d + 2 agua/d + 2 E/d → 1 combustible/d.
+- **Batería (planificada):** el almacén deja de dar cap de energía; la batería pasa a ser el reservorio de energía.
+- **Agua y radar (implementado):** depósito garantizado + anillos difusos finitos; el radar encuentra todo y es la exploración permanente.
+- **Bosques y cristales (implementados):** bosque cercano garantizado (bloquea construcción, A tala y da madera, deja brotes), carbón en el borde de lo explorado y cristales en grupos de 2-3 puntos dispersos (4-5 los más grandes). Sus usos se definirán después.
 
 ## Backlog
 
 - Mejoras Mk II, alimañas ambientales, tower defense, botín, inventario y variantes de muerte.
 - Desgaste, eventos climáticos, radio y finales.
 - Pulido de UI (9-slice, autotile, overview); las animaciones de menú ya están decididas.
-- Trampa de peces, batería, mundo 2048/anillos y la extracción/uso de carbón/cristal están planificados en [plan.md](plan.md), no en este backlog.
+- Batería y la extracción/uso de carbón/cristal están planificados en [plan.md](plan.md), no en este backlog. Trampa, mundo 2048/anillos y bosques/cristales ya están implementados.

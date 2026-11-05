@@ -2,9 +2,8 @@
 """Solitudine — entrada del juego."""
 
 import argparse
+import os
 import sys
-
-from game import run
 
 
 def main() -> int:
@@ -25,11 +24,23 @@ def main() -> int:
         action="store_true",
         help="Solo PC y --dev: renderiza la ventana al doble de tamaño.",
     )
+    parser.add_argument(
+        "--world-size",
+        type=int,
+        default=None,
+        help="Lado del mapa en tiles (default: 2048 o SOLITUDINE_WORLD_SIZE).",
+    )
     args = parser.parse_args()
     if args.scale2 and not args.dev:
         parser.error("--2x requiere --dev")
     if args.scale2 and args.handheld:
         parser.error("--2x no aplica a --handheld")
+    if args.world_size is not None:
+        if args.world_size < 64:
+            parser.error("--world-size debe ser >= 64")
+        os.environ["SOLITUDINE_WORLD_SIZE"] = str(args.world_size)
+    from game import run
+
     return run(dev=args.dev, handheld=args.handheld, scale=2 if args.scale2 else 1)
 
 

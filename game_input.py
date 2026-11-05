@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import random
 from dataclasses import dataclass
 
 import demolition
+from config import FOREST_WOOD_MAX, FOREST_WOOD_MIN
 from construction import BuildController, BuildKind, BuildMode, kind_cost
 from credits import CREDITS_SCROLL_STEP, KONAMI_SEQUENCE, max_credits_scroll
 from gamepad import LJOY_DOWN, LJOY_LEFT, LJOY_RIGHT, LJOY_UP
@@ -16,7 +18,7 @@ from resources import ResourceId
 from simulation import Simulation
 from ui import MapLayer
 from vision import set_module_clear
-from world import ModuleState, World
+from world import ModuleState, Tile, World
 
 
 PAUSE_CREDITS = 1
@@ -198,9 +200,22 @@ def handle_frame_input(
                 MapLayer.RESOURCES if layer == MapLayer.TERRAIN else MapLayer.TERRAIN
             )
         if inp.was_pressed(frame, "A"):
+            tile = Tile(world.tiles[world.idx(cursor_x, cursor_y)])
             if layer == MapLayer.RESOURCES:
                 result.select_x, result.select_y = cursor_x, cursor_y
                 result.layer = MapLayer.TERRAIN
+            elif tile == Tile.FOREST:
+                caps = network_caps(world, get_connected(world))
+                amount = random.uniform(FOREST_WOOD_MIN, FOREST_WOOD_MAX)
+                space = max(0.0, caps[ResourceId.WOOD] - sim.resources.wood)
+                sim.resources.wood += min(space, amount)
+                world.tiles[world.idx(cursor_x, cursor_y)] = Tile.SPROUT
+                result.save_requested = True
+                result.select_x, result.select_y = cursor_x, cursor_y
+            elif tile == Tile.SPROUT:
+                world.tiles[world.idx(cursor_x, cursor_y)] = Tile.GROUND
+                result.save_requested = True
+                result.select_x, result.select_y = cursor_x, cursor_y
             elif world.has_ruin(cursor_x, cursor_y):
                 already_selected = select_x == cursor_x and select_y == cursor_y
                 if already_selected:
