@@ -3,7 +3,7 @@
 **Fecha:** 2026-11-05
 **Tester:** TxxT
 **Build:** beta PC 2x/1.5x (`tools/dev_beta/`)
-**Estado:** etapas 0-3 implementadas (2026-11-05); etapa 4 en triage.
+**Estado:** etapas 0-4 implementadas y prep etapa 5 (2026-11-05).
 
 > Este archivo conserva el feedback crudo y las decisiones acordadas. La tabla de implementación de abajo es el estado real; las secciones de feedback conservan el texto original.
 
@@ -15,7 +15,8 @@
 | 1 | D5 (2048 parametrizable, arrays, save size/seed), D6 (anillos, bosques/carbón/cristales), D10, B19 (seed) | B18 reproducir el caso del tester; benchmark R36S |
 | 2 | B31 (scroll), B32 (carrusel animado), D8 (nombres), D11 (animaciones) | Ajustes de tuning visual |
 | 3 | B17/D1 (trampa RNG nocturna), B16/D2 (extractor/mina 50%), B15/D9 (invernadero 6/3), sink de comida (biodiésel) | B14: más usos para la comida |
-| 4 | — | B01, B02, B06, B08, B11 (red, A+A, cámara, monitoreo, rename) |
+| 4 | B01 (Cable→Enlace), B02 (cables libres), B06 (A+A), B08 (cámara), B11/D7 (monitoreo) | Ajustes de tuning visual |
+| Prep 5 | Extractores de carbón/cristal, generador de combustible | Árbol tecnológico, combate y eventos |
 
 ## Resumen
 
@@ -298,9 +299,9 @@ Estas ideas dependen de combate/late game y no entran en el slice actual:
 
 | Bucket | Items |
 |--------|-------|
-| **Hecho (etapas 0-3)** | B04, B05, B07, B09, B12, B13, B30, B18, B19, B20, B21, B31, B32, B10, B17, B16, B15, B14 (biodiésel), créditos |
-| **Etapa 4** | B01 (rename cable), B02 (cables libres/recálculo), B06 (menú A+A), B08 (cámara), B11 (monitoreo), D7 |
-| **Etapa 5 / backlog** | extracción/uso de carbón/cristal, combustible/combate, B22-B29 |
+| **Hecho (etapas 0-4)** | B04, B05, B07, B09, B12, B13, B30, B18, B19, B20, B21, B31, B32, B10, B17, B16, B15, B14 (biodiésel), créditos, B01 (Cable→Enlace), B02, B06, B08, B11, D7 |
+| **Prep etapa 5** | Extractores de carbón/cristal y generador de combustible |
+| **Etapa 5 / backlog** | árbol tecnológico de carbón/cristal/combustible, combate, eventos, B22-B29 |
 
 ## Decisiones explicadas (ronda 2)
 
@@ -468,13 +469,13 @@ Estas ideas dependen de combate/late game y no entran en el slice actual:
 | **1. Mundo 2048 + generación** | **Hecho** — tamaño parametrizable, arrays compactos, save size/seed, anillos difusos, bosques/carbón/cristales y recursos nuevos |
 | **2. UI de construcción** | **Hecho** — scroll, carrusel animado, nombres y animaciones |
 | **3. Trampa + comida + extractores** | **Hecho** — RNG nocturna, extractor/mina al 50%, invernadero 6/3, biodiésel como sink |
-| **4. Red y módulos** | **Siguiente** — rename de cable, cables libres, menú A+A, cámara y estación de monitoreo |
-| **5. Contenido/late game** | **Backlog** — extracción/uso de carbón/cristal, combustible/combate, eventos y Mk II |
+| **4. Red y módulos** | **Hecho** — rename Cable→Enlace, cables libres, menú A+A, cámara y estación de monitoreo |
+| **Prep 5** | **Hecho** — extractores de carbón/cristal y generador de combustible |
+| **5. Contenido/late game** | **Siguiente/backlog** — árbol tecnológico de carbón/cristal/combustible, combate, eventos y Mk II |
 
 **Notas:**
 - Benchmark 2048 en PC: ~60 ms de generación, ~40 MB de arrays y ~3,9 ms por frame de mapa; falta medir en R36S.
-- La etapa 4 depende del menú A+A y del rename de cable.
-- La etapa 5 no debería abrirse antes de estabilizar la 4.
+- La etapa 5 ahora tiene fuentes y un uso de combustible; falta el árbol tecnológico y el combate/eventos.
 
 ## Archivos probablemente afectados
 

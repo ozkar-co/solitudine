@@ -28,7 +28,6 @@ from module_defs import (
     ModuleContext,
     ModuleKind,
     effective_flow,
-    module_active,
     module_def,
 )
 from module_flow import module_flow_lines
@@ -52,6 +51,14 @@ from ui_theme import (
     panel_rect,
 )
 from world import Deposit, ModuleState, Tile, World
+
+
+_EXTRACTOR_DEPOSITS: dict[ModuleKind, tuple[Deposit, ResourceId]] = {
+    ModuleKind.EXTRACTOR: (Deposit.WATER, ResourceId.WATER),
+    ModuleKind.MINE: (Deposit.MINERAL, ResourceId.MINERAL),
+    ModuleKind.COAL_EXTRACTOR: (Deposit.COAL, ResourceId.COAL),
+    ModuleKind.CRYSTAL_EXTRACTOR: (Deposit.CRYSTAL, ResourceId.CRYSTAL),
+}
 
 
 def _module_ctx(sim: Simulation, world: World, mod) -> ModuleContext:
@@ -126,15 +133,12 @@ def _module_status_key(mod, sim: Simulation, world: World, caps) -> str:
         if sim.power_factor < 0.999:
             return "status.low_power"
 
-    if kind in (ModuleKind.EXTRACTOR, ModuleKind.MINE):
-        dep = Deposit.WATER if kind == ModuleKind.EXTRACTOR else Deposit.MINERAL
+    extractor = _EXTRACTOR_DEPOSITS.get(kind)
+    if extractor is not None:
+        dep, resource = extractor
         if not world.patch_has_deposit(mod.x, mod.y, dep):
             return "status.no_deposit"
-        if kind == ModuleKind.EXTRACTOR:
-            space = _output_space(sim.resources.water, caps[ResourceId.WATER], mod)
-        else:
-            space = _output_space(sim.resources.mineral, caps[ResourceId.MINERAL], mod)
-        if space <= 0.0:
+        if _output_space(sim.resources.amount(resource), caps[resource], mod) <= 0.0:
             return "status.no_output"
         return "status.producing"
 
@@ -177,6 +181,9 @@ def _module_status_key(mod, sim: Simulation, world: World, caps) -> str:
             return "status.no_output"
         return "status.recycling"
 
+    if kind == ModuleKind.MONITOR:
+        return "status.monitoring"
+
     if kind == ModuleKind.FISH_TRAP:
         if Tile(world.tiles[world.idx(mod.x, mod.y)]) != Tile.WATER:
             return "status.no_water"
@@ -191,6 +198,13 @@ def _module_status_key(mod, sim: Simulation, world: World, caps) -> str:
         if sim.resources.food <= 0.0:
             return "status.no_food"
         if _output_space(sim.resources.fuel, caps[ResourceId.FUEL], mod) <= 0.0:
+            return "status.no_output"
+        return "status.producing"
+
+    if kind == ModuleKind.FUEL_GENERATOR:
+        if sim.resources.fuel <= 0.0:
+            return "status.no_fuel"
+        if sim.resources.power >= caps[ResourceId.POWER]:
             return "status.no_output"
         return "status.producing"
 
@@ -224,6 +238,7 @@ def _status_color(key: str) -> tuple[int, int, int]:
         "status.no_water",
         "status.no_mineral",
         "status.no_food",
+        "status.no_fuel",
         "status.no_scrap",
         "status.o2_only",
     ):
@@ -454,8 +469,9 @@ def _draw_module_inspection(
             t("panel.buffer", value=format_amount(mod.buffer), cap=format_amount(mod.buffer_cap)),
         )
         y += 16
-    if mod.kind in (ModuleKind.EXTRACTOR, ModuleKind.MINE):
-        dep = Deposit.WATER if mod.kind == ModuleKind.EXTRACTOR else Deposit.MINERAL
+    extractor = _EXTRACTOR_DEPOSITS.get(mod.kind)
+    if extractor is not None:
+        dep, _resource = extractor
         total = world.patch_deposit_total(mod.x, mod.y, dep)
         if total > 0:
             _panel_line(surf, font_sm, x, y, t("panel.patch_reserve", value=format_amount(total)), COL_DIM)
@@ -467,17 +483,8 @@ def _draw_module_inspection(
     if mod.built_day > 0:
         _panel_line(surf, font_sm, x, y, t("panel.built", day=mod.built_day), COL_DIM)
         y += 16
-    action = module_def(mod.kind).special_action
-    if action is not None and module_active(mod, ctx.connected):
-        _panel_line(
-            surf,
-            font_sm,
-            x,
-            y,
-            t("panel.action_hint", action=t(f"action.{action}")),
-            COL_WARN,
-        )
-        y += 16
+    _panel_line(surf, font_sm, x, y, t("panel.menu_hint"), COL_WARN)
+    y += 16
     return y
 
 

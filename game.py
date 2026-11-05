@@ -38,6 +38,8 @@ from ui import (
 )
 from ui_input import input_policy
 from ui_minimap import draw_minimap
+from ui_module_menu import draw_module_menu
+from ui_network import draw_network_screen
 from ui_tech import draw_tech_screen
 from world import generate_world
 
@@ -182,6 +184,7 @@ def run(dev: bool = False, handheld: bool = False, scale: float = 1.0) -> int:
     select_y: int | None = None
     layer = MapLayer.TERRAIN
     cam_bounds = world.camera_bounds(CAMERA_MARGIN)
+    cursor_bounds = world.cursor_bounds(CAMERA_MARGIN)
     mrect = map_rect()
     cursor_acc_x = 0.0
     cursor_acc_y = 0.0
@@ -195,7 +198,7 @@ def run(dev: bool = False, handheld: bool = False, scale: float = 1.0) -> int:
             print(f"No se pudo guardar: {exc}", file=sys.stderr)
 
     def reset_session() -> None:
-        nonlocal world, sim, camera, cam_bounds, cursor_x, cursor_y, hx, hy
+        nonlocal world, sim, camera, cam_bounds, cursor_bounds, cursor_x, cursor_y, hx, hy
         nonlocal select_x, select_y, layer, cursor_acc_x, cursor_acc_y
         savegame.delete_save()
         world = generate_world()
@@ -203,6 +206,7 @@ def run(dev: bool = False, handheld: bool = False, scale: float = 1.0) -> int:
         hx, hy = world.habitat_x, world.habitat_y
         camera = Camera(float(hx), float(hy), world.size)
         cam_bounds = world.camera_bounds(CAMERA_MARGIN)
+        cursor_bounds = world.cursor_bounds(CAMERA_MARGIN)
         cursor_x, cursor_y = hx, hy
         select_x, select_y = None, None
         layer = MapLayer.TERRAIN
@@ -245,6 +249,8 @@ def run(dev: bool = False, handheld: bool = False, scale: float = 1.0) -> int:
             user_paused=sim.user_paused,
             tech_open=sim.research.open,
             demolish_open=sim.demolish is not None,
+            module_menu_open=sim.module_menu is not None,
+            network_open=sim.network_open,
         )
         sim.paused = policy.pause_time
 
@@ -298,6 +304,7 @@ def run(dev: bool = False, handheld: bool = False, scale: float = 1.0) -> int:
             cursor_y, cursor_acc_y = _step_cursor_axis(
                 cursor_y, cursor_acc_y, uy_h, dy_h, uy_p, dy_p, cursor_rate, dt
             )
+            cursor_bounds = world.cursor_bounds(CAMERA_MARGIN)
             cursor_x, cursor_y = camera.clamp_cursor(
                 cursor_x,
                 cursor_y,
@@ -305,7 +312,7 @@ def run(dev: bool = False, handheld: bool = False, scale: float = 1.0) -> int:
                 mrect.y,
                 mrect.w,
                 mrect.h,
-                cam_bounds,
+                cursor_bounds,
                 world.size,
             )
 
@@ -376,6 +383,10 @@ def run(dev: bool = False, handheld: bool = False, scale: float = 1.0) -> int:
 
         if sim.game_over:
             draw_game_over(screen, font, font_sm, sim)
+        elif sim.network_open:
+            draw_network_screen(screen, font, font_sm, sim, world)
+        elif sim.module_menu is not None:
+            draw_module_menu(screen, font, font_sm, sim, world)
         elif sim.research.open:
             draw_tech_screen(screen, font, font_sm, sim, world)
         elif pause_modal:

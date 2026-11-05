@@ -18,8 +18,9 @@
 | Beta etapa 1 | **Hecho** — mundo parametrizable 2048, arrays compactos, save size/seed, anillos difusos, bosques/carbón/cristales y recursos nuevos |
 | Beta etapa 2 | **Hecho** — scroll del menú, carrusel animado de categorías y nombres nuevos |
 | Beta etapa 3 | **Hecho** — trampa de peces, RNG nocturna, extractor/mina al 50%, invernadero 6/3 y procesador de biodiésel como sink |
-| 4 | **Siguiente** — cables libres, menú A+A, cámara, estación de monitoreo y rename de cable |
-| 5+ | **Backlog/planificado** — batería, extracción de carbón/cristal, combustible/combate, eventos y Mk II |
+| Beta etapa 4 | **Hecho** — cables libres, menú A+A, cámara a bordes, monitoreo y rename Cable→Enlace |
+| Prep etapa 5 | **Hecho** — extractores de carbón/cristal y generador de combustible |
+| 5 | **Siguiente** — batería/energía o cerrar árbol tecnológico, combate y eventos |
 
 El juego es jugable en PC y en R36S. La UI (grilla de 16 px, sprites, zoom, minimapa, día/noche, lámpara) está estable. El loop de chatarra (ruinas → reciclador → mineral) y la demolición ya funcionan.
 
@@ -27,11 +28,10 @@ El juego es jugable en PC y en R36S. La UI (grilla de 16 px, sprites, zoom, mini
 
 **Roadmap actual (plan.md):**
 
-1. **Red y módulos (etapa 4):** cables de colocación libre, menú contextual A+A, cámara, estación de monitoreo y rename de cable.
-2. **Batería/almacén + energía:** almacén sin cap de energía y batería con cap.
-3. **Etapa 5:** extracción/uso de carbón/cristal, combustible/combate, eventos y Mk II.
+1. **Batería/almacén + energía:** almacén sin cap de energía y batería con cap.
+2. **Cerrar etapa 5:** tecnologías para carbón/cristal/combustible, combate, eventos y Mk II.
 
-**Estado beta:** etapas 0-3 implementadas (66 tests). Detalle en [beta-txxt.md](beta-txxt.md).
+**Estado beta:** etapas 0-4 + prep etapa 5 implementadas (82 tests). Detalle en [beta-txxt.md](beta-txxt.md).
 
 ## Comandos
 
@@ -56,10 +56,15 @@ tools\dev_beta\build.ps1           # betas PC Windows 2x/1.5x (PowerShell)
 - Guardado JSON automático; `save.json` está ignorado por git. `VERSION` 4, sin migración: los saves anteriores se borran al cargar. Se guardan recursos, stats, `cost_paid`, ruinas, `size` y `seed`.
 - La luz es visual: el hábitat ilumina desde el inicio y la lámpara consume energía solo de noche, proporcional a la oscuridad.
 - Un módulo apagado no produce, no consume, no da visión, no suma cap de almacén y no emite luz.
-- Regla de recursos: 2 fuentes / 2 usos es una heurística, no una regla estricta. En beta se aceptan recursos sin uso completo (madera, carbón, combustible y cristales).
+- Regla de recursos: 2 fuentes / 2 usos es una heurística, no una regla estricta. En beta se aceptan recursos sin uso completo (madera, carbón y cristales); el combustible ya tiene uso en el generador.
 - La barra superior muestra solo los cuatro vitales; el modo recursos muestra los once recursos.
 - Fuente UI: Pixel Operator 16/24 (cuerpo regular, títulos bold); VT323 queda como fallback/A-B.
 - El menú de construcción usa scroll vertical animado, carrusel circular de categorías y tarjetas horizontales por módulo; la seleccionada se resalta en ámbar y las no disponibles se muestran en gris.
+- Cables de colocación libre; los tramos desconectados no alimentan hasta conectar. El display del cable es **Enlace**.
+- A+A abre el menú contextual de cada módulo: investigar, ver red, encender/apagar, demoler o cerrar. B ya no demuele módulos; queda para cables.
+- La cámara llega a los bordes del mapa; el cursor sigue limitado a lo explorado.
+- La estación de monitoreo requiere estar online y conectada para abrir la pantalla de red.
+- Extractores de carbón/cristal y generador de combustible son prep de etapa 5; no tienen tecnología todavía.
 
 ## Documentación
 

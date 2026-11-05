@@ -9,6 +9,7 @@ from module_tick import (
     clamp_pools,
     collect_power_jobs,
     flush_module_buffers,
+    tick_fuel_production,
     tick_solar_production,
 )
 from network import get_connected
@@ -64,6 +65,7 @@ def apply_modules_dt(
         scale=scale,
         hour_float=hour_float,
     )
+    tick_fuel_production(ctx)
     tick_solar_production(ctx)
     jobs = collect_power_jobs(ctx)
     factor = apply_power_jobs(ctx, jobs)

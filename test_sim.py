@@ -38,6 +38,7 @@ from module_defs import buffer_cap, module_active
 from module_kind import ModuleKind
 from module_power import module_energy_daily
 from network import get_connected, invalidate_network_cache
+from network_report import build_network_report
 from research import ResearchState
 from resources import AlertLevel, Cost, ResourceId, ResourcePool
 from savegame import delete_save, load_game, save_game
@@ -330,7 +331,7 @@ class BuildInputTests(unittest.TestCase):
         self.assertEqual((first.select_x, first.select_y), (lab.x, lab.y))
         self.assertFalse(sim.research.open)
 
-        handle_frame_input(
+        second = handle_frame_input(
             frame,
             Input(dev_mode=False),
             sim,
@@ -340,6 +341,20 @@ class BuildInputTests(unittest.TestCase):
             cursor_y=lab.y,
             select_x=first.select_x,
             select_y=first.select_y,
+        )
+        self.assertIsNotNone(sim.module_menu)
+        self.assertFalse(sim.research.open)
+
+        handle_frame_input(
+            frame,
+            Input(dev_mode=False),
+            sim,
+            world,
+            layer=MapLayer.TERRAIN,
+            cursor_x=lab.x,
+            cursor_y=lab.y,
+            select_x=second.select_x,
+            select_y=second.select_y,
         )
         self.assertTrue(sim.research.open)
 
@@ -969,7 +984,10 @@ class DemolitionTests(unittest.TestCase):
 
         selected = press("A", None, None)
         self.assertEqual((selected.select_x, selected.select_y), (x, y))
-        press("B", selected.select_x, selected.select_y)
+        opened = press("A", selected.select_x, selected.select_y)
+        self.assertIsNotNone(sim.module_menu)
+        press("DPAD_DOWN", opened.select_x, opened.select_y)
+        press("A", opened.select_x, opened.select_y)
         self.assertEqual(sim.demolish, (x, y))
 
         confirmed = press("A", selected.select_x, selected.select_y)
@@ -1367,3 +1385,136 @@ class CoastFullSetTests(unittest.TestCase):
         world.tiles[world.idx(x - 1, y)] = Tile.WATER
         world.tiles[world.idx(x + 1, y - 1)] = Tile.WATER
         self.assertEqual(coast_overlay_plan(world, x, y), [("inner_outer", 90)])
+
+
+class CableFreePlacementTests(unittest.TestCase):
+    def test_cable_can_be_placed_disconnected(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        x, y = HABITAT_X + 10, HABITAT_Y
+        prepare_tile(world, x, y)
+        sim.build.selected = BuildKind.CABLE
+        self.assertTrue(sim.build.try_place(world, sim.resources, x, y))
+        self.assertIn((x, y), world.cables)
+        self.assertNotIn((x, y), get_connected(world))
+
+
+class ModuleMenuTests(unittest.TestCase):
+    def test_a_a_opens_menu_and_toggles(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        mod = add_module(world, ModuleKind.FABRICATOR, 1)
+        inp = Input(dev_mode=False)
+        frame = FrameInput(frozenset({"A"}), frozenset({"A"}), frozenset())
+        first = handle_frame_input(
+            frame, inp, sim, world, layer=MapLayer.TERRAIN,
+            cursor_x=mod.x, cursor_y=mod.y, select_x=None, select_y=None,
+        )
+        second = handle_frame_input(
+            frame, inp, sim, world, layer=MapLayer.TERRAIN,
+            cursor_x=mod.x, cursor_y=mod.y, select_x=first.select_x, select_y=first.select_y,
+        )
+        self.assertIsNotNone(sim.module_menu)
+        self.assertTrue(mod.enabled)
+        result = handle_frame_input(
+            frame, inp, sim, world, layer=MapLayer.TERRAIN,
+            cursor_x=mod.x, cursor_y=mod.y, select_x=second.select_x, select_y=second.select_y,
+        )
+        self.assertFalse(mod.enabled)
+        self.assertIsNone(sim.module_menu)
+        self.assertTrue(result.save_requested)
+
+    def test_monitor_opens_network_screen(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        mod = add_module(world, ModuleKind.MONITOR, 1)
+        inp = Input(dev_mode=False)
+        frame = FrameInput(frozenset({"A"}), frozenset({"A"}), frozenset())
+        first = handle_frame_input(
+            frame, inp, sim, world, layer=MapLayer.TERRAIN,
+            cursor_x=mod.x, cursor_y=mod.y, select_x=None, select_y=None,
+        )
+        second = handle_frame_input(
+            frame, inp, sim, world, layer=MapLayer.TERRAIN,
+            cursor_x=mod.x, cursor_y=mod.y, select_x=first.select_x, select_y=first.select_y,
+        )
+        self.assertIsNotNone(sim.module_menu)
+        handle_frame_input(
+            frame, inp, sim, world, layer=MapLayer.TERRAIN,
+            cursor_x=mod.x, cursor_y=mod.y, select_x=second.select_x, select_y=second.select_y,
+        )
+        self.assertTrue(sim.network_open)
+        self.assertIsNone(sim.module_menu)
+
+
+class MonitorTests(unittest.TestCase):
+    def test_monitor_consumes_power_and_report_balances(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        sim.day_progress = 0.5
+        add_module(world, ModuleKind.MONITOR, 1)
+        before = sim.resources.power
+        run(sim, world, 1.0)
+        self.assertAlmostEqual(before - sim.resources.power, 10.0 / 48.0, places=4)
+        report = build_network_report(world, sim)
+        self.assertGreaterEqual(report.balances[ResourceId.POWER].consumed, 10.0)
+        self.assertGreaterEqual(report.balances[ResourceId.O2].consumed, 10.0)
+
+
+class CameraBoundsTests(unittest.TestCase):
+    def test_camera_reaches_full_map(self) -> None:
+        world = generate_world(size=128)
+        self.assertEqual(world.camera_bounds(8), (0, 0, 127, 127))
+
+
+class Stage5PrepTests(unittest.TestCase):
+    def _deposit(self, world, dep: Deposit, amount: float) -> None:
+        for dy in range(-1, 2):
+            for dx in range(-1, 2):
+                i = world.idx(HABITAT_X + 1 + dx, HABITAT_Y + dy)
+                prepare_tile(world, HABITAT_X + 1 + dx, HABITAT_Y + dy)
+                world.deposits[i] = dep
+                world.deposit_amounts[i] = amount
+
+    def test_coal_extractor_outputs_coal(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        sim.day_progress = 0.5
+        self._deposit(world, Deposit.COAL, 500.0)
+        add_module(world, ModuleKind.COAL_EXTRACTOR, 1)
+        run(sim, world, 1.0)
+        self.assertAlmostEqual(sim.resources.coal, 6.0 / 48.0, places=4)
+
+    def test_crystal_extractor_outputs_crystal(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        sim.day_progress = 0.5
+        self._deposit(world, Deposit.CRYSTAL, 500.0)
+        add_module(world, ModuleKind.CRYSTAL_EXTRACTOR, 1)
+        run(sim, world, 1.0)
+        self.assertAlmostEqual(sim.resources.crystal, 2.0 / 48.0, places=4)
+
+    def test_fuel_generator_burns_fuel_for_power(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        sim.day_progress = 0.5
+        sim.resources.fuel = 10.0
+        sim.resources.power = 10.0
+        add_module(world, ModuleKind.FUEL_GENERATOR, 1)
+        before = sim.resources.power
+        run(sim, world, 1.0)
+        self.assertAlmostEqual(10.0 - sim.resources.fuel, 1.0 / 48.0, places=4)
+        self.assertGreater(sim.resources.power, before)
+
+    def test_deposit_preview_for_coal_and_crystal(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        x, y = HABITAT_X + 1, HABITAT_Y
+        prepare_tile(world, x, y)
+        sim.resources.mineral = 10.0
+        sim.build.selected = BuildKind.COAL_EXTRACTOR
+        self.assertEqual(sim.build.preview(world, sim.resources, x, y), BuildPreview.NO_DEPOSIT)
+        i = world.idx(x, y)
+        world.deposits[i] = Deposit.COAL
+        world.deposit_amounts[i] = 100.0
+        self.assertEqual(sim.build.preview(world, sim.resources, x, y), BuildPreview.OK)

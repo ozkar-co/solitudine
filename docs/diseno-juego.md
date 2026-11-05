@@ -26,7 +26,7 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 ## Recursos y supervivencia
 
 - Recursos actuales: O₂, energía, agua, comida, mineral, componentes y chatarra.
-- Nuevos (2026-11-05): madera, carbón, combustible/biodiésel (producido) y cristales; ya están en la generación y en el pool, aunque carbón/cristal todavía no se puedan extraer.
+- Nuevos (2026-11-05): madera, carbón, combustible/biodiésel (producido) y cristales; carbón y cristales ya tienen extractores (prep etapa 5) y el combustible se usa en el generador.
 - O₂, agua y comida son letales al llegar a cero; la energía es una restricción, pero puede matar indirectamente si falta agua para el condensador.
 - Los depósitos son finitos; el agua tiene un depósito garantizado. La generación usa **anillos difusos**: densidad creciente con la distancia, rareza por recurso y cuota mínima por región; la seed se guarda. Bosques, carbón y cristales se generan ya. Detalle en [beta-txxt.md](beta-txxt.md).
 - La regla de 2 fuentes / 2 usos es una heurística, no una obligación. La matriz completa está en [plan.md](plan.md).
@@ -44,7 +44,7 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 
 - Las ruinas son tiles de 1×1 con 4-10 chatarra; hay 26 (2 garantizadas cerca del hábitat). Bloquean construcción y cables.
 - Se seleccionan con **A** y se recogen con **A** otra vez; entran a la red con cap 30 (+40 por almacén).
-- **B** sobre un módulo/cable seleccionado abre la confirmación de demolición; el módulo deja una ruina con 0,6-0,9 de su equivalente mineral y el cable devuelve 1 Cmp.
+- **B** sobre un cable seleccionado abre la confirmación de demolición. Los módulos se demolen desde su menú A+A; dejan una ruina con 0,6-0,9 de su equivalente mineral. El cable devuelve 1 Cmp.
 - Cancelar una obra devuelve chatarra por los componentes pagados y el progreso (cap 0,9).
 - El reciclador consume chatarra y agua para producir mineral; la tecnología `reciclaje` lo desbloquea.
 
@@ -69,22 +69,23 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 | Mover cámara | Flechas | R-stick |
 | Seleccionar / aceptar | E o J | A |
 | Recoger chatarra de una ruina | E para seleccionar, E otra vez | A para seleccionar, A otra vez |
-| Demoler módulo/cable o cancelar obra | Esc o K sobre la celda seleccionada | B sobre la celda seleccionada |
+| Abrir menú de módulo | E otra vez sobre el módulo | A otra vez sobre el módulo |
+| Elegir acción del menú | Arriba/Abajo + E | DPAD / L-stick + A |
+| Demoler cable o cancelar obra | Esc o K sobre el cable seleccionado | B sobre el cable seleccionado |
 | Confirmar demolición/cancelación | E | A |
-| Acción especial del módulo (Tecnología en laboratorio) | E otra vez sobre el módulo | A otra vez sobre el módulo |
+| Acción especial (investigar, ver red, encender/apagar, demoler) | desde el menú A+A | desde el menú A+A |
 | Construir | Tab | Y |
 | Cambiar capa | Q | X |
 | Cancelar | Esc o K | B |
 | Cambiar categoría (menú de construcción) | A/D (o L-stick) | DPAD / L-stick |
 | Zoom | 1 / 2 | L1/L2 |
-| Apagar/encender (excepto hábitat/almacén) | 4 (temporal) | R1 |
 | Minimapa | 3 | R2 |
 | Acelerar tiempo (dev) | T | — |
 | Iniciar partida (pantalla de carga) | Enter | START |
 | Pausa / créditos | Enter, luego menú | START, luego menú |
 | Salir | Backspace+Enter | SELECT+START |
 
-> **Remapeo PC implementado (2026-11-05):** `1/2` zoom, `Tab` construir, `E` aceptar, `Q` recursos, `Esc` B, `J/K` duplicados de A/B; `3` minimapa, `4` apagar/encender (temporal hasta el menú A+A), `T` acelera el tiempo en dev. Apagar/demoler pasan al menú A+A en la etapa 4. Ver [beta-txxt.md](beta-txxt.md).
+> **Controles PC implementados (2026-11-05):** `1/2` zoom, `Tab` construir, `E` aceptar, `Q` recursos, `Esc` B, `J/K` duplicados de A/B; `3` minimapa, `4` libre, `T` acelera el tiempo en dev. Apagar/demoler módulos pasan por el menú A+A; B queda para cables. Ver [beta-txxt.md](beta-txxt.md).
 
 ## UI
 
@@ -104,9 +105,12 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 - **Trampa de peces (implementada):** módulo barato sobre agua, conectado por cable; produce solo de noche, con una tirada por hora (0 permitido) y ~3 comida/noche en promedio, y se detiene si el agua se agota. Al demoler no deja ruina: da chatarra directa.
 - **Invernadero (implementado):** 10 Cmp; 6 comida/d + 3 O₂/d.
 - **Procesador de biodiésel (implementado):** 4 Cmp; 4 comida/d + 2 agua/d + 2 E/d → 1 combustible/d.
+- **Estación de monitoreo (implementada):** 6 Cmp, 2 E/d; online y conectada desbloquea la pantalla de red.
+- **Extractores de carbón/cristal (prep etapa 5):** carbón 3 E/d → 6/d; cristales 4 E/d → 2/d; placement sobre su depósito.
+- **Generador de combustible (prep etapa 5):** 1 combustible/d → 20 E/d.
 - **Batería (planificada):** el almacén deja de dar cap de energía; la batería pasa a ser el reservorio de energía.
 - **Agua y radar (implementado):** depósito garantizado + anillos difusos finitos; el radar encuentra todo y es la exploración permanente.
-- **Bosques y cristales (implementados):** bosque cercano garantizado (bloquea construcción, A tala y da madera, deja brotes), carbón en el borde de lo explorado y cristales en grupos de 2-3 puntos dispersos (4-5 los más grandes). Sus usos se definirán después.
+- **Bosques y cristales (implementados):** bosque cercano garantizado (bloquea construcción, A tala y da madera, deja brotes), carbón en el borde de lo explorado y cristales en grupos de 2-3 puntos dispersos (4-5 los más grandes). Carbón y cristales ya tienen extractores; sus usos avanzados se definirán después.
 
 ## Backlog
 

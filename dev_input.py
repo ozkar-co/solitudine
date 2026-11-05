@@ -40,7 +40,7 @@ ALL_DEV_KEYS = frozenset(KEY_TO_ACTION)
 DEV_KEYMAP = """
 DEV teclado -> mando
 E=A  Esc=B  Q=X  Tab=Y  J=A  K=B
-1/2=zoom  3=minimapa  4=apagar/encender  T=tiempo
+1/2=zoom  3=minimapa  4=libre  T=tiempo
 Bksp=SELECT  Enter=START  U=L3  O=R3  F=FN
 WASD=cursor  Flechas=cámara
 SELECT+START (Bksp+Enter)=salir

@@ -20,6 +20,10 @@ from config import (
     BUILD_DAYS_LABORATORY,
     BUILD_DAYS_LAMP,
     BUILD_DAYS_MINE,
+    BUILD_DAYS_MONITOR,
+    BUILD_DAYS_COAL_EXTRACTOR,
+    BUILD_DAYS_CRYSTAL_EXTRACTOR,
+    BUILD_DAYS_FUEL_GENERATOR,
     BUILD_DAYS_RADAR,
     BUILD_DAYS_RECYCLER,
     BUILD_DAYS_SOLAR,
@@ -35,6 +39,10 @@ from config import (
     COST_LABORATORY,
     COST_LAMP,
     COST_MINE,
+    COST_MONITOR,
+    COST_COAL_EXTRACTOR,
+    COST_CRYSTAL_EXTRACTOR,
+    COST_FUEL_GENERATOR,
     COST_RADAR,
     COST_RECYCLER,
     COST_SOLAR,
@@ -67,6 +75,13 @@ from config import (
     LAMP_POWER_DAILY,
     MINE_MINERAL_DAILY,
     MINE_POWER_DAILY,
+    MONITOR_POWER_DAILY,
+    COAL_EXTRACTOR_POWER_DAILY,
+    COAL_EXTRACTOR_COAL_DAILY,
+    CRYSTAL_EXTRACTOR_POWER_DAILY,
+    CRYSTAL_EXTRACTOR_CRYSTAL_DAILY,
+    FUEL_GENERATOR_POWER_DAILY,
+    FUEL_GENERATOR_FUEL_DAILY,
     MODULE_BUFFER_CAP,
     RADAR_POWER_DAILY,
     RECYCLER_COMPONENTS_DAILY,
@@ -91,6 +106,8 @@ class BufferOutput(StrEnum):
     MINERAL = "mineral"
     COMPONENTS = "components"
     FUEL = "fuel"
+    COAL = "coal"
+    CRYSTAL = "crystal"
 
 
 @dataclass(frozen=True)
@@ -271,6 +288,46 @@ MODULE_DEFS: dict[ModuleKind, ModuleDef] = {
         has_buffer=True,
         buffer_output=BufferOutput.FUEL,
     ),
+    ModuleKind.MONITOR: ModuleDef(
+        kind=ModuleKind.MONITOR,
+        nominal=ResourceFlow(power=-MONITOR_POWER_DAILY),
+        cost=Cost(COST_MONITOR),
+        build_days=BUILD_DAYS_MONITOR,
+        special_action="network",
+    ),
+    ModuleKind.COAL_EXTRACTOR: ModuleDef(
+        kind=ModuleKind.COAL_EXTRACTOR,
+        nominal=ResourceFlow(
+            power=-COAL_EXTRACTOR_POWER_DAILY,
+            coal=COAL_EXTRACTOR_COAL_DAILY,
+        ),
+        cost=Cost(COST_COAL_EXTRACTOR),
+        build_days=BUILD_DAYS_COAL_EXTRACTOR,
+        has_buffer=True,
+        buffer_output=BufferOutput.COAL,
+        placement_deposit=Deposit.COAL,
+    ),
+    ModuleKind.CRYSTAL_EXTRACTOR: ModuleDef(
+        kind=ModuleKind.CRYSTAL_EXTRACTOR,
+        nominal=ResourceFlow(
+            power=-CRYSTAL_EXTRACTOR_POWER_DAILY,
+            crystal=CRYSTAL_EXTRACTOR_CRYSTAL_DAILY,
+        ),
+        cost=Cost(COST_CRYSTAL_EXTRACTOR),
+        build_days=BUILD_DAYS_CRYSTAL_EXTRACTOR,
+        has_buffer=True,
+        buffer_output=BufferOutput.CRYSTAL,
+        placement_deposit=Deposit.CRYSTAL,
+    ),
+    ModuleKind.FUEL_GENERATOR: ModuleDef(
+        kind=ModuleKind.FUEL_GENERATOR,
+        nominal=ResourceFlow(
+            power=FUEL_GENERATOR_POWER_DAILY,
+            fuel=-FUEL_GENERATOR_FUEL_DAILY,
+        ),
+        cost=Cost(COST_FUEL_GENERATOR),
+        build_days=BUILD_DAYS_FUEL_GENERATOR,
+    ),
 }
 
 BUILDABLE_KINDS: tuple[ModuleKind, ...] = (
@@ -288,6 +345,10 @@ BUILDABLE_KINDS: tuple[ModuleKind, ...] = (
     ModuleKind.RECYCLER,
     ModuleKind.FISH_TRAP,
     ModuleKind.BIODIESEL,
+    ModuleKind.MONITOR,
+    ModuleKind.COAL_EXTRACTOR,
+    ModuleKind.CRYSTAL_EXTRACTOR,
+    ModuleKind.FUEL_GENERATOR,
 )
 
 CABLE_COST = Cost(COST_CABLE)

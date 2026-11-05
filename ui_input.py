@@ -21,8 +21,10 @@ def input_policy(
     user_paused: bool = False,
     tech_open: bool = False,
     demolish_open: bool = False,
+    module_menu_open: bool = False,
+    network_open: bool = False,
 ) -> InputPolicy:
-    if game_over or user_paused or tech_open or demolish_open:
+    if game_over or user_paused or tech_open or demolish_open or module_menu_open or network_open:
         return InputPolicy(block_cursor=True, block_camera_pan=True, pause_time=True)
     if build.mode == BuildMode.MENU:
         return InputPolicy(block_cursor=True, block_camera_pan=True, pause_time=True)

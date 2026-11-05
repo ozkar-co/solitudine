@@ -62,6 +62,10 @@ La hoja RD Tile es 4 columnas × 5 filas de tiles de 16×16. Los índices no usa
 | `assets/modules/recycler.png` | placeholder procedural | reciclador industrial, caja metálica y símbolo verde de reciclaje, 16×16 | — |
 | `assets/modules/fish_trap.png` | placeholder procedural | trampa de peces, marco de madera y red, 16×16 | — |
 | `assets/modules/biodiesel.png` | placeholder procedural | procesador de biodiésel, tanque y válvula, 16×16 | — |
+| `assets/modules/monitor.png` | placeholder procedural | estación de monitoreo, pantalla y antena, 16×16 | — |
+| `assets/modules/coal_extractor.png` | placeholder procedural | extractor de carbón, estructura y veta negra, 16×16 | — |
+| `assets/modules/crystal_extractor.png` | placeholder procedural | extractor de cristales, taladro y cristal cian, 16×16 | — |
+| `assets/modules/fuel_generator.png` | placeholder procedural | generador de combustible, tanque naranja, 16×16 | — |
 
 ### Iconos
 
@@ -86,7 +90,7 @@ La hoja RD Tile es 4 columnas × 5 filas de tiles de 16×16. Los índices no usa
 
 Los finales de módulos e iconos son **16×16**: se bajan desde el PNG 32×32 con `pygame.transform.scale` (nearest). El source 32 se conserva para editar.
 
-> `recycler.png`, `scrap.png`, `ruin_00.png`, `forest_00.png`, `sprout_00.png`, `fish_trap.png`, `biodiesel.png`, `water.png`, `cable.png`, `wood.png`, `coal.png`, `fuel.png` y `crystal.png` son placeholders procedurales; se pueden regenerar o editar a mano y actualizar seed/prompt en esta tabla.
+> `recycler.png`, `scrap.png`, `ruin_00.png`, `forest_00.png`, `sprout_00.png`, `fish_trap.png`, `biodiesel.png`, `monitor.png`, `coal_extractor.png`, `crystal_extractor.png`, `fuel_generator.png`, `water.png`, `cable.png`, `wood.png`, `coal.png`, `fuel.png` y `crystal.png` son placeholders procedurales; se pueden regenerar o editar a mano y actualizar seed/prompt en esta tabla.
 
 ### Créditos / easter egg
 

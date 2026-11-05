@@ -10,12 +10,16 @@ from config import (
     BIODIESEL_FUEL_DAILY,
     BIODIESEL_POWER_DAILY,
     BIODIESEL_WATER_DAILY,
+    COAL_EXTRACTOR_COAL_DAILY,
+    CRYSTAL_EXTRACTOR_CRYSTAL_DAILY,
     FABRICATOR_COMPONENTS_DAILY,
     FABRICATOR_MINERAL_DAILY,
     GREENHOUSE_FOOD_DAILY,
     GREENHOUSE_O2_DAILY,
     GREENHOUSE_POWER_DAILY,
     GREENHOUSE_WATER_DAILY,
+    FUEL_GENERATOR_FUEL_DAILY,
+    FUEL_GENERATOR_POWER_DAILY,
     HOURS_PER_DAY,
     SOLAR_HOUR_END,
     SOLAR_HOUR_START,
@@ -95,6 +99,22 @@ def tick_solar_production(ctx: TickContext) -> None:
         )
 
 
+def tick_fuel_production(ctx: TickContext) -> None:
+    for mod in ctx.world.modules:
+        if mod.kind != ModuleKind.FUEL_GENERATOR or not _mod_online(mod, ctx):
+            continue
+        power_space = max(0.0, ctx.caps[ResourceId.POWER] - ctx.resources.power)
+        if power_space <= 0.0 or ctx.resources.fuel <= 0.0:
+            continue
+        want = FUEL_GENERATOR_POWER_DAILY * ctx.scale
+        fuel_need = FUEL_GENERATOR_FUEL_DAILY * ctx.scale
+        factor = min(1.0, power_space / want, ctx.resources.fuel / fuel_need)
+        if factor <= 0.0:
+            continue
+        ctx.resources.fuel = max(0.0, ctx.resources.fuel - fuel_need * factor)
+        ctx.resources.power += want * factor
+
+
 def tick_habitat_life_support(ctx: TickContext, mod: Module) -> None:
     flow = module_def(ModuleKind.HABITAT).nominal
     ctx.resources.apply_vital_flow(
@@ -128,6 +148,12 @@ def collect_power_jobs(ctx: TickContext) -> list[PowerJob]:
             )
             continue
 
+        if mod.kind == ModuleKind.MONITOR:
+            jobs.append(
+                PowerJob(abs(module_def(ModuleKind.MONITOR).nominal.power) * ctx.scale, lambda _f: None)
+            )
+            continue
+
         if mod.kind == ModuleKind.LAMP:
             dark = darkness(ctx.hour_float / HOURS_PER_DAY)
             if dark > 0.0:
@@ -143,6 +169,18 @@ def collect_power_jobs(ctx: TickContext) -> list[PowerJob]:
 
         if mod.kind == ModuleKind.MINE:
             job = _job_mine(ctx, mod)
+            if job:
+                jobs.append(job)
+            continue
+
+        if mod.kind == ModuleKind.COAL_EXTRACTOR:
+            job = _job_coal(ctx, mod)
+            if job:
+                jobs.append(job)
+            continue
+
+        if mod.kind == ModuleKind.CRYSTAL_EXTRACTOR:
+            job = _job_crystal(ctx, mod)
             if job:
                 jobs.append(job)
             continue
@@ -230,6 +268,56 @@ def _job_mine(ctx: TickContext, mod: Module) -> PowerJob | None:
         if overflow > 0:
             ctx.resources.mineral, _ = _push(
                 ctx.resources.mineral, ctx.caps[ResourceId.MINERAL], overflow
+            )
+
+    return PowerJob(abs(rate.power) * ctx.scale, run)
+
+
+def _job_coal(ctx: TickContext, mod: Module) -> PowerJob | None:
+    rate = module_def(ModuleKind.COAL_EXTRACTOR).nominal
+    if not ctx.world.patch_has_deposit(mod.x, mod.y, Deposit.COAL):
+        return PowerJob(abs(rate.power) * ctx.scale * 0.5, lambda _f: None)
+    space = _output_space(mod, ctx.resources.coal, ctx.caps[ResourceId.COAL])
+    if space <= 0:
+        return None
+
+    def run(f: float, m=mod, sp=space) -> None:
+        if f <= 0:
+            return
+        want = min(COAL_EXTRACTOR_COAL_DAILY * ctx.scale * f, sp)
+        extracted = ctx.world.extract_from_patch(m.x, m.y, Deposit.COAL, want)
+        if extracted <= 0:
+            return
+        in_buf = _try_add_buffer(m, extracted)
+        overflow = extracted - in_buf
+        if overflow > 0:
+            ctx.resources.coal, _ = _push(
+                ctx.resources.coal, ctx.caps[ResourceId.COAL], overflow
+            )
+
+    return PowerJob(abs(rate.power) * ctx.scale, run)
+
+
+def _job_crystal(ctx: TickContext, mod: Module) -> PowerJob | None:
+    rate = module_def(ModuleKind.CRYSTAL_EXTRACTOR).nominal
+    if not ctx.world.patch_has_deposit(mod.x, mod.y, Deposit.CRYSTAL):
+        return PowerJob(abs(rate.power) * ctx.scale * 0.5, lambda _f: None)
+    space = _output_space(mod, ctx.resources.crystal, ctx.caps[ResourceId.CRYSTAL])
+    if space <= 0:
+        return None
+
+    def run(f: float, m=mod, sp=space) -> None:
+        if f <= 0:
+            return
+        want = min(CRYSTAL_EXTRACTOR_CRYSTAL_DAILY * ctx.scale * f, sp)
+        extracted = ctx.world.extract_from_patch(m.x, m.y, Deposit.CRYSTAL, want)
+        if extracted <= 0:
+            return
+        in_buf = _try_add_buffer(m, extracted)
+        overflow = extracted - in_buf
+        if overflow > 0:
+            ctx.resources.crystal, _ = _push(
+                ctx.resources.crystal, ctx.caps[ResourceId.CRYSTAL], overflow
             )
 
     return PowerJob(abs(rate.power) * ctx.scale, run)
@@ -443,6 +531,14 @@ def flush_module_buffers(ctx: TickContext) -> None:
         elif out == BufferOutput.FUEL:
             ctx.resources.fuel, moved = _push(
                 ctx.resources.fuel, ctx.caps[ResourceId.FUEL], mod.buffer
+            )
+        elif out == BufferOutput.COAL:
+            ctx.resources.coal, moved = _push(
+                ctx.resources.coal, ctx.caps[ResourceId.COAL], mod.buffer
+            )
+        elif out == BufferOutput.CRYSTAL:
+            ctx.resources.crystal, moved = _push(
+                ctx.resources.crystal, ctx.caps[ResourceId.CRYSTAL], mod.buffer
             )
         else:
             continue

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum, auto
 
 from config import BUILD_MENU_VISIBLE_CARDS
@@ -30,18 +30,34 @@ class BuildKind(Enum):
     RECYCLER = auto()
     FISH_TRAP = auto()
     BIODIESEL = auto()
+    MONITOR = auto()
+    COAL_EXTRACTOR = auto()
+    CRYSTAL_EXTRACTOR = auto()
+    FUEL_GENERATOR = auto()
 
 
 BUILD_CATEGORIES: tuple[tuple[str, tuple[BuildKind, ...]], ...] = (
-    ("category.energy", (BuildKind.SOLAR, BuildKind.BIODIESEL)),
-    ("category.extraction", (BuildKind.EXTRACTOR, BuildKind.MINE, BuildKind.FISH_TRAP)),
+    (
+        "category.energy",
+        (BuildKind.SOLAR, BuildKind.BIODIESEL, BuildKind.FUEL_GENERATOR),
+    ),
+    (
+        "category.extraction",
+        (
+            BuildKind.EXTRACTOR,
+            BuildKind.MINE,
+            BuildKind.FISH_TRAP,
+            BuildKind.COAL_EXTRACTOR,
+            BuildKind.CRYSTAL_EXTRACTOR,
+        ),
+    ),
     (
         "category.support",
         (BuildKind.GREENHOUSE, BuildKind.LAMP, BuildKind.ELECTROLYZER, BuildKind.CONDENSER),
     ),
     (
         "category.logistics",
-        (BuildKind.CABLE, BuildKind.FABRICATOR, BuildKind.STORAGE, BuildKind.RECYCLER),
+        (BuildKind.CABLE, BuildKind.FABRICATOR, BuildKind.STORAGE, BuildKind.RECYCLER, BuildKind.MONITOR),
     ),
     ("category.science", (BuildKind.RADAR, BuildKind.LABORATORY)),
 )
@@ -65,6 +81,7 @@ class BuildPreview(Enum):
     BAD_TERRAIN = "bad_terrain"
     NO_WATER_DEPOSIT = "no_water_deposit"
     NO_MINERAL_DEPOSIT = "no_mineral_deposit"
+    NO_DEPOSIT = "no_deposit"
     NO_RESOURCES = "no_resources"
     NO_NETWORK = "no_network"
     CABLE_NOT_CHAIN = "cable_not_chain"
@@ -91,6 +108,10 @@ BUILD_TO_MODULE: dict[BuildKind, ModuleKind] = {
     BuildKind.RECYCLER: ModuleKind.RECYCLER,
     BuildKind.FISH_TRAP: ModuleKind.FISH_TRAP,
     BuildKind.BIODIESEL: ModuleKind.BIODIESEL,
+    BuildKind.MONITOR: ModuleKind.MONITOR,
+    BuildKind.COAL_EXTRACTOR: ModuleKind.COAL_EXTRACTOR,
+    BuildKind.CRYSTAL_EXTRACTOR: ModuleKind.CRYSTAL_EXTRACTOR,
+    BuildKind.FUEL_GENERATOR: ModuleKind.FUEL_GENERATOR,
 }
 
 
@@ -127,7 +148,6 @@ class BuildController:
     menu_scroll_target: float = 0.0
     category_visual: float = 0.0
     category_visual_target: float = 0.0
-    cable_chain: list[tuple[int, int]] = field(default_factory=list)
 
     def _current_kinds(self) -> tuple[BuildKind, ...]:
         return BUILD_CATEGORIES[self.menu_category][1]
@@ -170,11 +190,9 @@ class BuildController:
         self.category_visual = 0.0
         self.category_visual_target = 0.0
         self._sync_selected()
-        self.cable_chain.clear()
 
     def exit_menu(self) -> None:
         self.mode = BuildMode.NONE
-        self.cable_chain.clear()
 
     def menu_up(self) -> None:
         if self.mode != BuildMode.MENU:
@@ -216,17 +234,14 @@ class BuildController:
         if self.mode != BuildMode.MENU:
             return
         self.mode = BuildMode.PLACE
-        self.cable_chain.clear()
 
     def cancel_build(self) -> None:
         self.mode = BuildMode.NONE
-        self.cable_chain.clear()
 
     def back_to_menu(self) -> None:
         if self.mode != BuildMode.PLACE:
             return
         self.mode = BuildMode.MENU
-        self.cable_chain.clear()
 
     def _tile_preview(self, world: World, x: int, y: int, kind: BuildKind) -> BuildPreview:
         if not world.in_bounds(x, y):
@@ -254,6 +269,14 @@ class BuildController:
             if tile != Tile.GROUND:
                 return BuildPreview.BAD_TERRAIN
             return BuildPreview.OK if world.patch_has_deposit(x, y, Deposit.MINERAL) else BuildPreview.NO_MINERAL_DEPOSIT
+        if defn.placement_deposit is not None:
+            if tile != Tile.GROUND:
+                return BuildPreview.BAD_TERRAIN
+            return (
+                BuildPreview.OK
+                if world.patch_has_deposit(x, y, defn.placement_deposit)
+                else BuildPreview.NO_DEPOSIT
+            )
         return BuildPreview.OK if tile == Tile.GROUND else BuildPreview.BAD_TERRAIN
 
     def can_place_tile(self, world: World, x: int, y: int, kind: BuildKind | None = None) -> bool:
@@ -261,27 +284,15 @@ class BuildController:
             kind = self.selected
         return self._tile_preview(world, x, y, kind) == BuildPreview.OK
 
-    def _cable_preview(self, world: World, x: int, y: int, connected: set[tuple[int, int]]) -> BuildPreview:
-        tile_status = self._tile_preview(world, x, y, BuildKind.CABLE)
-        if tile_status != BuildPreview.OK:
-            return tile_status
-        if (x, y) in self.cable_chain:
-            return BuildPreview.OCCUPIED
-        for dx, dy in ((0, -1), (0, 1), (-1, 0), (1, 0)):
-            nx, ny = x + dx, y + dy
-            if (nx, ny) in connected or (nx, ny) in self.cable_chain:
-                return BuildPreview.OK
-        if self.cable_chain:
-            return BuildPreview.CABLE_NOT_CHAIN
-        return BuildPreview.NO_NETWORK
+    def _cable_preview(self, world: World, x: int, y: int) -> BuildPreview:
+        return self._tile_preview(world, x, y, BuildKind.CABLE)
 
-    def _can_extend_cable(self, world: World, x: int, y: int, connected: set[tuple[int, int]]) -> bool:
-        return self._cable_preview(world, x, y, connected) == BuildPreview.OK
+    def _can_extend_cable(self, world: World, x: int, y: int) -> bool:
+        return self._cable_preview(world, x, y) == BuildPreview.OK
 
     def preview(self, world: World, resources: ResourcePool, x: int, y: int) -> BuildPreview:
-        connected = get_connected(world)
         if self.selected == BuildKind.CABLE:
-            preview = self._cable_preview(world, x, y, connected)
+            preview = self._cable_preview(world, x, y)
             if preview != BuildPreview.OK:
                 return preview
             return (
@@ -316,12 +327,11 @@ class BuildController:
             return False
         connected = get_connected(world)
         if self.selected == BuildKind.CABLE:
-            if not self._can_extend_cable(world, x, y, connected):
+            if not self._can_extend_cable(world, x, y):
                 return False
             if not CABLE_COST.spend(resources):
                 return False
             world.cables.add((x, y))
-            self.cable_chain.append((x, y))
             on_cable_added(world, x, y)
             invalidate_network_cache(world)
             self._refresh_connection_states(world, get_connected(world))

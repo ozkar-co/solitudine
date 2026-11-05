@@ -2,9 +2,9 @@
 
 > Fuente única del roadmap. Catálogo de módulos/tecnologías: [catalogo.md](catalogo.md). Estado: [estado.md](estado.md). Código: [arquitectura.md](arquitectura.md). Juego: [diseno-juego.md](diseno-juego.md).
 >
-> Regla: un slice a la vez. 4B/4C, UI/balance, playtest, fundación de recursos/costes y chatarra/reciclador/demolición están cerrados. **Beta etapas 0-3 (2026-11-05)** implementadas: remapeo/créditos/iconos, mundo 2048 con anillos, UI de construcción y trampa/comida. Ahora toca la **etapa 4: red y módulos**.
+> Regla: un slice a la vez. 4B/4C, UI/balance, playtest, fundación de recursos/costes y chatarra/reciclador/demolición están cerrados. **Beta etapas 0-4 (2026-11-05)** implementadas: remapeo/créditos/iconos, mundo 2048 con anillos, UI de construcción, trampa/comida y red/módulos. También quedó la **preparación de etapa 5**: extractores de carbón/cristal y generador de combustible. Ahora toca la **batería/energía** o cerrar el contenido de etapa 5.
 >
-> Feedback beta de TxxT (2026-11-05): [beta-txxt.md](beta-txxt.md). Las decisiones de las etapas 0-3 ya están implementadas; la etapa 4 queda en triage.
+> Feedback beta de TxxT (2026-11-05): [beta-txxt.md](beta-txxt.md). Las decisiones de las etapas 0-4 están implementadas; la etapa 5 sigue en preparación.
 
 ## Norte
 
@@ -28,7 +28,7 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
   - **Arranque (2026-10-29):** splash de texto best-effort en el lanzador antes del runtime; splash con pygame que se mantiene durante assets/guardado/mundo; joystick e inicialización pesada diferidos; al terminar pide START.
   - **Playtest UI (2026-10-29):** red logística única para cualquier módulo; almacén no apagable; menú de construcción con descripción y flujos produce/consume; bloqueos dicen “Investigar”; modales de menú más grandes; TxxT en créditos.
 - **Playtest (2026-10-29):** cerrado; los ajustes aplicados quedaron absorbidos por la pasada de UI/balance.
-- Guardado `VERSION` 4; sin migración (los saves viejos se borran). 66 tests de regresión.
+- Guardado `VERSION` 4; sin migración (los saves viejos se borran). 82 tests de regresión.
 
 ## Hecho: fundación de recursos/costes + chatarra (2026-10-29)
 
@@ -58,10 +58,25 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 - **Etapa 3:** trampa de peces (RNG nocturna, sin ruina), extractor/mina al 50% sin recursos, invernadero 6 comida/3 O₂ y procesador de biodiésel como sink de comida.
 - Criterio cumplido: placement sobre agua, cable sobre agua, producción nocturna con RNG, parada al agotarse el agua y guardado.
 
-## Ahora: etapa 4 — red y módulos
+## Hecho: etapa 4 — red y módulos (2026-11-05)
 
-- Cables de colocación libre, menú contextual A+A, cámara, estación de monitoreo y rename de cable.
-- No entra la trampa de defensa.
+- Cables de **colocación libre**, también desconectados; la red se recalcula al construir/demoler.
+- **Menú contextual A+A** en todos los módulos: investigación, red, encender/apagar, demoler y cerrar. Se retiró el apagado con R1 y la demolición de módulos con B; B queda para cables.
+- **Cámara hasta los bordes** del mapa; el cursor sigue limitado a lo explorado.
+- **Estación de monitoreo** (6 Cmp, 1,5 d, 2 E/d) con pantalla de red: balance por recurso, energía, módulos online/offline/en obra y caps.
+- Rename visible de **Cable → Enlace**; el ID `cable` no cambia.
+
+## Prep etapa 5 (2026-11-05)
+
+- **Extractor de carbón** (8 Cmp + 2 mineral, 1,5 d, 3 E/d → 6 carbón/d).
+- **Extractor de cristales** (10 Cmp + 4 mineral, 2 d, 4 E/d → 2 cristales/d).
+- **Generador de combustible** (8 Cmp + 2 mineral, 1,5 d, 1 combustible/d → 20 E/d).
+- Quedan sin árbol tecnológico y sin combate/eventos; es la base para la etapa 5.
+
+## Ahora: batería/energía o cierre de etapa 5
+
+- Batería con cap de energía y almacén sin cap de energía, o cerrar el contenido de etapa 5 (tecnologías para carbón/cristal/combustible, combate y eventos).
+- No entra la trampa de defensa hasta que exista combate.
 
 ## Decisiones cerradas
 
@@ -120,6 +135,15 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 - Recursos nuevos: **madera, carbón, combustible y cristales**. Madera tiene fuente; el combustible se produce en el procesador de biodiésel; carbón/cristal quedan sin uso hasta sus extractores.
 - Pendiente: regrow de brotes, visibilidad de yacimientos subterráneos y curvas de rareza por distancia.
 
+### Red y módulos
+
+- **Cables de colocación libre:** cualquier tile válido (suelo o agua), incluso desconectado; al tocar la red se conecta y al cortar se recalcula.
+- **Menú contextual A+A:** A selecciona, A abre el menú; desde ahí se investiga, se ve la red, se enciende/apaga, se demuele o se cierra. Se retiraron R1 (toggle) y B (demolición de módulos); B queda para cables.
+- **Cámara dinámica:** puede llegar a los cuatro bordes del mapa; el cursor sigue limitado a lo explorado.
+- **Estación de monitoreo:** 6 Cmp, 1,5 d, 2 E/d; si está online y conectada desbloquea la pantalla de red con balance por recurso, energía, módulos online/offline/en obra y caps.
+- **Rename visible:** Cable → **Enlace**; el ID interno `cable` no cambia para no romper saves.
+- **Prep etapa 5:** extractores de carbón/cristal y generador de combustible disponibles sin árbol tecnológico; el combustible ya tiene un uso (20 E/d).
+
 ### UI
 
 - Barra superior solo con los cuatro vitales, con nombres; si no caben, se decide en playtest.
@@ -143,12 +167,12 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 4. ~~Trampa de peces + comida.~~ Cerrado (2026-11-05).
 5. ~~Mundo 2048 + generación.~~ Cerrado (2026-11-05).
 6. ~~UI de construcción (scroll/carrusel/nombres).~~ Cerrado (2026-11-05).
-7. **Red y módulos (actual).** Criterio: cables libres, menú A+A, cámara, estación de monitoreo y rename de cable.
-8. **Batería/almacén + energía.** Criterio: almacén sin cap de energía, batería con cap, tecnología y rebalance.
-9. **Extracción/uso de carbón/cristal y combustible.** Criterio: al menos un uso concreto por recurso y paso por el estándar de recursos.
+7. ~~Red y módulos.~~ Cerrado (2026-11-05).
+8. **Batería/almacén + energía (actual).** Criterio: almacén sin cap de energía, batería con cap, tecnología y rebalance.
+9. ~~Prep etapa 5: extractores de carbón/cristal y generador de combustible.~~ Cerrado (2026-11-05); falta árbol tecnológico, combate y eventos.
 10. **Eventos, expansión y combate.** Backlog; no abrir antes de cerrar los slices anteriores.
 
-> La retroalimentación beta 2026-11-05 se ejecutó en las etapas 0-3; ver [beta-txxt.md](beta-txxt.md).
+> La retroalimentación beta 2026-11-05 se ejecutó en las etapas 0-4; ver [beta-txxt.md](beta-txxt.md).
 
 ## Matriz de recursos
 
@@ -162,9 +186,9 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 | Componentes | Fabricador | Construcción, investigación | Hecho |
 | Chatarra | Ruinas, demolición | Reciclador, investigación | Hecho |
 | Madera | Bosques (árboles) | Construcción/combustible por definir | Fuente hecha; usos pendientes |
-| Carbón | Yacimientos subterráneos | Combustible/energía por definir | Generado; extractor pendiente |
-| Cristales | Yacimientos subterráneos | Tecnología/módulos avanzados por definir | Generado; extractor pendiente |
-| Combustible/biodiésel | Procesador de biodiésel | Combustible/consumibles por definir | Hecho; usos pendientes |
+| Carbón | Yacimientos subterráneos (extractor de carbón) | Combustible/energía por definir | Fuente hecha; usos pendientes |
+| Cristales | Yacimientos subterráneos (extractor de cristales) | Tecnología/módulos avanzados por definir | Fuente hecha; usos pendientes |
+| Combustible/biodiésel | Procesador de biodiésel | Generador de combustible (20 E/d) | Hecho |
 
 > 2 fuentes / 2 usos es deseable, no obligatorio. **Excepción de beta (2026-11-05):** se aceptan recursos sin fuente/uso completo (madera, carbón, combustible y cristales) para dejar la infraestructura y el contenido de mundo listos; se completan en etapas posteriores.
 
@@ -188,6 +212,10 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 | Invernadero | 10 Cmp, 1,5 d, 3 E/d, 4 agua/d → 6 comida/d + 3 O₂/d (O₂ requiere agua) |
 | Trampa de peces | 2 Cmp, 0,5 d, sin energía; ~3 comida/noche (1 tirada/hora, 0 permitido) |
 | Procesador de biodiésel | 4 Cmp, 1 d, 2 E/d, 2 agua/d, 4 comida/d → 1 combustible/d |
+| Extractor de carbón | 8 Cmp + 2 mineral, 1,5 d, 3 E/d → 6 carbón/d |
+| Extractor de cristales | 10 Cmp + 4 mineral, 2 d, 4 E/d → 2 cristales/d |
+| Generador de combustible | 8 Cmp + 2 mineral, 1,5 d, 1 combustible/d → 20 E/d |
+| Estación de monitoreo | 6 Cmp, 1,5 d, 2 E/d; pantalla de red |
 | Mundo | Default 2048×2048, arrays compactos (~40 MB), generación por anillos difusos |
 | Núcleo estable | 2 solar + 2 extractores + invernadero + laboratorio + electrolizador |
 

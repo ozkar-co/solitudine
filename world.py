@@ -252,6 +252,11 @@ class World:
         return False
 
     def camera_bounds(self, margin: int) -> tuple[int, int, int, int]:
+        # La cámara puede llegar a cualquier borde del mapa; la niebla sigue
+        # ocultando lo no explorado.
+        return (0, 0, self.size - 1, self.size - 1)
+
+    def cursor_bounds(self, margin: int) -> tuple[int, int, int, int]:
         if self.expl_max_x < self.expl_min_x:
             r = INITIAL_VISION_RADIUS + margin
             hx, hy = self.habitat_x, self.habitat_y

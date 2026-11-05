@@ -19,3 +19,7 @@ class ModuleKind(StrEnum):
     RECYCLER = "recycler"
     FISH_TRAP = "fish_trap"
     BIODIESEL = "biodiesel"
+    MONITOR = "monitor"
+    COAL_EXTRACTOR = "coal_extractor"
+    CRYSTAL_EXTRACTOR = "crystal_extractor"
+    FUEL_GENERATOR = "fuel_generator"

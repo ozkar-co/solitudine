@@ -47,7 +47,7 @@ En PC, `--dev --2x` mantiene el render interno en 640×480 y escala la ventana a
 
 | Archivo | Responsabilidad |
 |---------|-----------------|
-| `main.py` | Entrada; `--dev`, `--handheld`, `--2x`. |
+| `main.py` | Entrada; `--dev`, `--handheld`, `--2x`, `--world-size`. |
 | `game.py` | Bucle, cámara, HUD, pausa, game over y auto-save. |
 | `simulation.py` | Reloj, día, pausa, muerte y estado global. |
 | `config.py` | Balance numérico y layout. |
@@ -56,7 +56,9 @@ En PC, `--dev --2x` mantiene el render interno en 640×480 y escala la ventana a
 | `research.py` | Investigación activa, progreso, desbloqueos y laboratorio. |
 | `module_kind.py` | Enum de módulos. |
 | `module_defs.py` | Registro de módulos, flujos, costes, `module_active()`. |
-| `module_tick.py` | Tick: producción, consumo, energía y lámpara. |
+| `module_tick.py` | Tick: producción, consumo, energía, lámpara, extractores profundos y generador de combustible. |
+| `module_menu.py` | Estado del menú contextual A+A de módulos. |
+| `network_report.py` | Balance de producción/consumo por recurso para la estación de monitoreo. |
 | `module_flow.py` / `module_power.py` | Delegados finos del panel a `module_defs`. |
 | `logistics.py` | Caps de red, buffers y orquestación del tick. |
 | `resources.py` | Registro de recursos, pool único, `Cost` multi-material, caps y alertas. |
@@ -68,7 +70,7 @@ En PC, `--dev --2x` mantiene el render interno en 640×480 y escala la ventana a
 | `daylight.py` | Curva de luz natural. |
 | `camera.py` | Cámara y zoom entero. |
 | `savegame.py` | Guardado JSON v4 con arrays comprimidos; sin migración. |
-| `game_input.py` | Acciones por frame, construcción, ruinas, demolición, R1. |
+| `game_input.py` | Acciones por frame, construcción, ruinas, menú A+A, red y demolición de cables. |
 | `input_state.py` / `gamepad.py` / `dev_input.py` | Entrada unificada. |
 | `i18n.py` / `locales/es.json` | Textos. |
 | `ui_layout.py` | Regiones 640×480. |
@@ -78,6 +80,8 @@ En PC, `--dev --2x` mantiene el render interno en 640×480 y escala la ventana a
 | `ui_minimap.py` | Minimapa cacheado. |
 | `ui_night.py` | Fuentes de luz visual y dithering por tile. |
 | `ui_panel.py` | Inspección, ruinas, reciclador y modo colocar. |
+| `ui_module_menu.py` | Dibujo del menú contextual A+A. |
+| `ui_network.py` | Pantalla de red de la estación de monitoreo. |
 | `ui_tech.py` | Pantalla de Tecnología mínima. |
 | `ui_modals.py` | Modales reutilizables (pausa, créditos, construcción, game over). |
 | `ui_input.py` / `game_help.py` | Política de input / texto contextual. |

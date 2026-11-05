@@ -17,6 +17,7 @@ from construction import BuildController
 from logistics import apply_modules_dt, network_caps
 from module_defs import module_active
 from module_kind import ModuleKind
+from module_menu import ModuleMenu
 from network import get_connected
 from research import ResearchState, active_labs, has_active_lab
 from resources import ResourceId, ResourcePool
@@ -32,6 +33,9 @@ class Simulation:
     stats: Stats = field(default_factory=Stats)
     build: BuildController = field(default_factory=BuildController)
     research: ResearchState = field(default_factory=ResearchState)
+    module_menu: ModuleMenu | None = None
+    network_open: bool = False
+    network_scroll: int = 0
     demolish: tuple[int, int] | None = None
     paused: bool = False
     user_paused: bool = False

@@ -9,10 +9,10 @@
 
 | Categoría | Módulos |
 |-----------|---------|
-| Energía | Panel solar, Procesador de biodiésel, Batería* |
-| Extracción | Extractor de agua, Mina, Trampa de peces |
+| Energía | Panel solar, Procesador de biodiésel, Generador de combustible, Batería* |
+| Extracción | Extractor de agua, Mina, Trampa de peces, Extractor de carbón, Extractor de cristales |
 | Soporte Vital | Invernadero, Lámpara, Electrolizador, Condensador |
-| Red Logística | Cable, Fabricador, Almacén, Reciclador, Estación de monitoreo* |
+| Red Logística | Enlace, Fabricador, Almacén, Reciclador, Estación de monitoreo |
 | Investigación | Radar, Laboratorio |
 | Defensa* | Torreta, Trampa de defensa |
 
@@ -23,7 +23,7 @@
 | ID | Nombre | Categoría | Estado | Tecnología | Mejora automática |
 |----|--------|-----------|--------|------------|-------------------|
 | `habitat` | Hábitat | Soporte Vital | hecho | — | — |
-| `cable` | Cable | Red Logística | hecho | — | — |
+| `cable` | Enlace | Red Logística | hecho | — | — |
 | `solar` | Panel solar | Energía | hecho | `solar_ii` | Mk II: +50% producción |
 | `extractor` | Extractor de agua | Extracción | hecho | `extraccion_ii` | Mk II: +25% agua, −20% energía |
 | `mine` | Mina | Extracción | hecho | `extraccion_ii` | Mk II: +25% mineral, −20% energía |
@@ -37,9 +37,12 @@
 | `condenser` | Condensador | Soporte Vital | hecho | `condensador` | Energía → agua |
 | `fish_trap` | Trampa de peces | Extracción | hecho | — | 2 Cmp, 0,5 d; noche: 1 tirada/hora, 0 permitido, ~3 comida/noche; sobre agua; sin ruina, da chatarra directa |
 | `biodiesel` | Procesador de biodiésel | Energía | hecho | — | 4 Cmp, 1 d; 2 E/d + 2 agua/d + 4 comida/d → 1 combustible/d |
+| `coal_extractor` | Extractor de carbón | Extracción | hecho (prep) | — | 8 Cmp + 2 mineral, 1,5 d, 3 E/d → 6 carbón/d |
+| `crystal_extractor` | Extractor de cristales | Extracción | hecho (prep) | — | 10 Cmp + 4 mineral, 2 d, 4 E/d → 2 cristales/d |
+| `fuel_generator` | Generador de combustible | Energía | hecho (prep) | — | 8 Cmp + 2 mineral, 1,5 d, 1 combustible/d → 20 E/d |
 | `recycler` | Reciclador | Red Logística | hecho | `reciclaje` | Chatarra → mineral (ratio 0,9; 5% componentes) |
 | `battery` | Batería | Energía | backlog | `bateria` | Cap de energía; el almacén deja de dar cap de energía |
-| `monitor` | Estación de monitoreo | Red Logística | backlog | — | Desbloquea la pantalla de red (consumo/producción por recurso); coste/energía a definir |
+| `monitor` | Estación de monitoreo | Red Logística | hecho | — | 6 Cmp, 1,5 d, 2 E/d; desbloquea la pantalla de red (consumo/producción por recurso) |
 | `turret` / `trap` | Torreta / Trampa de defensa | Defensa | backlog | — | Combate |
 
 El cable forma una **red logística única**: conecta módulos de cualquier tipo, sin redes separadas. El almacén no se puede apagar.
@@ -63,6 +66,10 @@ El cable forma una **red logística única**: conecta módulos de cualquier tipo
 | Reciclador | 3 Cmp | 0,5 d | 1 E/d | 4 chatarra/d · 0,5 agua/d | 3,6 mineral/d + 0,2 Cmp/d |
 | Trampa de peces | 2 Cmp | 0,5 d | — | — | ~3 comida/noche (1 tirada/hora, 0 permitido) |
 | Procesador de biodiésel | 4 Cmp | 1 d | 2 E/d | 4 comida/d · 2 agua/d | 1 combustible/d |
+| Extractor de carbón | 8 Cmp + 2 mineral | 1,5 d | 3 E/d | — | 6 carbón/d |
+| Extractor de cristales | 10 Cmp + 4 mineral | 2 d | 4 E/d | — | 2 cristales/d |
+| Generador de combustible | 8 Cmp + 2 mineral | 1,5 d | — | 1 combustible/d | 20 E/d |
+| Estación de monitoreo | 6 Cmp | 1,5 d | 2 E/d | — | Pantalla de red |
 
 Valores actuales de playtest. Cualquier ajuste se refleja en `config.py` y en esta tabla.
 
@@ -75,6 +82,8 @@ Valores actuales de playtest. Cualquier ajuste se refleja en `config.py` y en es
 > **Categorías (implementadas 2026-11-05):** **Energía, Extracción, Soporte Vital, Red Logística, Investigación y Defensa**.
 >
 > **Mundo (implementado 2026-11-05):** mapa parametrizable con default 2048; generación por anillos difusos; bosques, carbón y cristales; recursos de madera, carbón, combustible y cristales.
+>
+> **Etapa 4 + prep etapa 5 (implementado 2026-11-05):** cables de colocación libre, menú contextual A+A, cámara hasta los bordes, estación de monitoreo con pantalla de red y rename visible de cable a **Enlace**. Se adelantaron los extractores de carbón/cristal y el generador de combustible como preparación de la etapa 5 (sin árbol tecnológico todavía).
 
 ## Tecnologías
 

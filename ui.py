@@ -231,6 +231,10 @@ def _build_kind_label(kind: BuildKind) -> str:
         BuildKind.RECYCLER: t("build.recycler"),
         BuildKind.FISH_TRAP: t("build.fish_trap"),
         BuildKind.BIODIESEL: t("build.biodiesel"),
+        BuildKind.MONITOR: t("build.monitor"),
+        BuildKind.COAL_EXTRACTOR: t("build.coal_extractor"),
+        BuildKind.CRYSTAL_EXTRACTOR: t("build.crystal_extractor"),
+        BuildKind.FUEL_GENERATOR: t("build.fuel_generator"),
     }[kind]
 
 

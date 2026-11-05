@@ -12,13 +12,15 @@ from credits import CREDITS_SCROLL_STEP, KONAMI_SEQUENCE, max_credits_scroll
 from gamepad import LJOY_DOWN, LJOY_LEFT, LJOY_RIGHT, LJOY_UP
 from input_state import FrameInput, Input
 from logistics import network_caps
-from module_defs import module_active, module_def
+from module_defs import module_active
+from module_menu import ModuleMenu
 from network import get_connected
 from resources import ResourceId
 from simulation import Simulation
 from ui import MapLayer
+from ui_network import max_network_scroll
 from vision import set_module_clear
-from world import ModuleState, Tile, World
+from world import Tile, World
 
 
 PAUSE_CREDITS = 1
@@ -69,6 +71,59 @@ def handle_frame_input(
             sim.demolish = None
         elif inp.was_pressed(frame, "B") or inp.was_pressed(frame, "START"):
             sim.demolish = None
+        return result
+
+    if sim.network_open:
+        result.select_x, result.select_y = select_x, select_y
+        if (
+            inp.was_pressed(frame, "A")
+            or inp.was_pressed(frame, "B")
+            or inp.was_pressed(frame, "START")
+        ):
+            sim.network_open = False
+            sim.network_scroll = 0
+        elif inp.was_pressed(frame, "DPAD_UP") or inp.was_pressed(frame, LJOY_UP):
+            sim.network_scroll = max(0, sim.network_scroll - CREDITS_SCROLL_STEP)
+        elif inp.was_pressed(frame, "DPAD_DOWN") or inp.was_pressed(frame, LJOY_DOWN):
+            sim.network_scroll = min(
+                max_network_scroll(world, sim),
+                sim.network_scroll + CREDITS_SCROLL_STEP,
+            )
+        return result
+
+    if sim.module_menu is not None:
+        menu = sim.module_menu
+        result.select_x, result.select_y = menu.x, menu.y
+        if inp.was_pressed(frame, "B") or inp.was_pressed(frame, "START"):
+            sim.module_menu = None
+        elif inp.was_pressed(frame, "DPAD_UP") or inp.was_pressed(frame, LJOY_UP):
+            menu.move(-1)
+        elif inp.was_pressed(frame, "DPAD_DOWN") or inp.was_pressed(frame, LJOY_DOWN):
+            menu.move(1)
+        elif inp.was_pressed(frame, "A"):
+            item = menu.current()
+            mod = world.module_at(menu.x, menu.y)
+            if mod is None:
+                sim.module_menu = None
+            elif item.enabled:
+                if item.action == "toggle":
+                    mod.enabled = not mod.enabled
+                    connected = (mod.x, mod.y) in get_connected(world)
+                    set_module_clear(world, mod, module_active(mod, connected))
+                    result.save_requested = True
+                    sim.module_menu = None
+                elif item.action == "demolish":
+                    sim.demolish = (menu.x, menu.y)
+                    sim.module_menu = None
+                elif item.action == "research":
+                    sim.research.open = True
+                    sim.module_menu = None
+                elif item.action == "network":
+                    sim.network_open = True
+                    sim.network_scroll = 0
+                    sim.module_menu = None
+                elif item.action == "close":
+                    sim.module_menu = None
         return result
 
     if sim.research.open:
@@ -153,6 +208,7 @@ def handle_frame_input(
         elif (
             select_x is not None
             and select_y is not None
+            and world.module_at(select_x, select_y) is None
             and demolition.can_demolish(world, select_x, select_y)
         ):
             sim.demolish = (select_x, select_y)
@@ -185,25 +241,33 @@ def handle_frame_input(
                     build.cancel_build()
 
     elif not sim.user_paused:
-        if inp.was_pressed(frame, "R1") and select_x is not None and select_y is not None:
-            mod = world.module_at(select_x, select_y)
-            if (
-                mod is not None
-                and module_def(mod.kind).can_toggle
-                and mod.state in (ModuleState.ONLINE, ModuleState.OFFLINE)
-            ):
-                mod.enabled = not mod.enabled
-                connected = (mod.x, mod.y) in get_connected(world)
-                set_module_clear(world, mod, module_active(mod, connected))
         if inp.was_pressed(frame, "X"):
             result.layer = (
                 MapLayer.RESOURCES if layer == MapLayer.TERRAIN else MapLayer.TERRAIN
             )
         if inp.was_pressed(frame, "A"):
             tile = Tile(world.tiles[world.idx(cursor_x, cursor_y)])
+            already_selected = select_x == cursor_x and select_y == cursor_y
+            mod = world.module_at(cursor_x, cursor_y)
             if layer == MapLayer.RESOURCES:
                 result.select_x, result.select_y = cursor_x, cursor_y
                 result.layer = MapLayer.TERRAIN
+            elif mod is not None:
+                if already_selected:
+                    sim.module_menu = ModuleMenu.open(world, mod)
+                    result.select_x, result.select_y = mod.x, mod.y
+                else:
+                    result.select_x, result.select_y = cursor_x, cursor_y
+            elif world.has_ruin(cursor_x, cursor_y):
+                if already_selected:
+                    caps = network_caps(world, get_connected(world))
+                    space = max(0.0, caps[ResourceId.SCRAP] - sim.resources.scrap)
+                    taken = world.take_ruin(cursor_x, cursor_y, space)
+                    if taken > 0.0:
+                        sim.resources.add(ResourceId.SCRAP, taken)
+                        sim.stats.scrap_collected += taken
+                        result.save_requested = True
+                result.select_x, result.select_y = cursor_x, cursor_y
             elif tile == Tile.FOREST:
                 caps = network_caps(world, get_connected(world))
                 amount = random.uniform(FOREST_WOOD_MIN, FOREST_WOOD_MAX)
@@ -216,34 +280,7 @@ def handle_frame_input(
                 world.tiles[world.idx(cursor_x, cursor_y)] = Tile.GROUND
                 result.save_requested = True
                 result.select_x, result.select_y = cursor_x, cursor_y
-            elif world.has_ruin(cursor_x, cursor_y):
-                already_selected = select_x == cursor_x and select_y == cursor_y
-                if already_selected:
-                    caps = network_caps(world, get_connected(world))
-                    space = max(0.0, caps[ResourceId.SCRAP] - sim.resources.scrap)
-                    taken = world.take_ruin(cursor_x, cursor_y, space)
-                    if taken > 0.0:
-                        sim.resources.add(ResourceId.SCRAP, taken)
-                        sim.stats.scrap_collected += taken
-                        result.save_requested = True
-                result.select_x, result.select_y = cursor_x, cursor_y
             else:
-                mod = world.module_at(cursor_x, cursor_y)
-                already_selected = select_x == cursor_x and select_y == cursor_y
-                action = module_def(mod.kind).special_action if mod is not None else None
-                connected = (
-                    (mod.x, mod.y) in get_connected(world) if mod is not None else False
-                )
-                if (
-                    already_selected
-                    and mod is not None
-                    and action is not None
-                    and module_active(mod, connected)
-                ):
-                    if action == "research":
-                        sim.research.open = True
-                        sim.paused = True
-                else:
-                    result.select_x, result.select_y = cursor_x, cursor_y
+                result.select_x, result.select_y = cursor_x, cursor_y
 
     return result
