@@ -45,6 +45,7 @@ from simulation import Simulation
 from tech_defs import tech_def
 from vision import on_module_built
 from ui import MapLayer
+from ui_map import coast_overlay_plan
 from ui_night import light_sources
 from world import Deposit, Module, ModuleState, Tile, generate_world
 
@@ -1270,3 +1271,99 @@ class BuildModalTests(unittest.TestCase):
             for _ in range(5):
                 build.menu_down()
             self.assertGreater(build.menu_scroll_target, 0.0)
+
+
+class CoastOverlayTests(unittest.TestCase):
+    def _world(self):
+        world = generate_world(seed="COAST", size=64)
+        x, y = 20, 20
+        for dy in range(-1, 2):
+            for dx in range(-1, 2):
+                prepare_tile(world, x + dx, y + dy)
+        return world, x, y
+
+    def test_side_rotations(self) -> None:
+        world, x, y = self._world()
+        expected = {
+            "n": (0, -1, 270),
+            "e": (1, 0, 180),
+            "s": (0, 1, 90),
+            "w": (-1, 0, 0),
+        }
+        for name, (dx, dy, rot) in expected.items():
+            world, x, y = self._world()
+            world.tiles[world.idx(x + dx, y + dy)] = Tile.WATER
+            self.assertEqual(coast_overlay_plan(world, x, y), [("side", rot)], name)
+
+    def test_corner_inner_and_outer(self) -> None:
+        world, x, y = self._world()
+        world.tiles[world.idx(x, y - 1)] = Tile.WATER
+        world.tiles[world.idx(x + 1, y)] = Tile.WATER
+        self.assertEqual(coast_overlay_plan(world, x, y), [("inner", 270)])
+
+        # La diagonal en la esquina del inner no cambia el inner.
+        world.tiles[world.idx(x + 1, y - 1)] = Tile.WATER
+        self.assertEqual(coast_overlay_plan(world, x, y), [("inner", 270)])
+
+        # La diagonal opuesta sí agrega el outer.
+        world.tiles[world.idx(x - 1, y + 1)] = Tile.WATER
+        self.assertEqual(coast_overlay_plan(world, x, y), [("inner_outer", 270)])
+
+
+class CoastFullSetTests(unittest.TestCase):
+    def _world(self):
+        world = generate_world(seed="COASTFULL", size=64)
+        x, y = 20, 20
+        for dy in range(-1, 2):
+            for dx in range(-1, 2):
+                prepare_tile(world, x + dx, y + dy)
+        return world, x, y
+
+    def test_u_parallel_island(self) -> None:
+        cases = (
+            ({"n", "e", "s"}, [("u", 0)]),
+            ({"n", "e", "w"}, [("u", 90)]),
+            ({"n", "s"}, [("parallel", 0)]),
+            ({"e", "w"}, [("parallel", 90)]),
+            ({"n", "e", "s", "w"}, [("island", 0)]),
+        )
+        for water, expected in cases:
+            world, x, y = self._world()
+            for name in water:
+                dx, dy = {"n": (0, -1), "e": (1, 0), "s": (0, 1), "w": (-1, 0)}[name]
+                world.tiles[world.idx(x + dx, y + dy)] = Tile.WATER
+            self.assertEqual(coast_overlay_plan(world, x, y), expected, water)
+
+    def test_inner_outer_combinations(self) -> None:
+        world, x, y = self._world()
+        world.tiles[world.idx(x, y - 1)] = Tile.WATER
+        world.tiles[world.idx(x - 1, y)] = Tile.WATER
+        world.tiles[world.idx(x - 1, y - 1)] = Tile.WATER
+        world.tiles[world.idx(x + 1, y + 1)] = Tile.WATER
+        self.assertEqual(
+            coast_overlay_plan(world, x, y),
+            [("inner_outer", 0)],
+        )
+
+    def test_single_side_with_corner_points(self) -> None:
+        world, x, y = self._world()
+        world.tiles[world.idx(x, y - 1)] = Tile.WATER
+        world.tiles[world.idx(x + 1, y - 1)] = Tile.WATER
+        world.tiles[world.idx(x - 1, y + 1)] = Tile.WATER
+        self.assertEqual(
+            coast_overlay_plan(world, x, y),
+            [("side", 270), ("outer", 90)],
+        )
+
+    def test_diagonal_outer_only(self) -> None:
+        world, x, y = self._world()
+        world.tiles[world.idx(x + 1, y + 1)] = Tile.WATER
+        self.assertEqual(coast_overlay_plan(world, x, y), [("outer", 180)])
+
+    def test_l_corner_is_inner_outer(self) -> None:
+        # Tierra2 del ejemplo en L: agua S/W, diagonal NE de agua.
+        world, x, y = self._world()
+        world.tiles[world.idx(x, y + 1)] = Tile.WATER
+        world.tiles[world.idx(x - 1, y)] = Tile.WATER
+        world.tiles[world.idx(x + 1, y - 1)] = Tile.WATER
+        self.assertEqual(coast_overlay_plan(world, x, y), [("inner_outer", 90)])

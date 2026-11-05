@@ -52,7 +52,82 @@ def _tile_draw_rect(sx: float, sy: float, px: int) -> pygame.Rect:
     return pygame.Rect(round(sx), round(sy), px, px)
 
 
-_COAST_NEIGHBORS = (("n", 0, -1), ("e", 1, 0), ("s", 0, 1), ("w", -1, 0))
+_COAST_SIDES = (
+    ("n", 0, -1, 270),
+    ("e", 1, 0, 180),
+    ("s", 0, 1, 90),
+    ("w", -1, 0, 0),
+)
+_COAST_CORNERS = (
+    ("nw", "n", "w", -1, -1, 0),
+    ("sw", "s", "w", -1, 1, 90),
+    ("se", "s", "e", 1, 1, 180),
+    ("ne", "n", "e", 1, -1, 270),
+)
+_COAST_DIAGONALS = (
+    ("nw", -1, -1),
+    ("ne", 1, -1),
+    ("se", 1, 1),
+    ("sw", -1, 1),
+)
+_CORNER_OPPOSITE = {"nw": "se", "se": "nw", "ne": "sw", "sw": "ne"}
+_SIDE_ROTATION = {"n": 270, "e": 180, "s": 90, "w": 0}
+_LAND_SIDE_ROTATION = {"w": 0, "s": 90, "e": 180, "n": 270}
+
+
+def coast_overlay_plan(world: World, tx: int, ty: int) -> list[tuple[str, int]]:
+    """Piezas de costa para un tile: (tipo, rotación).
+
+    Bases: side con agua al oeste; inner/outer/inner_outer en NW; U con tierra
+    al oeste; parallel con agua al norte y al sur. Las rotaciones se aplican en
+    el render.
+    """
+    water = {
+        name
+        for name, dx, dy, _rot in _COAST_SIDES
+        if world.tile_at(tx + dx, ty + dy) == Tile.WATER
+    }
+    diag = {
+        name
+        for name, dx, dy in _COAST_DIAGONALS
+        if world.tile_at(tx + dx, ty + dy) == Tile.WATER
+    }
+
+    if len(water) == 4:
+        return [("island", 0)]
+    if len(water) == 3:
+        land = ({"n", "e", "s", "w"} - water).pop()
+        return [("u", _LAND_SIDE_ROTATION[land])]
+    if len(water) == 2:
+        if water == {"n", "s"}:
+            return [("parallel", 0)]
+        if water == {"e", "w"}:
+            return [("parallel", 90)]
+        corner = next(c for c in _COAST_CORNERS if c[1] in water and c[2] in water)
+        name, _a, _b, _dx, _dy, rot = corner
+        opposite = _CORNER_OPPOSITE[name]
+        # Dos lados ortogonales de agua: siempre inner. El outer solo puede
+        # aparecer en la esquina opuesta, donde ambos ortogonales son tierra.
+        if opposite in diag:
+            return [("inner_outer", rot)]
+        return [("inner", rot)]
+
+    if len(water) == 1:
+        name = next(iter(water))
+        _dx, _dy, rot = next((dx, dy, rot) for n, dx, dy, rot in _COAST_SIDES if n == name)
+        plan: list[tuple[str, int]] = [("side", rot)]
+        for cname, a, b, _cdx, _cdy, crot in _COAST_CORNERS:
+            if a in water or b in water:
+                continue
+            if cname in diag:
+                plan.append(("outer", crot))
+        return plan
+
+    return [
+        ("outer", crot)
+        for cname, _a, _b, _dx, _dy, crot in _COAST_CORNERS
+        if cname in diag
+    ]
 
 
 def _draw_coast(
@@ -65,9 +140,24 @@ def _draw_coast(
 ) -> None:
     if tile != Tile.GROUND:
         return
-    for direction, dx, dy in _COAST_NEIGHBORS:
-        if world.tile_at(tx + dx, ty + dy) == Tile.WATER:
-            surf.blit(ui_assets.coast(direction, tile_rect.w), tile_rect.topleft)
+    for kind, rotation in coast_overlay_plan(world, tx, ty):
+        if kind == "side":
+            piece = ui_assets.coast_side(tile_rect.w, rotation)
+        elif kind == "inner":
+            piece = ui_assets.coast_inner(tile_rect.w, rotation)
+        elif kind == "outer":
+            piece = ui_assets.coast_outer(tile_rect.w, rotation)
+        elif kind == "u":
+            piece = ui_assets.coast_u(tile_rect.w, rotation)
+        elif kind == "parallel":
+            piece = ui_assets.coast_parallel(tile_rect.w, rotation)
+        elif kind == "island":
+            piece = ui_assets.coast_island(tile_rect.w, rotation)
+        elif kind == "inner_outer":
+            piece = ui_assets.coast_inner_outer(tile_rect.w, rotation)
+        else:
+            continue
+        surf.blit(piece, tile_rect.topleft)
 
 
 _OVERLAY_CACHE: dict[tuple[tuple[int, int, int], int], pygame.Surface] = {}

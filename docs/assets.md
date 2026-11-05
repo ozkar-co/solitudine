@@ -28,17 +28,20 @@ Los perfiles solo permiten override de `seed`. No hay `negative_prompt` en RD+; 
 | `assets/tiles/rock_01.png` | `source/terrain/rock.png` | (0,3) índice 12 | ídem | 1103 |
 | `assets/tiles/forest_00.png` | placeholder procedural | — | bosque, árbol alienígena verde oscuro, 16×16 | — |
 | `assets/tiles/sprout_00.png` | placeholder procedural | — | brote, tallo y hojas pequeñas, 16×16 | — |
-| `assets/tiles/coast_n.png` | manual (no Genkit) | — | overlay 16×16 con línea guía azul claro en el borde norte | — |
-| `assets/tiles/coast_e.png` | manual (no Genkit) | — | overlay 16×16 con línea guía azul claro en el borde este | — |
-| `assets/tiles/coast_s.png` | manual (no Genkit) | — | overlay 16×16 con línea guía azul claro en el borde sur | — |
-| `assets/tiles/coast_w.png` | manual (no Genkit) | — | overlay 16×16 con línea guía azul claro en el borde oeste | — |
+| `assets/tiles/coast_side_00.png` | manual (no Genkit) | — | overlay 16×16 con borde de costa al oeste; se rota para N/E/S | — |
+| `assets/tiles/coast_inner_corner.png` | derivado de `coast_side_00` | — | dos bordes, agua en dos lados ortogonales; base NW | — |
+| `assets/tiles/coast_outer_border.png` | manual (arte del usuario) | — | punto de esquina con ambos ortogonales tierra y agua diagonal; base NW | — |
+| `assets/tiles/coast_u_00.png` | derivado de `coast_side_00` | — | tres lados de agua, tierra al oeste (U/cape) | — |
+| `assets/tiles/coast_parallel_00.png` | derivado de `coast_side_00` | — | agua al norte y al sur (costas paralelas) | — |
+| `assets/tiles/coast_island_00.png` | derivado de `coast_side_00` | — | isla de 1×1, agua en los cuatro lados | — |
+| `assets/tiles/coast_inner_outer_00.png` | derivado de `coast_inner_corner` + outer | — | inner en una esquina + outer en la diagonal opuesta; base inner NW + outer SE | — |
 | `assets/tiles/ruin_00.png` | placeholder procedural | — | ruina de chatarra, piedras rotas y óxido, 16×16 | — |
 
 La hoja RD Tile es 4 columnas × 5 filas de tiles de 16×16. Los índices no usados quedan como transiciones para un autotile futuro.
 
 **Variación de terreno:** el render elige `ground_00`/`ground_01` por hash de coordenada y rota el tile en múltiplos de 90° para variar la textura. No hace falta duplicar assets por rotación.
 
-**Costa (manual):** `coast_n/e/s/w.png` son overlays transparentes de 16×16 con una línea guía azul claro en el borde que da al agua. El juego elige la orientación según los vecinos de agua y compone dos overlays en las esquinas. Para dibujar la costa, editar estos PNG manteniendo 16×16 y el alpha; la línea es solo una guía y se puede tapar con el arte final.
+**Costa (manual/derivada):** `coast_side_00.png` es la base lateral con el agua al oeste; el juego la rota para N/E/S. `coast_inner_corner` (dos bordes) y `coast_outer_border` (punto) tienen base NW y se rotan para las cuatro esquinas. `coast_inner_outer_00` combina un inner en NW con un outer en SE. `coast_u_00` tiene tierra al oeste; `coast_parallel_00` tiene agua al norte y al sur; `coast_island_00` no rota. Regla: `inner` = dos lados ortogonales de agua; `outer` = punto donde ambos ortogonales son tierra y el agua está solo en diagonal. Para agregar estilos, sumar `coast_side_01.png`, `coast_u_01.png`, etc.; el código carga todas las variantes y usa la 00 por ahora. Mantener 16×16 y alpha.
 
 ### Módulos
 
