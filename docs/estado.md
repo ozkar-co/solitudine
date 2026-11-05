@@ -14,17 +14,20 @@
 | Playtest | **Hecho** — PC y R36S; ajustes aplicados |
 | Fundación recursos/costes | **Hecho** — pool único, `Cost` multi-material, `cost_paid` y save v4 |
 | Chatarra/reciclador/demolición | **Hecho** — ruinas, recogida, reciclador, demolición y cancelación |
-| Trampa de peces + comida | **Siguiente** — placement sobre agua, producción con RNG (~3/día promedio) y parada al agotarse el agua |
-| 5+ | **Backlog/planificado** — batería, agua RNG/radar, bosques/cristales, eventos y combate |
+| Trampa de peces + comida | **Siguiente** — placement sobre agua, producción nocturna con una tirada por hora (0 permitido, ~3/noche) y parada al agotarse el agua |
+| 5+ | **Backlog/planificado** — mundo 2048/anillos, UI de construcción, batería, bosques/carbón/cristales, recursos nuevos, eventos y combate |
 
 El juego es jugable en PC y en R36S. La UI (grilla de 16 px, sprites, zoom, minimapa, día/noche, lámpara) está estable. El loop de chatarra (ruinas → reciclador → mineral) y la demolición ya funcionan.
 
 ## Próximo trabajo
 
-1. **Trampa de peces + comida:** placement sobre agua, cable sobre agua, producción con RNG (~3/día promedio; confirmar ventana nocturna) y parada al agotarse el agua; sin ruina.
+**Roadmap actual (plan.md):**
+
+1. **Trampa de peces + comida:** placement sobre agua, cable sobre agua, producción nocturna con una tirada por hora (0 permitido, ~3/noche) y parada al agotarse el agua; sin ruina.
 2. **Batería/almacén + energía:** almacén sin cap de energía y batería con cap.
-3. Agua RNG/radar y bosques/cristales (ver [plan.md](plan.md)).
-4. **Feedback beta de TxxT:** triage pendiente en [beta-txxt.md](beta-txxt.md).
+3. **Mundo 2048 + anillos:** tamaño parametrizable, generación nueva, bosques/carbón/cristales y recursos nuevos (ver [plan.md](plan.md)).
+
+**Secuencia propuesta para la beta:** quick fixes → mundo 2048 + anillos → UI de construcción → trampa/comida → red/UX. Detalle en [beta-txxt.md](beta-txxt.md).
 
 ## Comandos
 

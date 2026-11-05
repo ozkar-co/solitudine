@@ -10,10 +10,10 @@
 | Categoría | Módulos |
 |-----------|---------|
 | Energía | Panel solar, Batería* |
-| Extracción | Extractor de agua, Mina |
-| Soporte | Invernadero, Lámpara, Electrolizador, Condensador, Trampa de peces* |
-| Logística | Cable, Fabricador, Almacén, Reciclador |
-| Ciencia | Radar, Laboratorio |
+| Extracción | Extractor de agua, Mina, Trampa de peces* |
+| Soporte Vital | Invernadero, Lámpara, Electrolizador, Condensador |
+| Red Logística | Cable, Fabricador, Almacén, Reciclador, Estación de monitoreo* |
+| Investigación | Radar, Laboratorio |
 | Defensa* | Torreta, Trampa de defensa |
 
 `*` planeado o backlog. Defensa no aparece hasta que exista combate. El hábitat no es construible.
@@ -22,22 +22,23 @@
 
 | ID | Nombre | Categoría | Estado | Tecnología | Mejora automática |
 |----|--------|-----------|--------|------------|-------------------|
-| `habitat` | Hábitat | Soporte | hecho | — | — |
-| `cable` | Cable | Logística | hecho | — | — |
+| `habitat` | Hábitat | Soporte Vital | hecho | — | — |
+| `cable` | Cable | Red Logística | hecho | — | — |
 | `solar` | Panel solar | Energía | hecho | `solar_ii` | Mk II: +50% producción |
 | `extractor` | Extractor de agua | Extracción | hecho | `extraccion_ii` | Mk II: +25% agua, −20% energía |
 | `mine` | Mina | Extracción | hecho | `extraccion_ii` | Mk II: +25% mineral, −20% energía |
-| `greenhouse` | Invernadero | Soporte | hecho | `agricultura_ii` | Mk II: +25% comida/O₂, −20% agua |
-| `fabricator` | Fabricador | Logística | hecho | `fabricacion_ii` | Mk II: +25% componentes, −15% mineral |
-| `storage` | Almacén | Logística | hecho | `almacenamiento_ii` | Mk II: +50% capacidad de red |
-| `radar` | Radar | Ciencia | hecho | `radar_ii` | Mk II: +4 radio, −10% energía |
-| `lamp` | Lámpara | Soporte | hecho | `iluminacion_ii` | Mk II: +2 radio, −25% energía |
-| `laboratory` | Laboratorio | Ciencia | hecho | — | — |
-| `electrolyzer` | Electrolizador | Soporte | hecho | `electrolisis` | Agua + energía → O₂ |
-| `condenser` | Condensador | Soporte | hecho | `condensador` | Energía → agua |
-| `fish_trap` | Trampa de peces | Soporte | backlog | — | 2 Cmp, 0,5 d; ~3 comida/día promedio con RNG sobre agua; se detiene si el agua se agota; sin ruina, da chatarra directa |
-| `recycler` | Reciclador | Logística | hecho | `reciclaje` | Chatarra → mineral (ratio 0,9; 5% componentes) |
+| `greenhouse` | Invernadero | Soporte Vital | hecho | `agricultura_ii` | Mk II: +25% comida/O₂, −20% agua |
+| `fabricator` | Fabricador | Red Logística | hecho | `fabricacion_ii` | Mk II: +25% componentes, −15% mineral |
+| `storage` | Almacén | Red Logística | hecho | `almacenamiento_ii` | Mk II: +50% capacidad de red |
+| `radar` | Radar | Investigación | hecho | `radar_ii` | Mk II: +4 radio, −10% energía |
+| `lamp` | Lámpara | Soporte Vital | hecho | `iluminacion_ii` | Mk II: +2 radio, −25% energía |
+| `laboratory` | Laboratorio | Investigación | hecho | — | — |
+| `electrolyzer` | Electrolizador | Soporte Vital | hecho | `electrolisis` | Agua + energía → O₂ |
+| `condenser` | Condensador | Soporte Vital | hecho | `condensador` | Energía → agua |
+| `fish_trap` | Trampa de peces | Extracción | backlog | — | 2 Cmp, 0,5 d; noche: 1 tirada/hora, 0 permitido, ~3 comida/noche; sobre agua; se detiene si el agua se agota; sin ruina, da chatarra directa |
+| `recycler` | Reciclador | Red Logística | hecho | `reciclaje` | Chatarra → mineral (ratio 0,9; 5% componentes) |
 | `battery` | Batería | Energía | backlog | `bateria` | Cap de energía; el almacén deja de dar cap de energía |
+| `monitor` | Estación de monitoreo | Red Logística | backlog | — | Desbloquea la pantalla de red (consumo/producción por recurso); coste/energía a definir |
 | `turret` / `trap` | Torreta / Trampa de defensa | Defensa | backlog | — | Combate |
 
 El cable forma una **red logística única**: conecta módulos de cualquier tipo, sin redes separadas. El almacén no se puede apagar.
@@ -64,7 +65,11 @@ Valores actuales de playtest. Cualquier ajuste se refleja en `config.py` y en es
 
 > **Coste multi-material activo:** el Fabricador cuesta **5 Cmp + 2 mineral**; la mina sigue en componentes para no bloquear el arranque. La chatarra tiene cap 30 (+40 por almacén) y las ruinas dan 4-10 por tile.
 >
-> **Trampa de peces (planificada, feedback beta 2026-11-05):** 2 Cmp, 0,5 d, sin energía; ~3 comida/día promedio con RNG; sin ruina, da chatarra directa. Falta confirmar la ventana nocturna, la distribución RNG y la categoría final (Soporte vs Extracción).
+> **Trampa de peces (planificada, feedback beta 2026-11-05):** 2 Cmp, 0,5 d, sin energía; solo de noche, una tirada por hora (0 permitido), ~3 comida/noche; sin ruina, da chatarra directa; categoría **Extracción**. Falta afinar distribución y ventana exacta.
+>
+> **Invernadero (decisión beta 2026-11-05, pendiente de implementar):** **6 comida/d** y **3 O₂/d**; coste propuesto **10 Cmp**; agua/energía sin cambios (4 agua/d, 3 E/d).
+>
+> **Categorías (decisión beta 2026-11-05):** los nombres visibles pasan a **Energía, Extracción, Soporte Vital, Red Logística, Investigación y Defensa**; el código se actualiza en la etapa de UI.
 
 ## Tecnologías
 
@@ -77,16 +82,16 @@ Valores actuales de playtest. Cualquier ajuste se refleja en `config.py` y en es
 
 | ID | Rama | Tier | Requiere | Efecto | Estado |
 |----|------|------|----------|--------|--------|
-| `electrolisis` | Soporte | 1 | Laboratorio | Desbloquea `electrolyzer` | hecho |
-| `condensador` | Soporte | 1 | Laboratorio | Desbloquea `condenser` | hecho |
-| `agricultura_ii` | Soporte | 2 | `electrolisis` | Invernadero Mk II | backlog |
-| `iluminacion_ii` | Soporte | 2 | `condensador` | Lámpara Mk II | backlog |
+| `electrolisis` | Soporte Vital | 1 | Laboratorio | Desbloquea `electrolyzer` | hecho |
+| `condensador` | Soporte Vital | 1 | Laboratorio | Desbloquea `condenser` | hecho |
+| `agricultura_ii` | Soporte Vital | 2 | `electrolisis` | Invernadero Mk II | backlog |
+| `iluminacion_ii` | Soporte Vital | 2 | `condensador` | Lámpara Mk II | backlog |
 | `extraccion_ii` | Industria | 1 | Laboratorio | Extractor y Mina Mk II | backlog |
 | `fabricacion_ii` | Industria | 2 | `extraccion_ii` | Fabricador Mk II | backlog |
 | `almacenamiento_ii` | Industria | 2 | `extraccion_ii` | Almacén Mk II | backlog |
 | `reciclaje` | Industria | 1* | Laboratorio | Desbloquea `recycler`; la demolición ya existe desde el día 0 | hecho |
 | `solar_ii` | Energía | 1 | Laboratorio | Panel solar Mk II | backlog |
-| `radar_ii` | Ciencia | 2 | `solar_ii` | Radar Mk II | backlog |
+| `radar_ii` | Investigación | 2 | `solar_ii` | Radar Mk II | backlog |
 | `bateria` | Energía | 2 | `solar_ii` | Desbloquea `battery` (cap de energía) | backlog |
 
 `*` `reciclaje` queda en T1 hasta que exista el árbol T2; entonces se reubica en Industria con su prerrequisito.

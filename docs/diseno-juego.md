@@ -17,7 +17,7 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 
 ## Mapa y módulos
 
-- Mapa de 1024×1024 tiles; cámara con zoom entero (16/32/48 px).
+- Mapa parametrizable (actual 1024×1024; el próximo pase pasa a default 2048×2048); cámara con zoom entero (16/32/48 px).
 - Los módulos y sus categorías están en [catalogo.md](catalogo.md).
 - Todo se conecta por cables desde el hábitat. Sin conexión, el módulo queda offline.
 - **R1** apaga/enciende el módulo seleccionado (excepto el hábitat).
@@ -26,9 +26,9 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 ## Recursos y supervivencia
 
 - Recursos actuales: O₂, energía, agua, comida, mineral, componentes y chatarra.
-- Planificados: madera/biomasa, cristal y biodiésel (producido).
+- Planificados: madera, carbón, combustible/biodiésel (producido) y cristales; se agregan a la generación ya, aunque no se puedan usar.
 - O₂, agua y comida son letales al llegar a cero; la energía es una restricción, pero puede matar indirectamente si falta agua para el condensador.
-- Los depósitos de agua/mineral son finitos; hoy hay un depósito de agua garantizado y se planifican depósitos RNG. Se evalúa un campo de densidad radial (“anillos difusos”) para controlar la probabilidad por distancia y evitar regiones vacías; propuesta en [beta-txxt.md](beta-txxt.md).
+- Los depósitos son finitos; el agua tiene un depósito garantizado. La generación usa **anillos difusos**: densidad creciente con la distancia, rareza por recurso y cuota mínima por región; la seed se guarda. Bosques, carbón y cristales se generan ya. Detalle en [beta-txxt.md](beta-txxt.md).
 - La regla de 2 fuentes / 2 usos es una heurística, no una obligación. La matriz completa está en [plan.md](plan.md).
 
 ## Red y logística
@@ -83,14 +83,16 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 | Pausa / créditos | START, luego menú | START, luego menú |
 | Salir | SELECT+START | SELECT+START |
 
+> **Feedback beta 2026-11-05 (pendiente de implementar):** en PC, `1/2` zoom, `Tab` construir, `E` aceptar, `Q` recursos, `Esc` B, `J/K` duplicados de A/B; `3` minimapa y `4` libre. Apagar y demoler pasan al menú contextual A+A de cada módulo, sin teclas dedicadas. Ver [beta-txxt.md](beta-txxt.md).
+
 ## UI
 
 - 640×480, grilla de 16 px, fuente Pixel Operator (con VT323 como fallback) y sprites propios.
 - Barra superior: O₂, agua, comida y energía, con nombre y `x/y`.
-- Modo recursos (X): los siete recursos con nombre y cantidad/cap.
+- Modo recursos (X): los siete recursos actuales con nombre y cantidad/cap; planificado incorporar madera, carbón, combustible y cristales (11 en total).
 - Panel lateral: estado, descripción, producción/consumo, buffer, reserva, día de construcción y contadores del reciclador.
 - Minimapa con región explorada, módulos, cables, ruinas y viewport.
-- Menú de construcción por pestañas (Energía, Extracción, Soporte, Logística, Ciencia); categorías vacías ocultas. Cada módulo es una tarjeta horizontal con icono, borde/fondo propio, coste multi-material, faltantes, descripción y flujo produce/consume; la seleccionada se resalta en ámbar. El modal tiene scroll vertical para N tarjetas y el selector de categorías es circular, con la selección centrada y las etiquetas difuminadas hacia los bordes.
+- Menú de construcción por pestañas (**Energía, Extracción, Soporte Vital, Red Logística, Investigación**; Defensa se oculta hasta combate); categorías vacías ocultas. Cada módulo es una tarjeta horizontal con icono, borde/fondo propio, coste multi-material, faltantes, descripción y flujo produce/consume; la seleccionada se resalta en ámbar. El modal tiene scroll vertical animado para N tarjetas y el selector de categorías es circular, con slide/fade, la selección centrada y las etiquetas difuminadas hacia los bordes.
 - Ruinas dibujadas en el mapa y modal de demolición/cancelación con confirmación A/B.
 - Badges de modo/pausa y celda seleccionada; X cambia capa también en modo colocar.
 - Consola de tecnología: una pantalla simple, sin pestañas vacías.
@@ -98,14 +100,14 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 
 ## Planificado
 
-- **Trampa de peces:** módulo barato sobre agua, conectado por cable; produce ~3 comida/día en promedio con RNG y se detiene si el agua se agota. Al demoler no deja ruina: da chatarra directa.
+- **Trampa de peces:** módulo barato sobre agua, conectado por cable; produce solo de noche, con una tirada por hora (0 permitido) y ~3 comida/noche en promedio, y se detiene si el agua se agota. Al demoler no deja ruina: da chatarra directa.
 - **Batería:** el almacén deja de dar cap de energía; la batería pasa a ser el reservorio de energía.
-- **Agua y radar:** depósito garantizado + depósitos RNG finitos; el radar encuentra todo y es la exploración permanente.
-- **Bosques y cristales:** contenido base futuro; bosques renovables con brotes y cristales subterráneos finitos. Sus usos se definirán antes de implementarlos.
+- **Agua y radar:** depósito garantizado + anillos difusos finitos; el radar encuentra todo y es la exploración permanente.
+- **Bosques y cristales:** se agregan ya en la beta, aunque no se puedan usar. Bosque cercano garantizado (bloquea construcción, da madera al destruirse y deja brotes), carbón en el borde de lo explorado y cristales en grupos de 2-3 puntos dispersos (4-5 los más grandes). Sus usos se definirán después.
 
 ## Backlog
 
 - Mejoras Mk II, alimañas ambientales, tower defense, botín, inventario y variantes de muerte.
 - Desgaste, eventos climáticos, radio y finales.
-- Pulido de UI (9-slice, autotile, animaciones, overview) solo si el contenido lo pide.
-- Trampa de peces, batería, agua RNG/radar y bosques/cristales están planificados en [plan.md](plan.md), no en este backlog.
+- Pulido de UI (9-slice, autotile, overview); las animaciones de menú ya están decididas.
+- Trampa de peces, batería, mundo 2048/anillos y la extracción/uso de carbón/cristal están planificados en [plan.md](plan.md), no en este backlog.
