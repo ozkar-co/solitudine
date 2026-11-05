@@ -35,7 +35,7 @@
 | `laboratory` | Laboratorio | Ciencia | hecho | — | — |
 | `electrolyzer` | Electrolizador | Soporte | hecho | `electrolisis` | Agua + energía → O₂ |
 | `condenser` | Condensador | Soporte | hecho | `condensador` | Energía → agua |
-| `fish_trap` | Trampa de peces | Soporte | backlog | — | 1-2 comida/noche sobre agua; se detiene si el agua se agota |
+| `fish_trap` | Trampa de peces | Soporte | backlog | — | 2 Cmp, 0,5 d; ~3 comida/día promedio con RNG sobre agua; se detiene si el agua se agota; sin ruina, da chatarra directa |
 | `recycler` | Reciclador | Logística | hecho | `reciclaje` | Chatarra → mineral (ratio 0,9; 5% componentes) |
 | `battery` | Batería | Energía | backlog | `bateria` | Cap de energía; el almacén deja de dar cap de energía |
 | `turret` / `trap` | Torreta / Trampa de defensa | Defensa | backlog | — | Combate |
@@ -63,6 +63,8 @@ El cable forma una **red logística única**: conecta módulos de cualquier tipo
 Valores actuales de playtest. Cualquier ajuste se refleja en `config.py` y en esta tabla.
 
 > **Coste multi-material activo:** el Fabricador cuesta **5 Cmp + 2 mineral**; la mina sigue en componentes para no bloquear el arranque. La chatarra tiene cap 30 (+40 por almacén) y las ruinas dan 4-10 por tile.
+>
+> **Trampa de peces (planificada, feedback beta 2026-11-05):** 2 Cmp, 0,5 d, sin energía; ~3 comida/día promedio con RNG; sin ruina, da chatarra directa. Falta confirmar la ventana nocturna, la distribución RNG y la categoría final (Soporte vs Extracción).
 
 ## Tecnologías
 

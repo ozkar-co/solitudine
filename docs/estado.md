@@ -1,6 +1,6 @@
 # Estado
 
-**Última actualización:** 2026-10-29
+**Última actualización:** 2026-11-05
 
 ## Dónde estamos
 
@@ -21,9 +21,10 @@ El juego es jugable en PC y en R36S. La UI (grilla de 16 px, sprites, zoom, mini
 
 ## Próximo trabajo
 
-1. **Trampa de peces + comida:** placement sobre agua, cable sobre agua y producción nocturna.
+1. **Trampa de peces + comida:** placement sobre agua, cable sobre agua, producción con RNG (~3/día promedio; confirmar ventana nocturna) y parada al agotarse el agua; sin ruina.
 2. **Batería/almacén + energía:** almacén sin cap de energía y batería con cap.
 3. Agua RNG/radar y bosques/cristales (ver [plan.md](plan.md)).
+4. **Feedback beta de TxxT:** triage pendiente en [beta-txxt.md](beta-txxt.md).
 
 ## Comandos
 
@@ -59,4 +60,5 @@ tools\dev_beta\build.ps1           # betas PC Windows 2x/1.5x (PowerShell)
 - [diseno-juego.md](diseno-juego.md) — concepto, loop, sistemas, controles y UI.
 - [arquitectura.md](arquitectura.md) — mapa de código y flujo.
 - [assets.md](assets.md) — prompts, seeds, regeneración y créditos/easter egg.
+- [beta-txxt.md](beta-txxt.md) — retroalimentación beta de TxxT (entrada y triage).
 - [joy2input.md](joy2input.md) — referencia de hardware/input en R36S.

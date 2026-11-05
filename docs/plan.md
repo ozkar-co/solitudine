@@ -3,6 +3,8 @@
 > Fuente única del roadmap. Catálogo de módulos/tecnologías: [catalogo.md](catalogo.md). Estado: [estado.md](estado.md). Código: [arquitectura.md](arquitectura.md). Juego: [diseno-juego.md](diseno-juego.md).
 >
 > Regla: un slice a la vez. 4B/4C, UI/balance, playtest, fundación de recursos/costes y chatarra/reciclador/demolición están cerrados. Ahora toca la **trampa de peces + comida** (slice 4). El análisis temporal quedó absorbido acá y en el catálogo/diseño; fue eliminado el 2026-10-29.
+>
+> Feedback beta de TxxT (2026-11-05): [beta-txxt.md](beta-txxt.md). Las decisiones de la trampa ya están reflejadas acá; el resto queda en triage.
 
 ## Norte
 
@@ -50,9 +52,9 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 
 ## Ahora: trampa de peces + comida (slice 4)
 
-- Módulo `fish_trap`: 1-2 Cmp, placement sobre agua, cable sobre agua, sin energía; 1-2 comida/noche.
-- Se detiene si el agua se agota; demoler devuelve chatarra.
-- Criterio: placement sobre agua, cable sobre agua, producción nocturna, parada al agotarse el agua y guardado.
+- Módulo `fish_trap`: 2 Cmp, 0,5 d, placement sobre agua, cable sobre agua, sin energía; ~3 comida/día en promedio con RNG.
+- Se detiene si el agua se agota; al demoler no deja ruina y devuelve chatarra directa.
+- Criterio: placement sobre agua, cable sobre agua, producción con RNG (~3/día promedio; confirmar si la ventana sigue siendo nocturna), parada al agotarse el agua y guardado.
 - No entra la trampa de defensa.
 
 ## Decisiones cerradas
@@ -79,7 +81,7 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 ### Comida, trampas y biodiésel
 
 - La comida es un problema recurrente. Se gastará en fabricar biodiésel y en la fabricación de trampas.
-- **Trampa de peces** (inicial): 1-2 Cmp; se coloca sobre agua y se conecta a la red aunque no consuma energía; produce 1-2 comida por noche; no es fuente primaria salvo en cantidad; si el agua se agota, queda inútil para siempre y se puede demoler para recuperar chatarra.
+- **Trampa de peces** (inicial): 2 Cmp, 0,5 d; se coloca sobre agua y se conecta a la red aunque no consuma energía; produce ~3 comida/día en promedio con RNG; no es fuente primaria salvo en cantidad; si el agua se agota, queda inútil para siempre y se puede demoler para recuperar chatarra. No deja ruina: la demolición da chatarra directa.
 - El cable puede ir sobre agua. La trampa es un módulo aparte y no comparte tile con el extractor.
 - La **trampa de defensa** queda para cuando exista combate.
 - **Biodiésel:** recurso producido, no extraído; su módulo/productor y consumidor se definirán más adelante. Cuando dos módulos o la supervivencia compiten por un recurso, el jugador controla apagando módulos; el reparto es igualitario y los empates se resuelven al azar.
@@ -114,6 +116,8 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 - Panel de módulo: estado, descripción, producción/consumo con nombres y día de construcción. Los módulos mixtos muestran ambas cosas; el reciclador muestra chatarra procesada y mineral reciclado.
 - Ruinas: se dibujan en el mapa, se inspeccionan en el panel y se recogen con A. La demolición/cancelación abre un modal con confirmación A/B.
 - Acciones especiales: cada módulo declara `special_action`; con el módulo activo e inspeccionado, A ejecuta la acción y el panel muestra “Pulsa A para {acción}”. SELECT queda libre. Laboratorio: A otra vez abre Tecnología. El cable forma una red logística única que conecta módulos de cualquier tipo; el almacén no se puede apagar.
+- **Menú contextual A+A (feedback beta 2026-11-05):** todos los módulos abren un menú con A+A (seleccionar y abrir). Apagar y demoler salen del menú, sin teclas dedicadas; el laboratorio conserva A+A para investigar. Pendiente de diseño de UI.
+- **Categorías (feedback beta 2026-11-05):** se revisan y renombran; nombres finales a definir. La trampa de peces puede moverse de Soporte a Extracción según el espacio del modal.
 - Badge de modo/pausa y celda seleccionada. X cambia capa también en modo colocar. Los estados son concisos, sin paréntesis explicativos.
 - Sin menú de ayuda dedicado: la UI debe ser autoexplicativa; se mantienen los hints contextuales.
 - Créditos en pausa con scroll y easter egg sin pistas.

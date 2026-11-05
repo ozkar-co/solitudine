@@ -98,7 +98,7 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 
 ## Planificado
 
-- **Trampa de peces:** módulo barato sobre agua, conectado por cable; produce 1-2 comida por noche y se detiene si el agua se agota.
+- **Trampa de peces:** módulo barato sobre agua, conectado por cable; produce ~3 comida/día en promedio con RNG y se detiene si el agua se agota. Al demoler no deja ruina: da chatarra directa.
 - **Batería:** el almacén deja de dar cap de energía; la batería pasa a ser el reservorio de energía.
 - **Agua y radar:** depósito garantizado + depósitos RNG finitos; el radar encuentra todo y es la exploración permanente.
 - **Bosques y cristales:** contenido base futuro; bosques renovables con brotes y cristales subterráneos finitos. Sus usos se definirán antes de implementarlos.

@@ -8,6 +8,7 @@
 | [diseno-juego.md](diseno-juego.md) | Qué es el juego, loop, sistemas y controles |
 | [arquitectura.md](arquitectura.md) | Mapa de código, flujo y reglas para añadir cosas |
 | [assets.md](assets.md) | Prompts, seeds, regeneración de sprites y créditos/easter egg |
+| [beta-txxt.md](beta-txxt.md) | Retroalimentación beta de TxxT — entrada y triage, no roadmap |
 | [joy2input.md](joy2input.md) | Referencia de input/hardware en R36S (no es roadmap) |
 
 Regla: si una decisión no está en `plan.md`/`catalogo.md`, no es parte del plan. Si no está en `arquitectura.md`, no es una regla de código.
