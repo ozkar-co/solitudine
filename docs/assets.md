@@ -26,9 +26,17 @@ Los perfiles solo permiten override de `seed`. No hay `negative_prompt` en RD+; 
 | `assets/tiles/water_00.png` | `source/terrain/water.png` | (2,1) índice 6 | alien planet water, dark teal liquid with gentle ripples, seamless top-down terrain | 1102 |
 | `assets/tiles/rock_00.png` | `source/terrain/rock.png` | (2,1) índice 6 | alien planet rock, grey stone with cracks and patches of moss, seamless top-down terrain | 1103 |
 | `assets/tiles/rock_01.png` | `source/terrain/rock.png` | (0,3) índice 12 | ídem | 1103 |
+| `assets/tiles/coast_n.png` | manual (no Genkit) | — | overlay 16×16 con línea guía azul claro en el borde norte | — |
+| `assets/tiles/coast_e.png` | manual (no Genkit) | — | overlay 16×16 con línea guía azul claro en el borde este | — |
+| `assets/tiles/coast_s.png` | manual (no Genkit) | — | overlay 16×16 con línea guía azul claro en el borde sur | — |
+| `assets/tiles/coast_w.png` | manual (no Genkit) | — | overlay 16×16 con línea guía azul claro en el borde oeste | — |
 | `assets/tiles/ruin_00.png` | placeholder procedural | — | ruina de chatarra, piedras rotas y óxido, 16×16 | — |
 
 La hoja RD Tile es 4 columnas × 5 filas de tiles de 16×16. Los índices no usados quedan como transiciones para un autotile futuro.
+
+**Variación de terreno:** el render elige `ground_00`/`ground_01` por hash de coordenada y rota el tile en múltiplos de 90° para variar la textura. No hace falta duplicar assets por rotación.
+
+**Costa (manual):** `coast_n/e/s/w.png` son overlays transparentes de 16×16 con una línea guía azul claro en el borde que da al agua. El juego elige la orientación según los vecinos de agua y compone dos overlays en las esquinas. Para dibujar la costa, editar estos PNG manteniendo 16×16 y el alpha; la línea es solo una guía y se puede tapar con el arte final.
 
 ### Módulos
 

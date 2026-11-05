@@ -50,6 +50,24 @@ def _tile_draw_rect(sx: float, sy: float, px: int) -> pygame.Rect:
     return pygame.Rect(round(sx), round(sy), px, px)
 
 
+_COAST_NEIGHBORS = (("n", 0, -1), ("e", 1, 0), ("s", 0, 1), ("w", -1, 0))
+
+
+def _draw_coast(
+    surf: pygame.Surface,
+    world: World,
+    tx: int,
+    ty: int,
+    tile_rect: pygame.Rect,
+    tile: Tile,
+) -> None:
+    if tile != Tile.GROUND:
+        return
+    for direction, dx, dy in _COAST_NEIGHBORS:
+        if world.tile_at(tx + dx, ty + dy) == Tile.WATER:
+            surf.blit(ui_assets.coast(direction, tile_rect.w), tile_rect.topleft)
+
+
 _OVERLAY_CACHE: dict[tuple[tuple[int, int, int], int], pygame.Surface] = {}
 _DISABLED_CACHE: dict[int, pygame.Surface] = {}
 
@@ -185,12 +203,15 @@ def draw_map(
 
             h = (tx * 374761393 + ty * 668265263) & 0xFFFFFFFF
             h = ((h ^ (h >> 13)) * 1274126177) & 0xFFFFFFFF
-            surf.blit(ui_assets.tile(tile, h, tile_rect.w), tile_rect.topleft)
+            rotation = ((h >> 8) & 3) * 90
+            surf.blit(ui_assets.tile(tile, h, tile_rect.w, rotation), tile_rect.topleft)
 
             if layer == MapLayer.RESOURCES:
                 overlay = _resource_overlay(world, i, tile)
                 if overlay is not None:
                     surf.blit(_tint_overlay(overlay, tile_rect.w), tile_rect.topleft)
+
+            _draw_coast(surf, world, tx, ty, tile_rect, tile)
 
             if world.has_ruin(tx, ty):
                 surf.blit(ui_assets.ruin(tile_rect.w), tile_rect.topleft)

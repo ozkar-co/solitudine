@@ -15,6 +15,7 @@ TILE_FILES = {
     Tile.WATER: "water",
     Tile.ROCK: "rock",
 }
+COAST_DIRECTIONS = ("n", "e", "s", "w")
 ICON_NAMES = (
     "o2",
     "water",
@@ -31,9 +32,11 @@ ICON_NAMES = (
 )
 
 _tiles: dict[Tile, list[pygame.Surface]] = {}
+_coast: dict[str, pygame.Surface] = {}
 _modules: dict[ModuleKind, pygame.Surface] = {}
 _icons: dict[str, pygame.Surface] = {}
-_tile_cache: dict[tuple[Tile, int, int], pygame.Surface] = {}
+_tile_cache: dict[tuple[Tile, int, int, int], pygame.Surface] = {}
+_coast_cache: dict[tuple[str, int], pygame.Surface] = {}
 _module_cache: dict[tuple[ModuleKind, int], pygame.Surface] = {}
 _ruin: pygame.Surface | None = None
 _ruin_cache: dict[int, pygame.Surface] = {}
@@ -73,6 +76,9 @@ def load() -> None:
             raise FileNotFoundError(f"Faltan tiles para {name}: {ASSETS_DIR / 'tiles'}")
         _tiles[tile] = [_load_image(p) for p in paths]
 
+    for direction in COAST_DIRECTIONS:
+        _coast[direction] = _load_image(ASSETS_DIR / "tiles" / f"coast_{direction}.png")
+
     _ruin = _load_image(ASSETS_DIR / "tiles" / "ruin_00.png")
 
     for kind in ModuleKind:
@@ -102,16 +108,32 @@ def font_lg() -> pygame.font.Font:
     return _font_lg
 
 
-def tile(tile_kind: Tile, variant: int, px: int) -> pygame.Surface:
+def tile(tile_kind: Tile, variant: int, px: int, rotation: int = 0) -> pygame.Surface:
     variants = _tiles[tile_kind]
-    base = variants[variant % len(variants)]
-    if px == base.get_width():
-        return base
-    key = (tile_kind, variant % len(variants), px)
+    index = variant % len(variants)
+    rot = rotation % 360
+    key = (tile_kind, index, px, rot)
     cached = _tile_cache.get(key)
     if cached is None:
+        base = variants[index]
+        if rot:
+            base = pygame.transform.rotate(base, rot)
+        if px != base.get_width():
+            base = pygame.transform.scale(base, (px, px))
+        _tile_cache[key] = base
+        cached = base
+    return cached
+
+
+def coast(direction: str, px: int) -> pygame.Surface:
+    base = _coast[direction]
+    if px == base.get_width():
+        return base
+    key = (direction, px)
+    cached = _coast_cache.get(key)
+    if cached is None:
         cached = pygame.transform.scale(base, (px, px))
-        _tile_cache[key] = cached
+        _coast_cache[key] = cached
     return cached
 
 
