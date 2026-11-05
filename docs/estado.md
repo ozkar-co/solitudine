@@ -14,7 +14,7 @@
 | Playtest | **Hecho** — PC y R36S; ajustes aplicados |
 | Fundación recursos/costes | **Hecho** — pool único, `Cost` multi-material, `cost_paid` y save v4 |
 | Chatarra/reciclador/demolición | **Hecho** — ruinas, recogida, reciclador, demolición y cancelación |
-| Trampa de peces + comida | **Siguiente** — placement sobre agua, producción nocturna y parada al agotarse el agua |
+| Trampa de peces + comida | **Siguiente** — placement sobre agua, producción con RNG (~3/día promedio) y parada al agotarse el agua |
 | 5+ | **Backlog/planificado** — batería, agua RNG/radar, bosques/cristales, eventos y combate |
 
 El juego es jugable en PC y en R36S. La UI (grilla de 16 px, sprites, zoom, minimapa, día/noche, lámpara) está estable. El loop de chatarra (ruinas → reciclador → mineral) y la demolición ya funcionan.

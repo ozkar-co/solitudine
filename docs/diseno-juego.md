@@ -28,7 +28,7 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 - Recursos actuales: O₂, energía, agua, comida, mineral, componentes y chatarra.
 - Planificados: madera/biomasa, cristal y biodiésel (producido).
 - O₂, agua y comida son letales al llegar a cero; la energía es una restricción, pero puede matar indirectamente si falta agua para el condensador.
-- Los depósitos de agua/mineral son finitos; hoy hay un depósito de agua garantizado y se planifican depósitos RNG.
+- Los depósitos de agua/mineral son finitos; hoy hay un depósito de agua garantizado y se planifican depósitos RNG. Se evalúa un campo de densidad radial (“anillos difusos”) para controlar la probabilidad por distancia y evitar regiones vacías; propuesta en [beta-txxt.md](beta-txxt.md).
 - La regla de 2 fuentes / 2 usos es una heurística, no una obligación. La matriz completa está en [plan.md](plan.md).
 
 ## Red y logística
@@ -90,7 +90,7 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 - Modo recursos (X): los siete recursos con nombre y cantidad/cap.
 - Panel lateral: estado, descripción, producción/consumo, buffer, reserva, día de construcción y contadores del reciclador.
 - Minimapa con región explorada, módulos, cables, ruinas y viewport.
-- Menú de construcción por pestañas (Energía, Extracción, Soporte, Logística, Ciencia); categorías vacías ocultas. Cada módulo es una tarjeta horizontal con icono, borde/fondo propio, coste multi-material, faltantes, descripción y flujo produce/consume; la seleccionada se resalta en ámbar.
+- Menú de construcción por pestañas (Energía, Extracción, Soporte, Logística, Ciencia); categorías vacías ocultas. Cada módulo es una tarjeta horizontal con icono, borde/fondo propio, coste multi-material, faltantes, descripción y flujo produce/consume; la seleccionada se resalta en ámbar. El modal tiene scroll vertical para N tarjetas y el selector de categorías es circular, con la selección centrada y las etiquetas difuminadas hacia los bordes.
 - Ruinas dibujadas en el mapa y modal de demolición/cancelación con confirmación A/B.
 - Badges de modo/pausa y celda seleccionada; X cambia capa también en modo colocar.
 - Consola de tecnología: una pantalla simple, sin pestañas vacías.

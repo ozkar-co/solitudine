@@ -9,13 +9,15 @@
 
 ## Resumen
 
-La beta está jugable. El feedback se concentra en cinco frentes:
+La beta está jugable. El feedback se concentra en siete frentes:
 
 1. **Controles y menús:** remapeo de PC, menos teclas dedicadas y menú contextual A+A por módulo.
 2. **Red de cables:** nombre más claro, colocación libre, recálculo al destruir, color gris y cables sobre agua/subterráneos.
-3. **Balance:** comida sobrante, invernadero, extractores sin agua y trampa de peces.
-4. **Mundo:** recursos que no aparecen, mundos aleatorios, mapa más grande, chunks, bosques y cristales.
-5. **Late game:** bichos, defensas, biodiésel, balas, eventos y fabricador Mk II.
+3. **UI de construcción:** scroll para muchas tarjetas y selector circular de categorías con difuminado.
+4. **Balance:** comida sobrante, invernadero, extractores sin agua y trampa de peces.
+5. **Mundo y generación:** depósitos extra que no cubren el mapa, anillos difusos, mundos aleatorios, mapa más grande y chunks.
+6. **Créditos:** pie y borde inferior tapando el texto; el scroll no llega al final.
+7. **Late game:** bichos, defensas, biodiésel, balas, eventos y fabricador Mk II.
 
 ## Decisiones generales acordadas
 
@@ -39,7 +41,13 @@ Reemplazan los valores provisionales de `plan.md` (1-2 Cmp, 1-2 comida/noche):
 - Se acepta revisar y renombrar las categorías ahora.
 - Nombres finales y mapping de módulos: **a definir**.
 - Categorías actuales: Energía, Extracción, Soporte, Logística, Ciencia, Defensa.
-- La trampa de peces figura en Soporte en el catálogo. Si se mantiene ahí, el modal de construcción pasa de 4 a 5 tarjetas y **no entra en la altura fija actual** (medido: 4 tarjetas dejan 3 px de margen; 5 desbordan ~61 px). Opciones: mover la trampa a Extracción, agregar scroll/ventana al modal o redimensionar las tarjetas.
+- La trampa de peces figura en Soporte en el catálogo. Si se mantiene ahí, el modal de construcción pasa de 4 a 5 tarjetas y **no entra en la altura fija actual** (medido: 4 tarjetas dejan 3 px de margen; 5 desbordan ~61 px). La solución acordada es scroll, no mover la trampa por falta de espacio.
+
+### Menú de construcción
+
+- **Scroll vertical:** el modal debe soportar N tarjetas, no solo 4. Se van a añadir módulos y DLCs con más contenido.
+- **Selector de categorías circular:** la categoría seleccionada queda centrada; las vecinas se muestran a los lados con alpha decreciente hacia los bordes; izquierda/derecha navega con wrap-around.
+- Detalles abiertos: cantidad de tarjetas visibles, cantidad de etiquetas de categoría visibles, si hay animación de desplazamiento y si el scroll hace wrap en los extremos.
 
 ### Controles PC (beta)
 
@@ -131,7 +139,25 @@ Notas de implementación:
 **B10 — Renombrar categorías**
 - Feedback: “las categorías necesitan un cambio de nombre; podemos hacerlo de una vez, revisar los nombres”.
 - Estado: abierto; nombres finales a definir.
-- Nota: “Soporte” y “Logística” son los candidatos más débiles. Revisar también si la trampa de peces va en Soporte o Extracción.
+- Nota: “Soporte” y “Logística” son los candidatos más débiles. Con scroll en el modal, el espacio deja de ser criterio; la trampa de peces puede ir a Soporte o Extracción por semántica, no por capacidad.
+
+**B30 — Créditos: pie, borde inferior y scroll**
+- Feedback: “la línea del borde inferior y los controles se pintan por encima del texto y no hace scroll hasta abajo”.
+- Causa confirmada: `draw_credits_modal` calcula `fixed_height` con `line_h = font_sm.get_height() + 2 = 18`, pero el paso real de las líneas es 19 (`surface.get_height() + 2`). Con 14 líneas visibles el contenido crece 14 px y el separador/pie tapa la última línea; por eso tampoco se ve el final al scrollear.
+- Fix propuesto: dejar que `draw_map_modal` calcule la altura (quitar `fixed_height`) o calcularla con `_line_step` real. Añadir un test de layout que verifique que el pie no solapa la última línea.
+- Estado: bug confirmado; fix simple.
+
+**B31 — Modal de construcción con scroll**
+- Feedback: debe soportar varias tarjetas y hacer scroll; se van a añadir más módulos y DLCs.
+- Estado: decidido.
+- Propuesta: ventana de 4 tarjetas visibles (la altura actual), scroll de 1, selección con arriba/abajo, indicador de scroll/flechas y pie fijo. Evaluar wrap en los extremos.
+- Impacto: `ui.py`, `construction.BuildController` (índice/scroll), tests de navegación.
+
+**B32 — Selector de categorías circular**
+- Feedback: selector circular, difuminado hacia los bordes, con la selección actual centrada.
+- Estado: decidido; detalles a definir.
+- Propuesta: carrusel horizontal de 5 etiquetas; la seleccionada al centro; vecinas con alpha decreciente; izquierda/derecha cambia y mantiene el centro; wrap-around. Empezar sin animación y evaluar slide/fade después.
+- Impacto: `ui.py`/`ui_modals.py`, `BuildController.menu_category` (ya hace wrap), locales y tests.
 
 ### 2. Módulos y red
 
@@ -181,11 +207,12 @@ Notas de implementación:
 
 ### 4. Mundo y cámara
 
-**B18 — Recursos que no se generan**
-- Feedback: “no se están generando recursos en el mapa; revisar la generación de mundo”.
-- Estado: **a reproducir**. Verificación rápida del seed actual `NEP325`: el generador produce 12.521 tiles de agua, 5.272 tiles con depósito de agua y 3.377 con mineral.
-- Hipótesis: problema de exploración/niebla en la partida del tester, expectativa de recursos renovables, o un bug específico de la build/save. Pedir seed, save y zona explorada.
-- Acción: reproducir con la build beta y confirmar si “no se generan” significa “no aparecen cerca” o “no se regeneran”.
+**B18 — Depósitos extra en el resto del mapa**
+- Feedback: “no se están generando recursos en el mapa; revisar la generación de mundo”. Aclaración: no son los depósitos iniciales; el tester exploró todo el mapa y no encontró los depósitos extra/procedurales.
+- Estado: **a reproducir con save nuevo**. El generador actual sí crea blobs procedurales (5.272 tiles de depósito de agua + 3.377 de mineral), pero la cobertura es muy despareja: **164 de 256 chunks de 64×64 (64%) no tienen ningún depósito**. Eso explica la sensación de mapa vacío.
+- Causa probable: 45+35 blobs aleatorios de radio 3-9 sobre 1M de tiles; no hay cuota mínima por región ni control de densidad por distancia. También puede influir un save viejo que conserva un mundo generado antes de un cambio.
+- Otra hipótesis: el overlay de recursos solo se dibuja en tiles visibles, no en niebla explorada. Si el tester “exploró” con radar y miró la capa de recursos, las zonas en niebla se ven vacías aunque tengan depósitos.
+- Acción: reproducir con save nuevo, seed y build; confirmar si miró en niebla o en zona visible; reemplazar la dispersión aleatoria por el esquema de anillos difusos (ver propuesta) y agregar tests de cobertura.
 
 **B19 — Mundos aleatorios**
 - Feedback: “ya podemos habilitar los mundos aleatorios”.
@@ -203,6 +230,40 @@ Notas de implementación:
 - Feedback: “metamos de una vez bosques y cristales”.
 - Estado: abierto; el plan actual los deja para el slice 7 y pide un uso concreto por recurso.
 - Nota: bosques renovables (brotes/regrow, bloquean construcción) y cristales finitos bajo tierra; requieren recursos, extractor, usos y probablemente cambios de generación/save.
+
+### Propuesta: generación por anillos difusos
+
+**Problema:** la generación actual tira 45 blobs de agua y 35 de mineral en posiciones uniformes sobre 1024×1024. El resultado es correcto en promedio pero muy desparejo: 64% de los chunks de 64×64 quedan vacíos y el jugador percibe el mapa como vacío al explorar. Los depósitos iniciales garantizados no alcanzan para sostener la exploración.
+
+**Idea:** reemplazar la probabilidad uniforme por un campo de densidad radial alrededor del hábitat, con transiciones suaves (“anillos difusos”) y una cuota mínima por región.
+
+**Modelo propuesto:**
+
+1. **Distancia normalizada:** `d = distancia_al_hábitat / distancia_máxima`, entre 0 y 1.
+2. **Perfil radial:** una función `ρ(d)` que define la densidad objetivo de depósitos por tile. Ejemplo a discutir:
+   - `0.00-0.10`: solo starter patches, sin depósitos extra (protege el arranque).
+   - `0.10-0.40`: densidad baja.
+   - `0.40-0.70`: densidad media.
+   - `0.70-1.00`: densidad alta (recompensa explorar).
+   La inversa también es válida si se quiere que el centro sea rico y los bordes pobres; hay que decidirlo.
+3. **Difuminado:** interpolar `ρ(d)` entre anillos con `smoothstep` y sumar ruido coherente de baja frecuencia para romper la simetría. Nada de bordes duros visibles.
+4. **Muestreo por chunk:** dividir el mapa en chunks (por ejemplo 32×32 o 64×64). Para cada chunk:
+   - calcular `λ = área * ρ(d_centro)`;
+   - sortear `k ~ Poisson(λ)`;
+   - aplicar un mínimo por chunk/anillo para evitar zonas vacías;
+   - colocar `k` depósitos con jitter o blue noise para que no se apilen.
+5. **Curvas separadas:** agua y mineral pueden usar perfiles distintos (por ejemplo, agua más cerca y mineral más lejos). Los starter patches se mantienen intactos.
+6. **Determinismo:** todo se deriva de la seed maestra + coordenadas del chunk. La misma seed reproduce el mismo mundo.
+7. **Debug:** en modo dev, un overlay de anillos/densidad y un conteo de depósitos por anillo para tunear.
+8. **Tests:** cobertura mínima por anillo, densidad dentro de rango, determinismo, starter patches y no solapamiento con roca.
+
+**Implementación por etapas:**
+
+- **Etapa 1 (ahora, mapa 1024):** cambiar los blobs por muestreo por chunks con perfil radial; mantener arrays planos y save actual.
+- **Etapa 2 (mundos aleatorios):** guardar la seed en el save y regenerar con ella; sumar UI de nueva partida/seed.
+- **Etapa 3 (chunks/dinámico):** generar chunks bajo demanda con el mismo campo; guardar chunks modificados y no todo el mapa. Necesario para 2048+ y mundos infinitos.
+
+**Decisiones abiertas:** dirección del gradiente (más recursos cerca o lejos del centro), cantidad y ancho de anillos, tamaño de chunk, cuota mínima por chunk, curvas separadas o compartidas para agua/mineral, y si los anillos se muestran al jugador o solo en debug.
 
 ### 5. Ideas adicionales (backlog)
 
@@ -223,24 +284,168 @@ Estas ideas dependen de combate/late game y no entran en el slice actual:
 
 | Bucket | Items |
 |--------|-------|
-| **Antes de la próxima beta** | B03 (verificar), B04 (bug), B05 (remapeo PC), B07 (texto laboratorio), B09 (tiempo dev), B12 (icono agua), B13 (cables grises), B16 (decisión extractor), B18 (reproducir recursos) |
+| **Antes de la próxima beta** | B03 (verificar), B04 (bug), B05 (remapeo PC), B07 (texto laboratorio), B09 (tiempo dev), B12 (icono agua), B13 (cables grises), B16 (decisión extractor), B18 (reproducir), B30 (créditos) |
 | **Slice actual: trampa + comida** | B17 (trampa), B14 (sink de comida), B15 (rebalance invernadero), B02 (solo cable sobre agua) |
-| **Siguiente: red y UX** | B01 (nombre), B02 (colocación libre/recálculo), B06 (menú A+A), B08 (cámara), B10 (categorías), B11 (monitoreo) |
-| **Mundo** | B19 (mundos aleatorios), B20 (mapa/chunks), B21 (bosques/cristales) |
+| **Siguiente: UI de construcción** | B31 (scroll), B32 (selector circular), B10 (categorías) |
+| **Siguiente: red y UX** | B01 (nombre), B02 (colocación libre/recálculo), B06 (menú A+A), B08 (cámara), B11 (monitoreo) |
+| **Mundo** | B18 (anillos difusos), B19 (mundos aleatorios), B20 (mapa/chunks), B21 (bosques/cristales) |
 | **Backlog** | B22-B29 (combate/late game) |
 
-## Conflictos y preguntas abiertas
+## Decisiones abiertas explicadas
 
-1. **Trampa 3/día vs producción nocturna.** El plan original decía 1-2 comida/noche; la decisión nueva dice ~3/día promedio. ¿Sigue siendo solo de noche? ¿La RNG se sortea por noche o por tick?
-2. **Extractor en vacío.** B16 contradice el test actual. ¿Consume, se auto-apaga o se mantiene?
-3. **Cables libres.** B02 puede eliminar `NO_NETWORK`/`CABLE_NOT_CHAIN`. ¿Se permite construir redes desconectadas y conectarlas después? ¿Cómo se valida el recálculo al demoler?
-4. **Remapeo PC.** `J/K` como A/B choca con `IJKL` de DPAD. ¿El DPAD queda solo en flechas? ¿Qué acciones van en `3/4` si `R1` desaparece?
-5. **Mapa 2024/2048.** Confirmar el número; si es 2048, evaluar memoria y si chunks entra en esta fase.
-6. **Recursos no generados.** El generador actual sí produce; falta reproducir el caso del tester.
-7. **Estación de monitoreo.** ¿Módulo construible o pantalla de red?
-8. **Categorías.** Nombres finales y ubicación de la trampa (Soporte vs Extracción).
-9. **Invernadero/trampa.** Números finales después de definir la RNG de la trampa y el sink de comida.
-10. **Bosques/cristales.** El plan los difiere hasta tener usos concretos; el tester pide adelantarlos. ¿Se abre el alcance?
+> Cada punto tiene qué hay que decidir, el contexto, opciones y una recomendación. La recomendación no es una decisión: sirve para destrabar la conversación.
+
+### Checklist rápido
+
+| ID | Decisión | Opciones | Recomendación |
+|----|----------|----------|---------------|
+| D1 | Trampa: ventana y RNG | A nocturna / B continua / C diaria | A, 1-5 uniforme |
+| D2 | Extractor sin agua | A consumo en vacío / B auto-off / C actual | B |
+| D3 | Cables libres | A colocación libre / B ramificar / C radio | A |
+| D4 | Teclas 3/4 | A R1/R2 / B minimapa+red / C categorías | B |
+| D5 | Mapa | A 1024 / B 2048 plano / C chunks | A ahora |
+| D6 | Generación | A más blobs / B anillos / C biomas | B |
+| D7 | Monitoreo | A pantalla / B módulo / C híbrido | C |
+| D8 | Categorías | nombres propuestos | Trampa en Extracción |
+| D9 | Comida | sink + números | Biodiésel + trampas; invernadero 10 Cmp / 8 comida / 3 O₂ |
+| D10 | Bosques/cristales | A scenery / B full / C split | C |
+| D11 | Modal | 4 tarjetas / 5 categorías | 4/5, sin animación |
+
+### D1 — Trampa: ventana de producción y RNG
+
+**Qué falta decidir:** si produce solo de noche y cómo se reparte la RNG.
+**Contexto:** el plan original decía 1-2 comida/noche; la decisión nueva dice ~3/día promedio. El tick actual es continuo (`dt / SECONDS_PER_DAY`), así que si se sortea por tick la varianza se diluye y la “suerte” casi no se siente; si se sortea por noche, hay que definir la ventana y el estado del panel.
+**Opciones:**
+- **A. Nocturna, un sorteo por noche:** 1-5 uniforme (media 3) o Poisson λ=3. Simple, legible y conserva la identidad nocturna.
+- **B. Continua ponderada por oscuridad:** promedio 3/día, sin picos. Más suave y fácil de mostrar en el panel, pero menos “trampa”.
+- **C. Sorteo diario al amanecer:** se calcula y se entrega durante el día. Más predecible, pero necesita almacenamiento/aviso.
+**Recomendación:** A con 1-5 uniforme; si querés que existan noches de 0, usar 0-6 uniforme (media 3). Mostrar “Noche” / “En espera” en el panel.
+**Para cerrar:** elegir A/B/C, rango (¿0-6 o 1-5?) y si la trampa debe estar conectada a la red para producir (el plan dice que sí).
+**Impacto:** `module_tick`, `module_defs.effective_flow`, panel y tests.
+
+### D2 — Extractor sin agua
+
+**Qué falta decidir:** si un extractor encendido consume energía cuando no hay depósito.
+**Contexto:** hoy `_job_extractor` devuelve `None` sin depósito y el test `test_depleted_extractor_does_not_consume_power` afirma consumo cero. El tester espera que consuma porque está encendido.
+**Opciones:**
+- **A. Consumo en vacío:** consume una fracción (p. ej. 25-50%) mientras esté encendido. Realista y castiga dejarlo prendido; puede causar apagones.
+- **B. Auto-apagado:** al agotarse el depósito pasa a apagado/offline y muestra “Sin agua”. Evita energía desperdiciada; menos realista.
+- **C. Consumo pleno:** consume igual que produciendo. Simple pero duro y con riesgo de softlock.
+**Recomendación:** B para el próximo slice (coherente con “queda inútil”), o A con 25% y aviso claro si querés el comportamiento realista.
+**Para cerrar:** elegir A/B/C; si A, fracción de consumo y si el jugador puede apagarlo a mano.
+**Impacto:** `module_tick`, test, estado del panel y balance energético.
+
+### D3 — Cables en cualquier punto
+
+**Qué falta decidir:** qué significa “cualquier punto” y cómo se recalcula la red.
+**Contexto:** hoy `_cable_preview` exige adyacencia a la red conectada o al tramo actual; no se pueden dejar tramos desconectados. El tester pide libertad y revisar el recálculo al destruir.
+**Opciones:**
+- **A. Colocación libre:** cualquier tile válido (suelo/agua), aunque quede desconectado; al tocar la red se conecta. Flexible para planificar; necesita distinguir visualmente conectado/desconectado.
+- **B. Ramificar desde cualquier cable:** solo se permite si el nuevo cable toca otro cable; los tramos desconectados no existen. Puede ser lo que el tester ya intentó.
+- **C. Libre solo cerca de la red:** un radio de tolerancia; raro y difícil de explicar.
+**Recomendación:** A, con overlay de red, estado visual para cables offline e invalidación de caché en construir/demoler. Tests: un tramo desconectado no da visión ni alimenta; al conectarse, sí.
+**Para cerrar:** confirmar A vs B. Si A, ¿se permite cable sobre agua? (sí, por el slice) y ¿sobre roca? (no).
+**Impacto:** `construction`, `network`, `demolition`, `vision`, `ui_map` y save.
+
+### D4 — Remapeo PC
+
+**Qué falta decidir:** acciones de `3/4` y qué pasa con el DPAD.
+**Contexto:** el mapa nuevo es 1/2 zoom, Tab construir, E aceptar, Q recursos, Esc B, J/K A/B. Hoy J/K son DPAD_LEFT/DOWN, E/Q son R1/L1 y 3/4 serían R1/R2. Además, el menú A+A elimina R1 (apagar).
+**Opciones para 3/4:**
+- **A. 3=R1, 4=R2:** conserva apagar y minimapa; pero apagar se va al menú A+A, así que 3 queda libre.
+- **B. 3=minimapa, 4=overlay de red:** reasigna R2 y deja 3 para el futuro.
+- **C. 3/4 = categoría anterior/siguiente:** útil en el menú de construcción, pero ya hay izquierda/derecha.
+**DPAD:** recomiendo dejar solo flechas; J/K pasan a A/B y no se puede mantener IJKL.
+**Recomendación:** 1/2 zoom, Tab construir, E aceptar, Q recursos, Esc B, J/K A/B, 3=minimapa y 4=libre para red/estación de monitoreo. Confirmar.
+**Para cerrar:** elegir acción de 3 y 4; confirmar DPAD solo flechas; confirmar Enter/START y Backspace/SELECT.
+**Impacto:** `dev_input`, `DEV_KEYMAP`, ayuda y tests.
+
+### D5 — Tamaño de mapa: 2024/2048
+
+**Qué falta decidir:** si el próximo paso es 2048 con arrays planos o chunks.
+**Contexto:** hoy 1024² = ~1M tiles en listas planas. 2048² = ~4M, 4× memoria/tiempo de generación. R36S tiene memoria limitada. Chunks/dinámico es un refactor grande de `World`, save, visión, radar y cámara.
+**Opciones:**
+- **A. Quedarse en 1024** y hacer anillos ahora. Menor riesgo; valida el loop.
+- **B. 2048 con arrays planos:** más mundo sin cambiar arquitectura; medir memoria en R36S antes.
+- **C. Chunks/dinámico:** necesario para 2048+ y mundos infinitos; más trabajo y cambio de save.
+**Recomendación:** A para la próxima etapa, diseñando el generador de anillos con coordenadas de chunk para no bloquear B/C. Hacer un spike de memoria de B después.
+**Para cerrar:** confirmar si “2024” era 2048; si 2048 es requisito para la próxima beta o puede esperar; plataforma objetivo.
+**Impacto:** `config.WORLD_SIZE`, `world`, `camera`, `savegame` y tests.
+
+### D6 — Generación de depósitos y anillos difusos
+
+**Qué falta decidir:** el perfil de densidad y cómo se garantiza cobertura.
+**Contexto:** el generador actual crea blobs aleatorios; 64% de chunks de 64×64 quedan vacíos. El tester exploró y lo percibió vacío. La propuesta de anillos difusos está arriba.
+**Opciones:**
+- **A. Más blobs:** subir 45/35 a, por ejemplo, 90/70 y radios. Rápido, pero sigue sin garantizar cobertura.
+- **B. Anillos + cuota por chunk:** densidad radial suave + mínimo por región. Recomendado; controla el ritmo de exploración.
+- **C. Chunks/biomas con ruido:** generación más orgánica y escalable; más trabajo y requiere decidir biomas.
+**Recomendación:** B en 1024 ahora; C cuando se expanda el mapa.
+**Para cerrar:** dirección del gradiente (¿más lejos = más rico o al revés?), anillos y anchos, mínimo por chunk, curvas separadas para agua/mineral, y si los anillos se muestran o son invisibles.
+**Impacto:** `world`, `config`, `savegame` (seed), tests y debug overlay.
+
+### D7 — Estación de monitoreo
+
+**Qué falta decidir:** módulo construible vs pantalla de UI.
+**Contexto:** el modo recursos ya muestra cantidades, caps y tendencia global; no hay desglose por módulo ni balance de red en un solo lugar.
+**Opciones:**
+- **A. Pantalla de red:** acceso directo, sin tile ni energía; QoL inmediata.
+- **B. Módulo:** coste, conexión y quizá energía; encaja con la progresión de base.
+- **C. Híbrido:** el módulo desbloquea la pantalla; sin módulo no ves el desglose.
+**Recomendación:** C si querés progresión; A si querés resolver el feedback ya. Empezar por A y convertir en C después es posible.
+**Para cerrar:** elegir A/B/C; si B/C, coste, energía y tecnología.
+**Impacto:** `module_defs`, UI, save y tests.
+
+### D8 — Nombres de categorías y ubicación de la trampa
+
+**Qué falta decidir:** nombres finales y si la trampa va en Soporte o Extracción.
+**Contexto:** categorías actuales: Energía, Extracción, Soporte, Logística, Ciencia, Defensa. “Soporte” y “Logística” son ambiguos. Con scroll, el espacio ya no obliga a mover la trampa.
+**Propuesta de nombres (a confirmar):** Energía, Extracción, Soporte vital, Red/Infraestructura, Investigación, Defensa.
+**Trampa:** Extracción (saca comida del agua) o Soporte vital (mantiene la supervivencia). Recomiendo Extracción.
+**Para cerrar:** nombres finales y categoría de la trampa.
+**Impacto:** `BUILD_CATEGORIES`, locales, docs y tests. Mantener los IDs internos.
+
+### D9 — Invernadero, trampa y sink de comida
+
+**Qué falta decidir:** qué consume la comida y cómo se rebalancea el invernadero.
+**Contexto:** hábitat −8/d; invernadero +10/d; trampa +3/d promedio. Sin sink, la comida se acumula. El invernadero actual es 8 Cmp, 1,5 d, 3 E/d, 4 agua/d → 10 comida + 2 O₂/d.
+**Opciones de sink:** biodiésel (lanzallamas), fabricación de trampas, recetas del fabricador Mk II, consumo de bichos/eventos. Recomiendo biodiésel + trampas.
+**Opción de invernadero:** 10 Cmp, 1,5-2 d, 8 comida/d, 3 O₂/d, 4 agua/d, 3 E/d. Ajustar después de playtest.
+**Para cerrar:** elegir el primer sink y confirmar los números objetivo; si el invernadero debe seguir siendo la fuente principal o complementaria.
+**Impacto:** `config`, `module_defs`, catálogo, tests y balance.
+
+### D10 — Bosques y cristales
+
+**Qué falta decidir:** si entran ahora y con qué uso.
+**Contexto:** el plan los deja para el slice 7 hasta tener un uso concreto. El tester pide adelantarlos. La generación por anillos debe incluirlos si entran.
+**Opciones:**
+- **A. Solo scenery inerte:** visual/generación, sin recurso. Bajo riesgo, pero puede confundir.
+- **B. Recursos completos ahora:** madera/biomasa y cristal + extractores + usos + tecnología. Mucho alcance.
+- **C. Split:** bosques ahora con un uso simple (biodiésel/construcción) y cristales después con su extractor.
+**Recomendación:** C si hay un uso claro para madera/biomasa; si no, A hasta definirlo.
+**Para cerrar:** elegir A/B/C y el primer uso concreto de cada recurso.
+**Impacto:** `world`, `config`, `module_defs`, `tech_defs`, assets, save y anillos.
+
+### D11 — Detalles del modal y del selector
+
+**Qué falta decidir:** cuántas tarjetas/etiquetas se ven y si hay animación.
+**Contexto:** B31/B32 ya están decididos en dirección.
+**Propuesta:** 4 tarjetas visibles, scroll de 1, wrap opcional; carrusel de 5 categorías, alpha decreciente, wrap, sin animación al principio.
+**Para cerrar:** confirmar 4/5, si querés animación y si el scroll debe hacer wrap.
+**Impacto:** `ui.py`, `ui_modals.py`, `BuildController` y tests.
+
+## Siguiente etapa propuesta
+
+> Secuencia sugerida para destrabar la beta y después seguir con el slice. No es una decisión cerrada; se puede reordenar.
+
+| Etapa | Contenido | Por qué |
+|-------|-----------|---------|
+| **0. Quick fixes beta** | B03 (verificar), B04/B05 (remapeo), B07 (copy), B12 (gota), B13 (cables grises), B30 (créditos), B09 (tiempo dev) | Son cambios acotados que mejoran la próxima build sin tocar el loop. |
+| **1. Mundo** | B18 (reproducir), anillos difusos, B19 (seed aleatoria), B20 (medir 2048), tests de cobertura | Es el problema más visible del tester y condiciona exploración/balance. |
+| **2. UI de construcción** | B31 (scroll), B32 (selector circular), B10 (nombres) | Desbloquea agregar módulos y DLCs sin romper el modal. |
+| **3. Trampa + comida** | B17, D1 (RNG/noche), D9 (sink/invernadero), B16 (decisión extractor) | Cierra el slice actual y el problema de comida. |
+| **4. Red y módulos** | B01 (nombre), B02 (cables libres), B06 (menú A+A), B08 (cámara), B11 (monitoreo) | Mejora la UX de la red y prepara más módulos. |
+| **5. Contenido/late game** | B21 (bosques/cristales), B22-B29 (combate, biodiésel, eventos) | Requiere sistemas nuevos; no antes de estabilizar lo anterior. |
 
 ## Archivos probablemente afectados
 
