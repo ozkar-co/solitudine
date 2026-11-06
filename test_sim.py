@@ -49,7 +49,7 @@ from vision import on_module_built
 from ui import MapLayer
 from ui_map import coast_overlay_plan
 from ui_night import light_sources
-from world import Deposit, Module, ModuleState, Tile, generate_world
+from world import Deposit, Module, ModuleState, Tile, generate_world, new_seed
 
 
 def add_module(world, kind: ModuleKind, dx: int, *, enabled: bool = True) -> Module:
@@ -743,7 +743,7 @@ class PauseMenuTests(unittest.TestCase):
         self.assertFalse(sim.user_paused)
         self.assertEqual(sim.pause_index, 0)
 
-    def test_pause_menu_exit(self) -> None:
+    def test_pause_menu_new_game_requires_confirmation(self) -> None:
         world = generate_world()
         sim = Simulation()
 
@@ -751,6 +751,19 @@ class PauseMenuTests(unittest.TestCase):
         self._press(sim, world, "DPAD_DOWN")
         self._press(sim, world, "DPAD_DOWN")
         self.assertEqual(sim.pause_index, 2)
+        self._press(sim, world, "A")
+        self.assertTrue(sim.new_game_confirm)
+        result = self._press(sim, world, "A")
+        self.assertTrue(result.reset_session)
+
+    def test_pause_menu_exit(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+
+        self._press(sim, world, "START")
+        for _ in range(3):
+            self._press(sim, world, "DPAD_DOWN")
+        self.assertEqual(sim.pause_index, 3)
         result = self._press(sim, world, "A")
         self.assertTrue(result.quit_requested)
 
@@ -1231,6 +1244,14 @@ class WorldGenerationTests(unittest.TestCase):
         self.assertIsInstance(world.tiles, bytearray)
         self.assertIsInstance(world.deposits, bytearray)
         self.assertIsInstance(world.deposit_amounts, array)
+
+    def test_new_seed_is_short_and_reproducible(self) -> None:
+        seed = new_seed()
+        self.assertEqual(len(seed), 8)
+        self.assertTrue(all(ch in "0123456789ABCDEF" for ch in seed))
+        a = generate_world(seed=seed, size=128)
+        b = generate_world(seed=seed, size=128)
+        self.assertEqual(bytes(a.tiles), bytes(b.tiles))
 
     def test_deterministic_seed(self) -> None:
         a = generate_world(seed="A", size=128)

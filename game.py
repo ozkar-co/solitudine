@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import sys
 import time
 
@@ -31,6 +32,7 @@ from ui import (
     draw_mode_badge,
     draw_panel,
     draw_pause_modal,
+    draw_new_game_modal,
     draw_splash,
     draw_top_bar,
     map_rect,
@@ -41,7 +43,7 @@ from ui_minimap import draw_minimap
 from ui_module_menu import draw_module_menu
 from ui_network import draw_network_screen
 from ui_tech import draw_tech_screen
-from world import generate_world
+from world import generate_world, new_seed
 
 
 TIME_SCALES = (1.0, 2.0, 5.0, 10.0)
@@ -166,8 +168,11 @@ def run(dev: bool = False, handheld: bool = False, scale: float = 1.0) -> int:
     except Exception as exc:
         print(f"Guardado ignorado: {exc}", file=sys.stderr)
         loaded = None
+    def fresh_world():
+        return generate_world(seed=os.environ.get("SOLITUDINE_SEED") or new_seed())
+
     if loaded is None:
-        world = generate_world()
+        world = fresh_world()
         sim = Simulation()
     else:
         world, sim = loaded
@@ -201,7 +206,7 @@ def run(dev: bool = False, handheld: bool = False, scale: float = 1.0) -> int:
         nonlocal world, sim, camera, cam_bounds, cursor_bounds, cursor_x, cursor_y, hx, hy
         nonlocal select_x, select_y, layer, cursor_acc_x, cursor_acc_y
         savegame.delete_save()
-        world = generate_world()
+        world = fresh_world()
         sim = Simulation()
         hx, hy = world.habitat_x, world.habitat_y
         camera = Camera(float(hx), float(hy), world.size)
@@ -382,6 +387,7 @@ def run(dev: bool = False, handheld: bool = False, scale: float = 1.0) -> int:
                 keymap=DEV_KEYMAP,
                 zoom_px=camera.tile_px,
                 time_scale=time_scale,
+                seed=world.seed,
                 debug_lines=debug_lines,
             )
 
@@ -396,6 +402,8 @@ def run(dev: bool = False, handheld: bool = False, scale: float = 1.0) -> int:
         elif pause_modal:
             if sim.credits_open:
                 draw_credits_modal(screen, font, font_sm, sim)
+            elif sim.new_game_confirm:
+                draw_new_game_modal(screen, font, font_sm)
             else:
                 draw_pause_modal(screen, font, font_sm, sim)
         elif build.mode == BuildMode.MENU:

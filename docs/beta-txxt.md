@@ -228,9 +228,8 @@ Notas de implementación (2026-11-05):
 
 **B19 — Mundos aleatorios**
 - Feedback: “ya podemos habilitar los mundos aleatorios”.
-- Estado: **decidido en dirección (D5)**: la seed se guarda en el save y se usa para regenerar. Falta la UI de nueva partida/seed y el reroll.
-- Nota técnica: hoy `WORLD_SEED` es fijo y `load_game()` llama `generate_world()` sin seed. Hay que leer `size`/`seed` del save y regenerar con ellos; implica cambio de formato/versión.
-- Decidir: seed visible, reroll, mundos compartidos por seed y compatibilidad con saves v4.
+- Estado: **implementado (2026-11-06)**: cada partida nueva usa seed aleatoria; el save conserva `size`/`seed`; `--seed`/`SOLITUDINE_SEED` reproduce un mundo; la pausa ofrece **Nueva partida** con confirmación. La seed actual se muestra en el overlay dev.
+- Pendiente opcional: seed visible en menú de pausa, reroll sin borrar progreso y compartir mundos por seed.
 
 **B20 — Mapa más grande, chunks y generación dinámica**
 - Feedback: “expandir a 2024” (probablemente 2048), “considerar sistema de chunks y generación dinámica”.

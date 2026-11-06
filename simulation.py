@@ -40,6 +40,7 @@ class Simulation:
     paused: bool = False
     user_paused: bool = False
     pause_index: int = 0
+    new_game_confirm: bool = False
     credits_open: bool = False
     credits_scroll: int = 0
     credits_konami: str = ""

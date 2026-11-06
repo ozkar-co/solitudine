@@ -24,8 +24,9 @@ from world import Tile, World
 
 
 PAUSE_CREDITS = 1
-PAUSE_EXIT = 2
-PAUSE_OPTION_COUNT = 3
+PAUSE_NEW_GAME = 2
+PAUSE_EXIT = 3
+PAUSE_OPTION_COUNT = 4
 
 
 @dataclass
@@ -159,6 +160,12 @@ def handle_frame_input(
         return result
 
     if sim.user_paused:
+        if sim.new_game_confirm:
+            if inp.was_pressed(frame, "A"):
+                result.reset_session = True
+            elif inp.was_pressed(frame, "B") or inp.was_pressed(frame, "START"):
+                sim.new_game_confirm = False
+            return result
         if sim.credits_open:
             if (
                 inp.was_pressed(frame, "A")
@@ -204,6 +211,8 @@ def handle_frame_input(
                 sim.credits_open = True
                 sim.credits_scroll = 0
                 sim.credits_konami = ""
+            elif sim.pause_index == PAUSE_NEW_GAME:
+                sim.new_game_confirm = True
             elif sim.pause_index == PAUSE_EXIT:
                 result.quit_requested = True
             else:
@@ -214,6 +223,7 @@ def handle_frame_input(
     if inp.was_pressed(frame, "START"):
         sim.user_paused = True
         sim.pause_index = 0
+        sim.new_game_confirm = False
         sim.credits_open = False
         sim.credits_scroll = 0
         sim.credits_konami = ""

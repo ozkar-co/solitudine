@@ -27,7 +27,7 @@ J = A        K = B         T = acelerar tiempo (dev)
 WASD = cursor              Flechas = cámara
 Enter = START              Bksp = SELECT
 Bksp + Enter = salir
-Pausa (Enter) -> Salir
+Pausa (Enter): Continuar / Créditos / Nueva partida / Salir
 
 También acepta mando si el sistema lo detecta.
 

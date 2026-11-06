@@ -75,6 +75,7 @@ __all__ = [
     "draw_mode_badge",
     "draw_panel",
     "draw_pause_modal",
+    "draw_new_game_modal",
     "draw_splash",
     "module_debug_lines",
     "draw_top_bar",
@@ -191,6 +192,7 @@ def draw_dev_debug(
     keymap: str,
     zoom_px: int,
     time_scale: float = 1.0,
+    seed: str = "",
     debug_lines: list[str] | None = None,
 ) -> None:
     from gamepad import format_actions
@@ -198,7 +200,7 @@ def draw_dev_debug(
     rect = map_rect()
     lines = [
         f"FPS {fps:4.1f}  frame {frame_ms:5.1f}ms  celdas {tiles_drawn}  zoom {zoom_px}px  tiempo x{time_scale:g}",
-        f"gen {gen_ms:.0f}ms  held: {format_actions(held)}",
+        f"seed {seed}  gen {gen_ms:.0f}ms  held: {format_actions(held)}",
     ]
     y = rect.y + 4
     for line in lines:
@@ -582,7 +584,12 @@ def draw_pause_modal(
     font_sm: pygame.font.Font,
     sim: Simulation,
 ) -> None:
-    options = (t("pause.menu_continue"), t("pause.menu_credits"), t("pause.menu_exit"))
+    options = (
+        t("pause.menu_continue"),
+        t("pause.menu_credits"),
+        t("pause.menu_new_game"),
+        t("pause.menu_exit"),
+    )
     lines: list[ModalLine] = []
     for index, label in enumerate(options):
         selected = index == sim.pause_index
@@ -592,6 +599,28 @@ def draw_pause_modal(
         title=t("pause.title"),
         columns=(ModalColumn(lines=tuple(lines)),),
         help_text=t("pause.hint_menu"),
+        wide=True,
+        dim_map=True,
+    )
+    draw_modal(surf, font, font_sm, spec)
+
+
+def draw_new_game_modal(
+    surf: pygame.Surface,
+    font: pygame.font.Font,
+    font_sm: pygame.font.Font,
+) -> None:
+    spec = ModalSpec(
+        title=t("new_game.title"),
+        columns=(
+            ModalColumn(
+                lines=(
+                    ModalLine(t("new_game.warning"), COL_WARN),
+                    ModalLine(t("new_game.info"), COL_TEXT),
+                )
+            ),
+        ),
+        help_text=t("new_game.hint"),
         wide=True,
         dim_map=True,
     )

@@ -30,6 +30,11 @@ def main() -> int:
         default=None,
         help="Lado del mapa en tiles (default: 2048 o SOLITUDINE_WORLD_SIZE).",
     )
+    parser.add_argument(
+        "--seed",
+        default=None,
+        help="Semilla fija para reproducir un mundo nuevo (default: aleatoria).",
+    )
     args = parser.parse_args()
     if args.scale2 and not args.dev:
         parser.error("--2x requiere --dev")
@@ -39,6 +44,10 @@ def main() -> int:
         if args.world_size < 64:
             parser.error("--world-size debe ser >= 64")
         os.environ["SOLITUDINE_WORLD_SIZE"] = str(args.world_size)
+    if args.seed is not None:
+        if not args.seed.strip():
+            parser.error("--seed no puede estar vacío")
+        os.environ["SOLITUDINE_SEED"] = args.seed
     from game import run
 
     return run(dev=args.dev, handheld=args.handheld, scale=2 if args.scale2 else 1)

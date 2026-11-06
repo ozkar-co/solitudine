@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 import random
+import secrets
 from array import array
 from dataclasses import dataclass, field
 from enum import IntEnum
@@ -292,6 +293,11 @@ class World:
                     if track and not was_explored:
                         self._touch_explored(x, y)
                         self.explored_version += 1
+
+
+def new_seed() -> str:
+    """Semilla corta y legible para una partida nueva."""
+    return secrets.token_hex(4).upper()
 
 
 def _seed_int(text: str) -> int:
