@@ -55,6 +55,7 @@ La hoja RD Tile es 4 columnas × 5 filas de tiles de 16×16. Los índices no usa
 | `assets/modules/mine.png` | `source/modules/mine.png` | mining rig module, drill, dark metal, amber lights | 1206 |
 | `assets/modules/fabricator.png` | `source/modules/fabricator.png` | fabricator module, industrial machine, dark metal, orange lights | 1207 |
 | `assets/modules/storage.png` | `source/modules/storage.png` | storage container module, stacked crates, dark metal, green stripes | 1208 |
+| `assets/modules/battery.png` | placeholder procedural | batería, carcasa metálica, barras verdes y rayo ámbar, 16×16 | — |
 | `assets/modules/lamp.png` | `source/modules/lamp.png` | lamp post module, tall pole with warm glowing lamp, dark metal base, top-down view, clear silhouette | 1214 |
 | `assets/modules/laboratory.png` | `source/modules/laboratory.png` | laboratory module, compact science lab, domed glass, dark metal, cyan lights, top-down | 1215 |
 | `assets/modules/electrolyzer.png` | `source/modules/electrolyzer.png` | electrolysis machine, water tank and electrodes, dark metal, cyan bubbles, top-down | 1216 |
@@ -65,7 +66,7 @@ La hoja RD Tile es 4 columnas × 5 filas de tiles de 16×16. Los índices no usa
 | `assets/modules/monitor.png` | placeholder procedural | estación de monitoreo, pantalla y antena, 16×16 | — |
 | `assets/modules/coal_extractor.png` | placeholder procedural | extractor de carbón, estructura y veta negra, 16×16 | — |
 | `assets/modules/crystal_extractor.png` | placeholder procedural | extractor de cristales, taladro y cristal cian, 16×16 | — |
-| `assets/modules/fuel_generator.png` | placeholder procedural | generador de combustible, tanque naranja, 16×16 | — |
+| `assets/modules/fuel_generator.png` | placeholder procedural | generador eléctrico, tanque naranja y bujía, 16×16 | — |
 
 ### Iconos
 

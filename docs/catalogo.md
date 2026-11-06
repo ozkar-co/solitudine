@@ -9,14 +9,14 @@
 
 | Categoría | Módulos |
 |-----------|---------|
-| Energía | Panel solar, Procesador de biodiésel, Generador de combustible, Batería* |
+| Energía | Generador eléctrico, Panel solar, Procesador de biodiésel, Batería |
 | Extracción | Extractor de agua, Mina, Trampa de peces, Extractor de carbón, Extractor de cristales |
 | Soporte Vital | Invernadero, Lámpara, Electrolizador, Condensador |
 | Red Logística | Enlace, Fabricador, Almacén, Reciclador, Estación de monitoreo |
 | Investigación | Radar, Laboratorio |
 | Defensa* | Torreta, Trampa de defensa |
 
-`*` planeado o backlog. Defensa no aparece hasta que exista combate. El hábitat no es construible.
+Defensa no aparece hasta que exista combate. El hábitat no es construible.
 
 ## Módulos
 
@@ -24,40 +24,40 @@
 |----|--------|-----------|--------|------------|-------------------|
 | `habitat` | Hábitat | Soporte Vital | hecho | — | — |
 | `cable` | Enlace | Red Logística | hecho | — | — |
-| `solar` | Panel solar | Energía | hecho | `solar_ii` | Mk II: +50% producción |
+| `solar` | Panel solar | Energía | hecho | `fotovoltaica`; `solar_ii` | Requiere Fotovoltaica; Mk II: +50% producción |
 | `extractor` | Extractor de agua | Extracción | hecho | `extraccion_ii` | Mk II: +25% agua, −20% energía |
 | `mine` | Mina | Extracción | hecho | `extraccion_ii` | Mk II: +25% mineral, −20% energía |
 | `greenhouse` | Invernadero | Soporte Vital | hecho | `agricultura_ii` | Mk II: +25% comida/O₂, −20% agua |
 | `fabricator` | Fabricador | Red Logística | hecho | `fabricacion_ii` | Mk II: +25% componentes, −15% mineral |
-| `storage` | Almacén | Red Logística | hecho | `almacenamiento_ii` | Mk II: +50% capacidad de red |
+| `storage` | Almacén | Red Logística | hecho | `almacenamiento_ii` | +40 a caps generales; no energía/O₂; Mk II pendiente |
 | `radar` | Radar | Investigación | hecho | `radar_ii` | Mk II: +4 radio, −10% energía |
 | `lamp` | Lámpara | Soporte Vital | hecho | `iluminacion_ii` | Mk II: +2 radio, −25% energía |
 | `laboratory` | Laboratorio | Investigación | hecho | — | — |
 | `electrolyzer` | Electrolizador | Soporte Vital | hecho | `electrolisis` | Agua + energía → O₂ |
 | `condenser` | Condensador | Soporte Vital | hecho | `condensador` | Energía → agua |
 | `fish_trap` | Trampa de peces | Extracción | hecho | — | 2 Cmp, 0,5 d; noche: 1 tirada/hora, 0 permitido, ~3 comida/noche; sobre agua; sin ruina, da chatarra directa |
-| `biodiesel` | Procesador de biodiésel | Energía | hecho | — | 4 Cmp, 1 d; 2 E/d + 2 agua/d + 4 comida/d → 1 combustible/d |
-| `coal_extractor` | Extractor de carbón | Extracción | hecho (prep) | — | 8 Cmp + 2 mineral, 1,5 d, 3 E/d → 6 carbón/d |
-| `crystal_extractor` | Extractor de cristales | Extracción | hecho (prep) | — | 10 Cmp + 4 mineral, 2 d, 4 E/d → 2 cristales/d |
-| `fuel_generator` | Generador de combustible | Energía | hecho (prep) | — | 8 Cmp + 2 mineral, 1,5 d, 1 combustible/d → 20 E/d |
+| `biodiesel` | Procesador de biodiésel | Energía | hecho | — | 4 Cmp, 1 d; 2 E/d + 2 agua/d + 4 comida/d → 1 biodiésel/d |
+| `coal_extractor` | Extractor de carbón | Extracción | hecho | `carbon` | 8 Cmp + 2 mineral, 1,5 d, 3 E/d → 6 carbón/d |
+| `crystal_extractor` | Extractor de cristales | Extracción | hecho | `cristalografia` | 10 Cmp + 4 mineral, 2 d, 4 E/d → 2 cristales/d |
+| `fuel_generator` | Generador eléctrico | Energía | hecho | — | 8 Cmp + 2 mineral, 1,5 d; 1 unidad/d → 5/12/20 E/d con madera/carbón/biodiésel; arranca apagado |
 | `recycler` | Reciclador | Red Logística | hecho | `reciclaje` | Chatarra → mineral (ratio 0,9; 5% componentes) |
-| `battery` | Batería | Energía | backlog | `bateria` | Cap de energía; el almacén deja de dar cap de energía |
+| `battery` | Batería | Energía | hecho | `almacenamiento` | +100 cap de energía; el almacén general no da energía |
 | `monitor` | Estación de monitoreo | Red Logística | hecho | — | 6 Cmp, 1,5 d, 2 E/d; desbloquea la pantalla de red (consumo/producción por recurso) |
 | `turret` / `trap` | Torreta / Trampa de defensa | Defensa | backlog | — | Combate |
 
-El cable forma una **red logística única**: conecta módulos de cualquier tipo, sin redes separadas. El almacén no se puede apagar.
+El cable forma una **red logística única**: conecta módulos de cualquier tipo, sin redes separadas. El almacén y la batería no se pueden apagar.
 
-## Números implementados (2026-11-05)
+## Números implementados (2026-11-06)
 
 | Módulo | Coste | Obra | Energía | Entrada | Salida |
 |--------|-------|------|---------|---------|--------|
 | Hábitat | — | — | 8 E/d | 10 O₂/d · 10 agua/d · 8 comida/d | Soporte vital |
-| Panel solar | 5 Cmp | 1 d | — | — | 12 E/d (solo 6-18 h) |
+| Panel solar | 5 Cmp | 1 d | — | — | 12 E/d (solo 6-18 h); requiere Fotovoltaica |
 | Extractor de agua | 6 Cmp | 1 d | 2 E/d | — | 12 agua/d |
 | Mina | 4 Cmp | 1,5 d | 3 E/d | — | 8 mineral/d |
 | Invernadero | 10 Cmp | 1,5 d | 3 E/d | 4 agua/d | 6 comida/d + 3 O₂/d (O₂ requiere agua) |
 | Fabricador | 5 Cmp + 2 mineral | 2 d | 4 E/d | 6 mineral/d | 4 componentes/d |
-| Almacén | 5 Cmp | 1 d | — | — | +40 a los caps de red (hoy incluye energía; planificado: solo no-energía) |
+| Almacén | 5 Cmp | 1 d | — | — | +40 a caps generales; no energía ni O₂ |
 | Radar | 8 Cmp | 1,5 d | 12 E/d | — | Exploración permanente |
 | Lámpara | 6 Cmp | 1 d | 0-4 E/d (noche) | — | Luz |
 | Laboratorio | 8 Cmp | 1,5 d | 3 E/d | — | Investigación |
@@ -65,11 +65,12 @@ El cable forma una **red logística única**: conecta módulos de cualquier tipo
 | Condensador | 8 Cmp | 1,5 d | 6 E/d | — | 8 agua/d |
 | Reciclador | 3 Cmp | 0,5 d | 1 E/d | 4 chatarra/d · 0,5 agua/d | 3,6 mineral/d + 0,2 Cmp/d |
 | Trampa de peces | 2 Cmp | 0,5 d | — | — | ~3 comida/noche (1 tirada/hora, 0 permitido) |
-| Procesador de biodiésel | 4 Cmp | 1 d | 2 E/d | 4 comida/d · 2 agua/d | 1 combustible/d |
-| Extractor de carbón | 8 Cmp + 2 mineral | 1,5 d | 3 E/d | — | 6 carbón/d |
-| Extractor de cristales | 10 Cmp + 4 mineral | 2 d | 4 E/d | — | 2 cristales/d |
-| Generador de combustible | 8 Cmp + 2 mineral | 1,5 d | — | 1 combustible/d | 20 E/d |
+| Procesador de biodiésel | 4 Cmp | 1 d | 2 E/d | 4 comida/d · 2 agua/d | 1 biodiésel/d |
+| Extractor de carbón | 8 Cmp + 2 mineral | 1,5 d | 3 E/d | — | 6 carbón/d; requiere Minería de carbón |
+| Extractor de cristales | 10 Cmp + 4 mineral | 2 d | 4 E/d | — | 2 cristales/d; requiere Cristalografía |
+| Generador eléctrico | 8 Cmp + 2 mineral | 1,5 d | — | 1 madera/carbón/biodiésel por día | 5/12/20 E/d según combustible |
 | Estación de monitoreo | 6 Cmp | 1,5 d | 2 E/d | — | Pantalla de red |
+| Batería | 8 Cmp + 4 mineral | 2 d | — | — | +100 cap de energía |
 
 Valores actuales de playtest. Cualquier ajuste se refleja en `config.py` y en esta tabla.
 
@@ -83,19 +84,22 @@ Valores actuales de playtest. Cualquier ajuste se refleja en `config.py` y en es
 >
 > **Mundo (implementado 2026-11-05):** mapa parametrizable con default 2048; generación por anillos difusos; bosques, carbón y cristales; recursos de madera, carbón, combustible y cristales.
 >
-> **Etapa 4 + prep etapa 5 (implementado 2026-11-05):** cables de colocación libre, menú contextual A+A, cámara hasta los bordes, estación de monitoreo con pantalla de red y rename visible de cable a **Enlace**. Se adelantaron los extractores de carbón/cristal y el generador de combustible como preparación de la etapa 5 (sin árbol tecnológico todavía).
+> **Etapa 4 + fase 5 (implementado 2026-11-06):** cables de colocación libre, menú contextual A+A declarativo, cámara hasta los bordes, estación de monitoreo con pantalla de red, rename visible de cable a **Enlace**, generador eléctrico multi-combustible, tecnologías solar/carbón/cristal/almacenamiento y batería. Los cristales quedan reservados para v6.
 
 ## Tecnologías
 
 - Todas requieren un **Laboratorio** construido.
 - Un nodo a la vez; coste multi-material (`Cost`), tiempo en días; el laboratorio debe estar online, conectado y con energía.
-- T1 cuesta 4 Cmp y 1,5 días; T2 base cuesta 10 Cmp y 3 días (propuesta). `reciclaje` es T1 provisional: 5 chatarra + 2 Cmp + 1 mineral y 2 días.
+- **Por ahora el árbol se limita por recursos y laboratorio.** `TechDef` ya soporta `prereqs`; a futuro habrá prerrequisitos y tecnologías que solo desbloquean otras tecnologías (`unlock_kinds=()`).
+- Una tecnología puede desbloquear **varios** módulos (`unlock_kinds`), un módulo o una acción; el coste puede usar cualquier recurso, incluido biodiésel.
+- `reciclaje` es T1 provisional: 5 chatarra + 2 Cmp + 1 mineral y 2 días.
 - Las mejoras de módulos se aplican **automáticamente** a los módulos existentes; no se reconstruyen.
-- Una tecnología puede desbloquear un módulo, una acción (p. ej. reciclaje) o subir el tier de un módulo.
 - Varios laboratorios activos suman velocidad de investigación; cada uno consume energía.
 
 | ID | Rama | Tier | Requiere | Efecto | Estado |
 |----|------|------|----------|--------|--------|
+| `fotovoltaica` | Energía | 1 | Laboratorio | Desbloquea `solar` (3 Cmp, 0,5 d) | hecho |
+| `carbon` | Extracción | 1 | Laboratorio | Desbloquea `coal_extractor` (4 Cmp, 0,75 d) | hecho |
 | `electrolisis` | Soporte Vital | 1 | Laboratorio | Desbloquea `electrolyzer` | hecho |
 | `condensador` | Soporte Vital | 1 | Laboratorio | Desbloquea `condenser` | hecho |
 | `agricultura_ii` | Soporte Vital | 2 | `electrolisis` | Invernadero Mk II | backlog |
@@ -104,9 +108,10 @@ Valores actuales de playtest. Cualquier ajuste se refleja en `config.py` y en es
 | `fabricacion_ii` | Industria | 2 | `extraccion_ii` | Fabricador Mk II | backlog |
 | `almacenamiento_ii` | Industria | 2 | `extraccion_ii` | Almacén Mk II | backlog |
 | `reciclaje` | Industria | 1* | Laboratorio | Desbloquea `recycler`; la demolición ya existe desde el día 0 | hecho |
+| `cristalografia` | Extracción | 2 | Laboratorio | Desbloquea `crystal_extractor`; cuesta 10 Cmp + 8 biodiésel, 3 d | hecho |
+| `almacenamiento` | Energía | 2 | Laboratorio | Desbloquea `battery`; 6 Cmp + 2 mineral, 2 d | hecho |
 | `solar_ii` | Energía | 1 | Laboratorio | Panel solar Mk II | backlog |
 | `radar_ii` | Investigación | 2 | `solar_ii` | Radar Mk II | backlog |
-| `bateria` | Energía | 2 | `solar_ii` | Desbloquea `battery` (cap de energía) | backlog |
 
 `*` `reciclaje` queda en T1 hasta que exista el árbol T2; entonces se reubica en Industria con su prerrequisito.
 

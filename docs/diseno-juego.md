@@ -20,13 +20,13 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 - Mapa parametrizable con default **2048×2048** (`--world-size`/`SOLITUDINE_WORLD_SIZE`); cámara con zoom entero (16/32/48 px).
 - Los módulos y sus categorías están en [catalogo.md](catalogo.md).
 - Todo se conecta por cables desde el hábitat. Sin conexión, el módulo queda offline.
-- **R1** apaga/enciende el módulo seleccionado (excepto el hábitat).
+- **A+A** abre el menú del módulo; encender/apagar, investigar, ver red o elegir combustible se eligen ahí, sin teclas dedicadas.
 - Un módulo apagado no produce, no consume energía, no aporta visión, no suma capacidad de almacén y no emite luz.
 
 ## Recursos y supervivencia
 
 - Recursos actuales: O₂, energía, agua, comida, mineral, componentes y chatarra.
-- Nuevos (2026-11-05): madera, carbón, combustible/biodiésel (producido) y cristales; carbón y cristales ya tienen extractores (prep etapa 5) y el combustible se usa en el generador.
+- Nuevos (2026-11-05): madera, carbón, biodiésel y cristales. Madera y carbón alimentan el generador; el biodiésel se produce y se usa en el generador y en Cristalografía; los cristales quedan para v6.
 - O₂, agua y comida son letales al llegar a cero; la energía es una restricción, pero puede matar indirectamente si falta agua para el condensador.
 - Los depósitos son finitos; el agua tiene un depósito garantizado. La generación usa **anillos difusos**: densidad creciente con la distancia, rareza por recurso y cuota mínima por región; la seed se guarda. Bosques, carbón y cristales se generan ya. Detalle en [beta-txxt.md](beta-txxt.md).
 - La regla de 2 fuentes / 2 usos es una heurística, no una obligación. La matriz completa está en [plan.md](plan.md).
@@ -35,8 +35,8 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 
 - Los módulos producen a buffers locales; la red tiene capacidad limitada.
 - Los cables forman una **red logística única**: conectan módulos de cualquier tipo, sin redes separadas.
-- El almacén amplía la capacidad de la red y no se puede apagar.
-- Planificado: el almacén deja de dar cap de energía y la batería pasa a ser el reservorio de energía; los tanques especializados quedan para más adelante.
+- El almacén general amplía los caps generales (+40), pero no energía ni O₂; no se puede apagar.
+- La batería es un almacenamiento especializado (+100 energía) detrás de investigación; el tanque de O₂ y los tanques de agua quedan para v6.
 - La energía se reparte proporcionalmente si falta; un módulo sin energía produce menos.
 - Los productores se detienen al llenar su buffer o la red.
 
@@ -58,7 +58,8 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 ## Exploración e investigación
 
 - Solo el radar explora de forma permanente; el resto da visión local.
-- La investigación desbloquea módulos; el laboratorio y las tecnologías de soporte/reciclaje ya están implementados. La trampa de peces y la comida recurrente ya están implementadas; el próximo paso es la UX de red y módulos (etapa 4).
+- La investigación desbloquea módulos. Hoy el árbol se limita por recursos y laboratorio; a futuro tendrá prerrequisitos y tecnologías que solo desbloquean otras tecnologías.
+- Tecnologías de fase 5: Fotovoltaica, Minería de carbón, Cristalografía y Almacenamiento especializado.
 - Exploración avanzada, alimañas, botín y combate están en backlog.
 
 ## Controles
@@ -106,11 +107,11 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 
 - **Trampa de peces (implementada):** módulo barato sobre agua, conectado por cable; produce solo de noche, con una tirada por hora (0 permitido) y ~3 comida/noche en promedio, y se detiene si el agua se agota. Al demoler no deja ruina: da chatarra directa.
 - **Invernadero (implementado):** 10 Cmp; 6 comida/d + 3 O₂/d.
-- **Procesador de biodiésel (implementado):** 4 Cmp; 4 comida/d + 2 agua/d + 2 E/d → 1 combustible/d.
+- **Procesador de biodiésel (implementado):** 4 Cmp; 4 comida/d + 2 agua/d + 2 E/d → 1 biodiésel/d.
 - **Estación de monitoreo (implementada):** 6 Cmp, 2 E/d; online y conectada desbloquea la pantalla de red.
-- **Extractores de carbón/cristal (prep etapa 5):** carbón 3 E/d → 6/d; cristales 4 E/d → 2/d; placement sobre su depósito.
-- **Generador de combustible (prep etapa 5):** 1 combustible/d → 20 E/d.
-- **Batería (planificada):** el almacén deja de dar cap de energía; la batería pasa a ser el reservorio de energía.
+- **Extractores de carbón/cristal (implementados):** carbón 3 E/d → 6/d con Minería de carbón; cristales 4 E/d → 2/d con Cristalografía; placement sobre su depósito.
+- **Generador eléctrico (implementado):** desde el inicio, apagado y sin combustible; 1 unidad/día → 5/12/20 E/d con madera/carbón/biodiésel.
+- **Batería (implementada):** +100 cap de energía con Almacenamiento especializado; no reemplaza al almacén general.
 - **Agua y radar (implementado):** depósito garantizado + anillos difusos finitos; el radar encuentra todo y es la exploración permanente.
 - **Bosques y cristales (implementados):** bosque cercano garantizado (bloquea construcción, A tala y da madera, deja brotes), carbón en el borde de lo explorado y cristales en grupos de 2-3 puntos dispersos (4-5 los más grandes). Carbón y cristales ya tienen extractores; sus usos avanzados se definirán después.
 
@@ -119,4 +120,4 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 - Mejoras Mk II, alimañas ambientales, tower defense, botín, inventario y variantes de muerte.
 - Desgaste, eventos climáticos, radio y finales.
 - Pulido de UI (9-slice, autotile, overview); las animaciones de menú ya están decididas.
-- Batería y la extracción/uso de carbón/cristal están planificados en [plan.md](plan.md), no en este backlog. Trampa, mundo 2048/anillos y bosques/cristales ya están implementados.
+- Cristales (usos), tanque de O₂, tanques especializados de agua y combate/eventos están planificados para v6 en [plan.md](plan.md). Trampa, mundo 2048/anillos, bosques/carbón, generador y batería ya están implementados.

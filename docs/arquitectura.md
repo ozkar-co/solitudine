@@ -6,7 +6,8 @@
 
 - Un archivo, una responsabilidad.
 - La simulación no dibuja; la UI no muta el mundo; `game.py` orquesta.
-- `module_defs.py` es la fuente única de módulos, flujos y costes.
+- `module_defs.py` es la fuente única de módulos, flujos, costes, acciones de menú y almacenamiento especializado.
+- El menú A+A se construye desde datos: `ModuleDef.menu_actions` + acciones comunes; no hay ramas por módulo en la UI.
 - Sin abstracciones “por si acaso”: primero la función, luego el helper si se repite.
 - Todo el `.py` del juego está en la raíz; `main.py` es la entrada. `tools/dev_beta/` es una entrada temporal de beta PC, aislada del juego.
 
@@ -51,17 +52,17 @@ En PC, `--dev --2x` mantiene el render interno en 640×480 y escala la ventana a
 | `game.py` | Bucle, cámara, HUD, pausa, game over y auto-save. |
 | `simulation.py` | Reloj, día, pausa, muerte y estado global. |
 | `config.py` | Balance numérico y layout. |
-| `world.py` | Mapa, tiles, depósitos, módulos, cables, ruinas y visión. |
-| `tech_defs.py` | Nodos de tecnología y mapeo módulo → tecnología. |
+| `world.py` | Mapa, tiles, depósitos, módulos (incluido combustible elegido), cables, ruinas y visión. |
+| `tech_defs.py` | Nodos de tecnología, `prereqs`, `unlock_kinds` múltiple y mapeo módulo → tecnología. |
 | `research.py` | Investigación activa, progreso, desbloqueos y laboratorio. |
 | `module_kind.py` | Enum de módulos. |
 | `module_defs.py` | Registro de módulos, flujos, costes, `module_active()`. |
-| `module_tick.py` | Tick: producción, consumo, energía, lámpara, extractores profundos y generador de combustible. |
-| `module_menu.py` | Estado del menú contextual A+A de módulos. |
+| `module_tick.py` | Tick: producción, consumo, energía, lámpara, extractores y generador eléctrico de consumo fijo. |
+| `module_menu.py` | Menú contextual A+A declarativo y submenú de combustible; un único estado reutilizable. |
 | `network_report.py` | Balance de producción/consumo por recurso para la estación de monitoreo. |
 | `module_flow.py` / `module_power.py` | Delegados finos del panel a `module_defs`. |
-| `logistics.py` | Caps de red, buffers y orquestación del tick. |
-| `resources.py` | Registro de recursos, pool único, `Cost` multi-material, caps y alertas. |
+| `logistics.py` | Caps de red por recurso (general + especializados), buffers y tick. |
+| `resources.py` | Registro de recursos, pool único, `Cost`, caps, flags de almacenamiento general y alertas. |
 | `stats.py` | Contadores de chatarra procesada/reciclada. |
 | `construction.py` | Menú por pestañas, preview, `cost_paid`, bloqueo por tecnología y colocación. |
 | `demolition.py` | Demolición, cancelación de obra y conversión a ruina/chatarra. |
@@ -69,7 +70,7 @@ En PC, `--dev --2x` mantiene el render interno en 640×480 y escala la ventana a
 | `vision.py` | Niebla y visión incremental; respeta `enabled`. |
 | `daylight.py` | Curva de luz natural. |
 | `camera.py` | Cámara y zoom entero. |
-| `savegame.py` | Guardado JSON v4 con arrays comprimidos; sin migración. |
+| `savegame.py` | Guardado JSON v4 con arrays comprimidos y `fuel_resource`; sin migración. |
 | `game_input.py` | Acciones por frame, construcción, ruinas, menú A+A, red y demolición de cables. |
 | `input_state.py` / `gamepad.py` / `dev_input.py` | Entrada unificada. |
 | `i18n.py` / `locales/es.json` | Textos. |
@@ -80,7 +81,7 @@ En PC, `--dev --2x` mantiene el render interno en 640×480 y escala la ventana a
 | `ui_minimap.py` | Minimapa cacheado. |
 | `ui_night.py` | Fuentes de luz visual y dithering por tile. |
 | `ui_panel.py` | Inspección, ruinas, reciclador y modo colocar. |
-| `ui_module_menu.py` | Dibujo del menú contextual A+A. |
+| `ui_module_menu.py` | Dibujo genérico del menú A+A y de la página de combustibles. |
 | `ui_network.py` | Pantalla de red de la estación de monitoreo. |
 | `ui_tech.py` | Pantalla de Tecnología mínima. |
 | `ui_modals.py` | `draw_modal` único: título, subtítulo, columnas, scroll, ayuda y ancho completo; lo usan todos los modales. |

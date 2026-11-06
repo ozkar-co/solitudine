@@ -2,9 +2,9 @@
 
 > Fuente única del roadmap. Catálogo de módulos/tecnologías: [catalogo.md](catalogo.md). Estado: [estado.md](estado.md). Código: [arquitectura.md](arquitectura.md). Juego: [diseno-juego.md](diseno-juego.md).
 >
-> Regla: un slice a la vez. 4B/4C, UI/balance, playtest, fundación de recursos/costes y chatarra/reciclador/demolición están cerrados. **Beta etapas 0-4 (2026-11-05)** implementadas: remapeo/créditos/iconos, mundo 2048 con anillos, UI de construcción, trampa/comida y red/módulos. También quedó la **preparación de etapa 5**: extractores de carbón/cristal y generador de combustible. Ahora toca la **batería/energía** o cerrar el contenido de etapa 5.
+> Regla: un slice a la vez. 4B/4C, UI/balance, playtest, fundación de recursos/costes y chatarra/reciclador/demolición están cerrados. **Beta etapas 0-4 (2026-11-05)** implementadas: remapeo/créditos/iconos, mundo 2048 con anillos, UI de construcción, trampa/comida y red/módulos. **Fase 5 (2026-11-06)** implementada: generador eléctrico multi-combustible, tecnologías de solar/carbón/cristal/almacenamiento y batería. Ahora toca **v6**: usos de cristales, tanques especializados, combate/eventos y prerequisitos tecnológicos.
 >
-> Feedback beta de TxxT (2026-11-05): [beta-txxt.md](beta-txxt.md). Las decisiones de las etapas 0-4 están implementadas; la etapa 5 sigue en preparación.
+> Feedback beta de TxxT (2026-11-05): [beta-txxt.md](beta-txxt.md). Las decisiones de las etapas 0-4 y de la fase 5 están implementadas; v6 queda como siguiente bloque.
 
 ## Norte
 
@@ -68,17 +68,15 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 - **Modales unificados:** `ui_modals.draw_modal` centraliza título, subtítulo, columnas, scroll y ayuda; todos son anchos. La red usa dos columnas (producción/consumo) con icono + nombre.
 - **Beta PC:** solo 2x; se eliminó la variante intermedia.
 
-## Prep etapa 5 (2026-11-05)
+## Hecho: fase 5 — energía, cristales y almacenamiento (2026-11-06)
 
-- **Extractor de carbón** (8 Cmp + 2 mineral, 1,5 d, 3 E/d → 6 carbón/d).
-- **Extractor de cristales** (10 Cmp + 4 mineral, 2 d, 4 E/d → 2 cristales/d).
-- **Generador de combustible** (8 Cmp + 2 mineral, 1,5 d, 1 combustible/d → 20 E/d).
-- Quedan sin árbol tecnológico y sin combate/eventos; es la base para la etapa 5.
-
-## Ahora: batería/energía o cierre de etapa 5
-
-- Batería con cap de energía y almacén sin cap de energía, o cerrar el contenido de etapa 5 (tecnologías para carbón/cristal/combustible, combate y eventos).
-- No entra la trampa de defensa hasta que exista combate.
+- **Generador eléctrico** desde el inicio, apagado y sin combustible; consumo fijo de 1 unidad/día y salida 5/12/20 E/d según madera/carbón/biodiésel.
+- **Menú A+A declarativo:** acciones por módulo en `ModuleDef.menu_actions`, registro central y submenú de combustible; laboratorio, monitor, almacén, generador y hábitat comparten el mismo motor.
+- **Tecnologías:** Fotovoltaica (3 Cmp), Minería de carbón (4 Cmp), Cristalografía (10 Cmp + 8 biodiésel), Almacenamiento especializado (6 Cmp + 2 mineral).
+- **Cristalografía:** desbloquea el extractor de cristales; no usa cristal en el coste. Los cristales quedan sin uso hasta v6.
+- **Batería:** +100 cap de energía, detrás de Almacenamiento especializado.
+- **Almacén general:** +40 a recursos generales; no energía ni O₂.
+- **v6:** usos de cristales, tanque de O₂, tanques especializados de agua, combate/eventos, prerequisitos y tecnologías que solo desbloquean otras tecnologías.
 
 ## Decisiones cerradas
 
@@ -86,7 +84,7 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 
 - La regla de **2 fuentes / 2 usos** es una heurística, no una regla estricta. Se acepta una excepción si resuelve un problema claro y no deja un recurso de un solo uso.
 - Recursos actuales: O₂, agua, comida, energía, mineral, componentes, **chatarra**, **madera**, **carbón**, **combustible** y **cristales**.
-- Recursos incorporados (2026-11-05): **madera**, **carbón**, **combustible/biodiésel** (producido) y **cristales**. Madera sale de árboles; el combustible se produce en el procesador de biodiésel; carbón/cristal todavía no tienen extractor.
+- Recursos incorporados (2026-11-05): **madera**, **carbón**, **biodiésel** (producido) y **cristales**. Madera sale de árboles; el biodiésel se produce en el procesador; el carbón y los cristales tienen extractores con tecnología.
 - La matriz completa vive en este plan; el catálogo define módulos/tecnologías.
 
 ### Chatarra, ruinas y reciclador
@@ -119,22 +117,23 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 - Quedarse sin energía puede matar por sed a través del condensador; se acepta.
 - Cuando un depósito se agota, el tile vuelve a suelo; extractor y trampa quedan inútiles.
 
-### Energía
+### Energía y generador
 
 - Extractores y minas sin recursos **no se auto-apagan**: consumen **50% de su energía nominal** mientras estén encendidos y el panel muestra **“sin recursos disponibles” en rojo**. Se apagan manualmente; aplica a futuros extractores.
-- La **batería** es capacidad de energía; el almacén deja de aumentar el cap de energía.
-- El hábitat tiene un cap inicial de energía; la batería solo aumenta cap (el excedente diurno ya se almacena con la funcionalidad actual).
-- La batería queda detrás de investigación (T2). A medida que existan tanques especializados podrían quitarse capacidades al almacén; por ahora solo la batería.
-- El almacén sigue dando +40 a los recursos que no tengan reservorio especializado.
+- **Generador eléctrico:** disponible desde el inicio, sin tecnología. Se crea **apagado y sin combustible elegido**. Consume **1 unidad/día** y produce según el combustible: madera **5 E/d**, carbón **12 E/d**, biodiésel **20 E/d**. El menú A+A permite elegir combustible; si no hay selección o se agota, pasa a apagado.
+- **Panel solar:** requiere la tecnología barata **Fotovoltaica**. Sigue produciendo 12 E/d repartidos durante el día.
+- **Almacén general:** +40 a los recursos generales, pero **no energía ni O₂**. Esos caps quedan para almacenamientos especializados.
+- **Batería:** módulo especializado detrás de **Almacenamiento especializado**; suma **+100 de cap de energía**. No reemplaza al almacén general.
+- El tanque de O₂ y los tanques de agua especializados quedan para v6, con investigación propia.
 
 ### Bosques y cristales
 
 - Son contenido base, no DLC; su implementación debe servir para probar la creación parametrizable de recursos para un DLC.
-- **Implementados 2026-11-05:** bosques, carbón subterráneo y cristales; los recursos existen aunque carbón/cristal todavía no se puedan extraer.
+- **Implementados 2026-11-05:** bosques, carbón subterráneo y cristales. El carbón se desbloquea con **Minería de carbón** y los cristales con **Cristalografía**.
 - **Bosque cercano garantizado:** pequeño, bloquea construcción; **A** tala y da 6-10 de **madera** directamente; deja **brotes**. **A** sobre un brote lo quita sin dar nada. Regrow queda pendiente.
-- **Carbón:** yacimientos subterráneos; se garantiza uno en el borde del área explorada inicial, aunque no se pueda usar todavía.
-- **Cristales:** yacimientos subterráneos finitos; se generan como **puntos dispersos**: grupos de 2-3, y los más grandes de 4-5; no son un parche continuo. Se garantiza al menos un grupo hacia los bordes.
-- Recursos nuevos: **madera, carbón, combustible y cristales**. Madera tiene fuente; el combustible se produce en el procesador de biodiésel; carbón/cristal quedan sin uso hasta sus extractores.
+- **Carbón:** yacimientos subterráneos; se garantiza uno en el borde del área explorada inicial. Alimenta el generador eléctrico; el extractor requiere una investigación inicial barata.
+- **Cristales:** yacimientos subterráneos finitos; se generan como **puntos dispersos**: grupos de 2-3, y los más grandes de 4-5; no son un parche continuo. Se garantiza al menos un grupo hacia los bordes. El extractor queda detrás de **Cristalografía**, una investigación cara pagada con biodiésel; no se usa cristal en su coste para evitar un ciclo. Los cristales no tienen uso todavía.
+- Recursos nuevos: **madera, carbón, biodiésel y cristales**. Madera y carbón alimentan el generador; el biodiésel se produce en el procesador; los cristales quedan reservados para v6.
 - Pendiente: regrow de brotes, visibilidad de yacimientos subterráneos y curvas de rareza por distancia.
 
 ### Red y módulos
@@ -144,7 +143,7 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 - **Cámara dinámica:** puede llegar a los cuatro bordes del mapa; el cursor sigue limitado a lo explorado.
 - **Estación de monitoreo:** 6 Cmp, 1,5 d, 2 E/d; si está online y conectada desbloquea la pantalla de red con producción y consumo en dos columnas, energía y módulos online/offline/en obra.
 - **Rename visible:** Cable → **Enlace**; el ID interno `cable` no cambia para no romper saves.
-- **Prep etapa 5:** extractores de carbón/cristal y generador de combustible disponibles sin árbol tecnológico; el combustible ya tiene un uso (20 E/d).
+- **Fase 5:** generador eléctrico desde el inicio, menú de combustible, tecnologías de solar/carbón/cristal/almacenamiento y batería. El menú A+A es declarativo y reutilizable: cada módulo aporta acciones y la UI solo las renderiza.
 
 ### UI
 
@@ -154,7 +153,7 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 - Menú de construcción por pestañas; categorías vacías ocultas; no disponibles en gris con “Investigar”; coste, faltante, descripción y flujo produce/consume visibles. Cada módulo se muestra como tarjeta horizontal con icono, borde/fondo propio y la seleccionada resaltada en ámbar. Coste multi-material con un icono+cantidad por recurso y faltantes por recurso; **modal con scroll vertical animado para N tarjetas** y controles en pie separado; **selector de categorías circular con slide/fade**, selección centrada y etiquetas difuminadas hacia los bordes (feedback beta 2026-11-05).
 - Panel de módulo: estado, descripción, producción/consumo con nombres y día de construcción. Los módulos mixtos muestran ambas cosas; el reciclador muestra chatarra procesada y mineral reciclado.
 - Ruinas: se dibujan en el mapa, se inspeccionan en el panel y se recogen con A. La demolición/cancelación abre un modal con confirmación A/B.
-- Acciones especiales: cada módulo declara `special_action`; con el módulo activo e inspeccionado, A ejecuta la acción y el panel muestra “Pulsa A para {acción}”. SELECT queda libre. Laboratorio: A otra vez abre Tecnología. El cable forma una red logística única que conecta módulos de cualquier tipo; el almacén no se puede apagar.
+- Acciones especiales: cada módulo declara sus acciones de menú; con el módulo activo e inspeccionado, A abre el menú y la acción elegida se despacha desde un registro central. SELECT queda libre. El cable forma una red logística única que conecta módulos de cualquier tipo; el almacén y la batería no se pueden apagar.
 - **Menú contextual A+A (feedback beta 2026-11-05):** todos los módulos abren un menú con A+A (seleccionar y abrir). Apagar y demoler salen del menú, sin teclas dedicadas; el laboratorio conserva A+A para investigar. Pendiente de diseño de UI.
 - **Categorías (feedback beta 2026-11-05):** Energía, Extracción, Soporte Vital, Red Logística, Investigación y Defensa. La trampa de peces va en Extracción; el scroll del modal elimina la restricción de espacio.
 - Badge de modo/pausa y celda seleccionada. X cambia capa también en modo colocar. Los estados son concisos, sin paréntesis explicativos.
@@ -170,9 +169,10 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 5. ~~Mundo 2048 + generación.~~ Cerrado (2026-11-05).
 6. ~~UI de construcción (scroll/carrusel/nombres).~~ Cerrado (2026-11-05).
 7. ~~Red y módulos.~~ Cerrado (2026-11-05).
-8. **Batería/almacén + energía (actual).** Criterio: almacén sin cap de energía, batería con cap, tecnología y rebalance.
-9. ~~Prep etapa 5: extractores de carbón/cristal y generador de combustible.~~ Cerrado (2026-11-05); falta árbol tecnológico, combate y eventos.
-10. **Eventos, expansión y combate.** Backlog; no abrir antes de cerrar los slices anteriores.
+8. ~~Generador eléctrico multi-combustible + tecnologías solar/carbón.~~ Cerrado (2026-11-06).
+9. ~~Cristalografía y extractor de cristales.~~ Cerrado (2026-11-06); cristales sin uso hasta v6.
+10. ~~Batería y almacenamiento especializado.~~ Cerrado (2026-11-06); almacén general conserva +40 sin energía/O₂.
+11. **v6:** usos de cristales, tanques de O₂/agua, combate/eventos, prerequisitos y tecnologías que solo desbloquean otras tecnologías.
 
 > La retroalimentación beta 2026-11-05 se ejecutó en las etapas 0-4; ver [beta-txxt.md](beta-txxt.md).
 
@@ -182,15 +182,15 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 |---------|---------|------|--------|
 | O₂ | Reserva inicial, invernadero (con agua), electrolizador | Soporte vital | Hecho |
 | Agua | Extractor, condensador | Soporte vital, invernadero, electrólisis | Hecho |
-| Energía | Panel solar | Casi todos los módulos | Hecho |
+| Energía | Panel solar; generador eléctrico (madera/carbón/biodiésel) | Casi todos los módulos | Hecho |
 | Comida | Invernadero; trampa de peces | Soporte vital; biodiésel | Hecho |
 | Mineral | Mina; reciclador | Fabricador | Hecho |
 | Componentes | Fabricador | Construcción, investigación | Hecho |
 | Chatarra | Ruinas, demolición | Reciclador, investigación | Hecho |
-| Madera | Bosques (árboles) | Construcción/combustible por definir | Fuente hecha; usos pendientes |
-| Carbón | Yacimientos subterráneos (extractor de carbón) | Combustible/energía por definir | Fuente hecha; usos pendientes |
-| Cristales | Yacimientos subterráneos (extractor de cristales) | Tecnología/módulos avanzados por definir | Fuente hecha; usos pendientes |
-| Combustible/biodiésel | Procesador de biodiésel | Generador de combustible (20 E/d) | Hecho |
+| Madera | Bosques (árboles) | Generador eléctrico (5 E/d) | Hecho |
+| Carbón | Yacimientos subterráneos (extractor de carbón) | Generador eléctrico (12 E/d) | Hecho; extractor con tecnología barata |
+| Cristales | Yacimientos subterráneos (extractor de cristales) | Reservados para v6 (láseres/tecnología avanzada) | Extracción con Cristalografía; uso pendiente |
+| Biodiésel (`fuel`) | Procesador de biodiésel | Generador eléctrico (20 E/d) y Cristalografía | Hecho |
 
 > 2 fuentes / 2 usos es deseable, no obligatorio. **Excepción de beta (2026-11-05):** se aceptan recursos sin fuente/uso completo (madera, carbón, combustible y cristales) para dejar la infraestructura y el contenido de mundo listos; se completan en etapas posteriores.
 
@@ -201,7 +201,7 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 | Reservas iniciales | 12 O₂ / 9 agua / 7 comida / 10 energía (días) |
 | Caps iniciales | 140 O₂ / 100 agua / 80 comida / 100 energía / 40 mineral / 80 Cmp / 30 chatarra / 60 madera / 60 carbón / 60 combustible / 40 cristales |
 | Componentes iniciales / cap | 60 / 80 |
-| Chatarra inicial / cap | 0 / 30 (+40 por almacén) |
+| Chatarra inicial / cap | 0 / 30 (+40 por almacén general) |
 | Ruinas | 26 (2 garantizadas + 24 procedurales), 4-10 chatarra |
 | Fabricador | 5 Cmp + 2 mineral, 2 d, 4 E/d, 6 mineral/d → 4 Cmp/d |
 | Reciclador | 3 Cmp, 0,5 d, 1 E/d, 0,5 agua/d, 4 chatarra/d → 3,6 mineral/d + 0,2 Cmp/d |
@@ -214,10 +214,11 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 | Invernadero | 10 Cmp, 1,5 d, 3 E/d, 4 agua/d → 6 comida/d + 3 O₂/d (O₂ requiere agua) |
 | Trampa de peces | 2 Cmp, 0,5 d, sin energía; ~3 comida/noche (1 tirada/hora, 0 permitido) |
 | Procesador de biodiésel | 4 Cmp, 1 d, 2 E/d, 2 agua/d, 4 comida/d → 1 combustible/d |
-| Extractor de carbón | 8 Cmp + 2 mineral, 1,5 d, 3 E/d → 6 carbón/d |
-| Extractor de cristales | 10 Cmp + 4 mineral, 2 d, 4 E/d → 2 cristales/d |
-| Generador de combustible | 8 Cmp + 2 mineral, 1,5 d, 1 combustible/d → 20 E/d |
+| Extractor de carbón | 8 Cmp + 2 mineral, 1,5 d, 3 E/d → 6 carbón/d; requiere Minería de carbón (4 Cmp, 0,75 d) |
+| Extractor de cristales | 10 Cmp + 4 mineral, 2 d, 4 E/d → 2 cristales/d; requiere Cristalografía (10 Cmp + 8 biodiésel, 3 d) |
+| Generador eléctrico | 8 Cmp + 2 mineral, 1,5 d, 1 unidad/d → 5/12/20 E/d (madera/carbón/biodiésel); arranca apagado |
 | Estación de monitoreo | 6 Cmp, 1,5 d, 2 E/d; pantalla de red |
+| Batería | 8 Cmp + 4 mineral, 2 d; +100 cap de energía; requiere Almacenamiento especializado (6 Cmp + 2 mineral, 2 d) |
 | Mundo | Default 2048×2048, arrays compactos (~40 MB), generación por anillos difusos |
 | Núcleo estable | 2 solar + 2 extractores + invernadero + laboratorio + electrolizador |
 

@@ -3,7 +3,7 @@
 **Fecha:** 2026-11-05
 **Tester:** TxxT
 **Build:** beta PC 2x (`tools/dev_beta/`)
-**Estado:** etapas 0-4 implementadas y prep etapa 5 (2026-11-05).
+**Estado:** etapas 0-4 y fase 5 implementadas (2026-11-06).
 
 > Este archivo conserva el feedback crudo y las decisiones acordadas. La tabla de implementación de abajo es el estado real; las secciones de feedback conservan el texto original.
 
@@ -16,7 +16,7 @@
 | 2 | B31 (scroll), B32 (carrusel animado), D8 (nombres), D11 (animaciones) | Ajustes de tuning visual |
 | 3 | B17/D1 (trampa RNG nocturna), B16/D2 (extractor/mina 50%), B15/D9 (invernadero 6/3), sink de comida (biodiésel) | B14: más usos para la comida |
 | 4 | B01 (Cable→Enlace), B02 (cables libres), B06 (A+A), B08 (cámara), B11/D7 (monitoreo) | Ajustes de tuning visual |
-| Prep 5 | Extractores de carbón/cristal, generador de combustible | Árbol tecnológico, combate y eventos |
+| Fase 5 | Generador multi-combustible, A+A declarativo, solar/carbón/cristal/almacenamiento, batería | v6: cristales, tanques especializados, combate/eventos |
 
 ## Resumen
 
@@ -468,12 +468,13 @@ Estas ideas dependen de combate/late game y no entran en el slice actual:
 | **2. UI de construcción** | **Hecho** — scroll, carrusel animado, nombres y animaciones |
 | **3. Trampa + comida + extractores** | **Hecho** — RNG nocturna, extractor/mina al 50%, invernadero 6/3, biodiésel como sink |
 | **4. Red y módulos** | **Hecho** — rename Cable→Enlace, cables libres, menú A+A, cámara y estación de monitoreo |
-| **Prep 5** | **Hecho** — extractores de carbón/cristal y generador de combustible |
-| **5. Contenido/late game** | **Siguiente/backlog** — árbol tecnológico de carbón/cristal/combustible, combate, eventos y Mk II |
+| **Fase 5** | **Hecho** — generador multi-combustible, tecnologías solar/carbón/cristal/almacenamiento y batería |
+| **v6** | **Siguiente/backlog** — usos de cristales, tanque de O₂, tanques especializados, prerequisitos, combate/eventos y Mk II |
 
 **Notas:**
 - Benchmark 2048 en PC: ~60 ms de generación, ~40 MB de arrays y ~3,9 ms por frame de mapa; falta medir en R36S.
-- La etapa 5 ahora tiene fuentes y un uso de combustible; falta el árbol tecnológico y el combate/eventos.
+- La fase 5 cierra energía/cristales/almacenamiento. El árbol tecnológico ya soporta `prereqs` y `unlock_kinds` múltiple; v6 agrega contenido de cristales, prerequisitos y combate/eventos.
+- El generador arranca apagado y sin combustible; se apaga solo si no hay selección o se agota. La madera/carbón/biodiésel producen 5/12/20 E/d con consumo fijo de 1 unidad/día.
 
 ## Archivos probablemente afectados
 
