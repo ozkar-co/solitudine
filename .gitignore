@@ -12,3 +12,4 @@ tools/dev_beta/build/
 tools/dev_beta/dist/
 tools/dev_beta/saves/
 tools/dev_beta/*.log
+tmp/
