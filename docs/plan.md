@@ -111,7 +111,7 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 ### Agua y exploración
 
 - **Generación por anillos difusos** (feedback beta 2026-11-05): la densidad de recursos crece con la distancia al hábitat; los raros (cristales) son escasos cerca y aumentan hacia los bordes; cuota mínima por región para evitar zonas vacías. Ver [beta-txxt.md](beta-txxt.md).
-- **Mapa parametrizable** con default **2048×2048**; cada partida nueva elige una seed aleatoria `ABC-123` (3 letras + 3 números) y el save guarda `size`/`seed`. `--seed`/`SOLITUDINE_SEED` permite reproducir. Arrays compactos para que entre en R36S; chunks/dinámico queda para después.
+- **Mapa parametrizable** con default **2048×2048**; cada partida nueva elige una seed aleatoria `ABC-123` (3 letras + 3 números), visible como nombre del planeta; el save guarda `size`/`seed`. `--seed`/`SOLITUDINE_SEED` permite reproducir. Arrays compactos para que entre en R36S; chunks/dinámico queda para después.
 - El agua tiene un depósito garantizado; los depósitos extra usan generación por anillos difusos. Es finita y no se regenera.
 - El radar es la única exploración permanente y encuentra todo (incluidos ruinas, bosques y cristales).
 - Quedarse sin energía puede matar por sed a través del condensador; se acepta.

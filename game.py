@@ -387,7 +387,6 @@ def run(dev: bool = False, handheld: bool = False, scale: float = 1.0) -> int:
                 keymap=DEV_KEYMAP,
                 zoom_px=camera.tile_px,
                 time_scale=time_scale,
-                seed=world.seed,
                 debug_lines=debug_lines,
             )
 

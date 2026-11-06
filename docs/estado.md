@@ -65,7 +65,7 @@ tools\dev_beta\build.ps1           # beta PC Windows 1x (PowerShell)
 - Cables de colocación libre; los tramos desconectados no alimentan hasta conectar. El display del cable es **Enlace**.
 - A+A abre un menú declarativo desde `ModuleDef.menu_actions`, con acciones comunes generadas y un registro central de handlers. B ya no demuele módulos; queda para cables.
 - La cámara llega a los bordes del mapa; el cursor sigue limitado a lo explorado.
-- Cada partida nueva usa una **seed aleatoria con formato `ABC-123`** (3 letras + 3 números); `--seed`/`SOLITUDINE_SEED` permite reproducir un mundo. El save conserva `size` y `seed`. La pausa ofrece **Nueva partida** con confirmación y **Salir**.
+- Cada partida nueva usa una **seed aleatoria con formato `ABC-123`** (3 letras + 3 números); `--seed`/`SOLITUDINE_SEED` permite reproducir un mundo. El save conserva `size` y `seed`. La seed se muestra como nombre del planeta arriba a la izquierda (`SOLITUDINE ABC-123`). La pausa ofrece **Nueva partida** con confirmación y **Salir**.
 - La estación de monitoreo requiere estar online y conectada para abrir la pantalla de red, con producción y consumo en dos columnas.
 - Todos los modales usan `ui_modals.draw_modal` (título/subtítulo/columnas/scroll/ayuda) y son anchos; no se redefinen cajas ni pies.
 - Beta PC pública 1x (`main.py`/`SolitudineBeta`); `--2x` queda para desarrollo local y no hay variante intermedia.

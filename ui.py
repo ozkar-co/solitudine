@@ -120,7 +120,7 @@ def draw_top_bar(
     if worst != AlertLevel.OK:
         pygame.draw.rect(surf, bar_border, rect, 2)
 
-    title = f"{t('game.title')}  {t('planet.code')}"
+    title = f"{t('game.title')}  {world.seed}"
     surf.blit(font_sm.render(title, False, COL_TEXT), (8, 0))
     day = f"{t('hud.day', day=sim.day)} {t('hud.hour', hour=sim.hour)}"
     day_s = font_sm.render(day, False, COL_DIM)
@@ -192,7 +192,6 @@ def draw_dev_debug(
     keymap: str,
     zoom_px: int,
     time_scale: float = 1.0,
-    seed: str = "",
     debug_lines: list[str] | None = None,
 ) -> None:
     from gamepad import format_actions
@@ -200,7 +199,7 @@ def draw_dev_debug(
     rect = map_rect()
     lines = [
         f"FPS {fps:4.1f}  frame {frame_ms:5.1f}ms  celdas {tiles_drawn}  zoom {zoom_px}px  tiempo x{time_scale:g}",
-        f"seed {seed}  gen {gen_ms:.0f}ms  held: {format_actions(held)}",
+        f"gen {gen_ms:.0f}ms  held: {format_actions(held)}",
     ]
     y = rect.y + 4
     for line in lines:
