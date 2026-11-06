@@ -288,22 +288,8 @@ def _panel_wrapped(
     return y
 
 
-def _build_kind_label(kind: BuildKind) -> str:
-    return {
-        BuildKind.CABLE: t("build.cable"),
-        BuildKind.SOLAR: t("build.solar"),
-        BuildKind.RADAR: t("build.radar"),
-        BuildKind.EXTRACTOR: t("build.extractor"),
-        BuildKind.MINE: t("build.mine"),
-        BuildKind.FABRICATOR: t("build.fabricator"),
-        BuildKind.GREENHOUSE: t("build.greenhouse"),
-        BuildKind.STORAGE: t("build.storage"),
-        BuildKind.LAMP: t("build.lamp"),
-        BuildKind.LABORATORY: t("build.laboratory"),
-        BuildKind.ELECTROLYZER: t("build.electrolyzer"),
-        BuildKind.CONDENSER: t("build.condenser"),
-        BuildKind.RECYCLER: t("build.recycler"),
-    }[kind]
+def build_kind_label(kind: BuildKind) -> str:
+    return t(f"build.{kind.name.lower()}")
 
 
 def _draw_build_resources(
@@ -346,7 +332,7 @@ def _draw_build_place(
     build = sim.build
     surf.blit(font.render(t("build.title"), False, COL_TEXT), (rect.x + 8, y))
     y += 26
-    _panel_line(surf, font_sm, rect.x + 8, y, _build_kind_label(build.selected))
+    _panel_line(surf, font_sm, rect.x + 8, y, build_kind_label(build.selected))
     y += 18
     cost = kind_cost(build.selected)
     _panel_line(surf, font_sm, rect.x + 8, y, t("build.cost_label"), COL_DIM)
@@ -595,11 +581,7 @@ def draw_panel(
     y = rect.y + 10
     surf.blit(font.render(t("panel.title"), False, COL_TEXT), (rect.x + 8, y))
     y += 24
-    layer_name = {
-        MapLayer.TERRAIN: t("layer.terrain"),
-        MapLayer.RESOURCES: t("layer.resources"),
-    }[layer]
-    surf.blit(font_sm.render(layer_name, False, COL_DIM), (rect.x + 8, y))
+    surf.blit(font_sm.render(t(f"layer.{layer.name.lower()}"), False, COL_DIM), (rect.x + 8, y))
     y += 22
 
     if sel_x is None or sel_y is None:
@@ -663,12 +645,13 @@ def draw_panel(
 
     tile = world.tile_at(sel_x, sel_y)
     if tile is not None:
-        names = {
-            Tile.GROUND: t("tile.ground"),
-            Tile.WATER: t("tile.water"),
-            Tile.ROCK: t("tile.rock"),
-        }
-        _panel_line(surf, font_sm, rect.x + 8, y, t("panel.type", type=names[tile]))
+        _panel_line(
+            surf,
+            font_sm,
+            rect.x + 8,
+            y,
+            t("panel.type", type=t(f"tile.{tile.name.lower()}")),
+        )
         y += 16
         if tile == Tile.WATER:
             amt = world.deposit_amount_at(sel_x, sel_y)

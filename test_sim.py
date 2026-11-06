@@ -13,6 +13,7 @@ from unittest.mock import patch
 
 import demolition
 import game
+import i18n
 from config import (
     BIODIESEL_FOOD_DAILY,
     BIODIESEL_FUEL_DAILY,
@@ -1696,3 +1697,26 @@ class FuelSaveTests(unittest.TestCase):
             saved = _world.module_at(mod.x, mod.y)
             self.assertIsNotNone(saved)
             self.assertEqual(saved.fuel_resource, ResourceId.COAL)
+
+
+class UILocaleCoverageTests(unittest.TestCase):
+    def setUp(self) -> None:
+        i18n.load("es")
+
+    def test_build_kind_labels(self) -> None:
+        from ui_panel import build_kind_label
+
+        for kind in BuildKind:
+            key = f"build.{kind.name.lower()}"
+            self.assertNotEqual(build_kind_label(kind), key, key)
+
+    def test_module_labels(self) -> None:
+        for kind in ModuleKind:
+            for prefix in ("module", "module_desc"):
+                key = f"{prefix}.{kind.value}"
+                self.assertNotEqual(i18n.t(key), key, key)
+
+    def test_resource_labels(self) -> None:
+        for resource in ResourceId:
+            key = f"resource.{resource.value}"
+            self.assertNotEqual(i18n.t(key), key, key)

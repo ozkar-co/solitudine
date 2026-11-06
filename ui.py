@@ -44,7 +44,7 @@ from ui_modals import (
     render_items,
     render_segments,
 )
-from ui_panel import draw_panel, module_debug_lines
+from ui_panel import build_kind_label, draw_panel, module_debug_lines
 from ui_theme import (
     COL_BORDER,
     COL_CARD,
@@ -216,31 +216,6 @@ def draw_dev_debug(
     for line in keymap.splitlines():
         surf.blit(font_sm.render(line, False, (90, 140, 200)), (rect.x + 4, y))
         y += 16
-
-
-def _build_kind_label(kind: BuildKind) -> str:
-    return {
-        BuildKind.CABLE: t("build.cable"),
-        BuildKind.SOLAR: t("build.solar"),
-        BuildKind.RADAR: t("build.radar"),
-        BuildKind.EXTRACTOR: t("build.extractor"),
-        BuildKind.MINE: t("build.mine"),
-        BuildKind.FABRICATOR: t("build.fabricator"),
-        BuildKind.GREENHOUSE: t("build.greenhouse"),
-        BuildKind.STORAGE: t("build.storage"),
-        BuildKind.BATTERY: t("build.battery"),
-        BuildKind.LAMP: t("build.lamp"),
-        BuildKind.LABORATORY: t("build.laboratory"),
-        BuildKind.ELECTROLYZER: t("build.electrolyzer"),
-        BuildKind.CONDENSER: t("build.condenser"),
-        BuildKind.RECYCLER: t("build.recycler"),
-        BuildKind.FISH_TRAP: t("build.fish_trap"),
-        BuildKind.BIODIESEL: t("build.biodiesel"),
-        BuildKind.MONITOR: t("build.monitor"),
-        BuildKind.COAL_EXTRACTOR: t("build.coal_extractor"),
-        BuildKind.CRYSTAL_EXTRACTOR: t("build.crystal_extractor"),
-        BuildKind.FUEL_GENERATOR: t("build.fuel_generator"),
-    }[kind]
 
 
 def _build_kind_desc(kind: BuildKind) -> str:
@@ -471,7 +446,7 @@ def draw_build_menu_modal(
         text_x = card.x + 9 + BUILD_CARD_ICON + 10
         text_y = card.y + 5
 
-        items = [("", f"{_build_kind_label(kind)} ( ", color)]
+        items = [("", f"{build_kind_label(kind)} ( ", color)]
         for resource, amount in cost.items():
             items.append(
                 (RESOURCE_BY_ID[resource].icon, format_amount(amount), color)
