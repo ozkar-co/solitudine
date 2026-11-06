@@ -28,7 +28,7 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 - Recursos actuales: O₂, energía, agua, comida, mineral, componentes y chatarra.
 - Nuevos (2026-11-05): madera, carbón, biodiésel y cristales. Madera y carbón alimentan el generador; el biodiésel se produce y se usa en el generador y en Cristalografía; los cristales quedan para v6.
 - O₂, agua y comida son letales al llegar a cero; la energía es una restricción, pero puede matar indirectamente si falta agua para el condensador.
-- Los depósitos son finitos; el agua tiene un depósito garantizado. La generación usa **anillos difusos**: densidad creciente con la distancia, rareza por recurso y cuota mínima por región. Cada partida nueva usa una **seed aleatoria**; `--seed` la fija y el save la conserva. Bosques, carbón y cristales se generan ya. Detalle en [beta-txxt.md](beta-txxt.md).
+- Los depósitos son finitos; el agua tiene un depósito garantizado. La generación usa **anillos difusos**: densidad creciente con la distancia, rareza por recurso y cuota mínima por región. Cada partida nueva usa una **seed aleatoria `ABC-123`** (3 letras + 3 números); `--seed` la fija y el save la conserva. Bosques, carbón y cristales se generan ya. Detalle en [beta-txxt.md](beta-txxt.md).
 - La regla de 2 fuentes / 2 usos es una heurística, no una obligación. La matriz completa está en [plan.md](plan.md).
 
 ## Red y logística

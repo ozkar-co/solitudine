@@ -1245,10 +1245,9 @@ class WorldGenerationTests(unittest.TestCase):
         self.assertIsInstance(world.deposits, bytearray)
         self.assertIsInstance(world.deposit_amounts, array)
 
-    def test_new_seed_is_short_and_reproducible(self) -> None:
+    def test_new_seed_shape_and_reproducible(self) -> None:
         seed = new_seed()
-        self.assertEqual(len(seed), 8)
-        self.assertTrue(all(ch in "0123456789ABCDEF" for ch in seed))
+        self.assertRegex(seed, r"^[A-Z]{3}-[0-9]{3}$")
         a = generate_world(seed=seed, size=128)
         b = generate_world(seed=seed, size=128)
         self.assertEqual(bytes(a.tiles), bytes(b.tiles))

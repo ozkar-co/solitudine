@@ -228,7 +228,7 @@ Notas de implementación (2026-11-05):
 
 **B19 — Mundos aleatorios**
 - Feedback: “ya podemos habilitar los mundos aleatorios”.
-- Estado: **implementado (2026-11-06)**: cada partida nueva usa seed aleatoria; el save conserva `size`/`seed`; `--seed`/`SOLITUDINE_SEED` reproduce un mundo; la pausa ofrece **Nueva partida** con confirmación. La seed actual se muestra en el overlay dev.
+- Estado: **implementado (2026-11-06)**: cada partida nueva usa seed aleatoria `ABC-123` (3 letras + 3 números); el save conserva `size`/`seed`; `--seed`/`SOLITUDINE_SEED` reproduce un mundo; la pausa ofrece **Nueva partida** con confirmación. La seed actual se muestra en el overlay dev.
 - Pendiente opcional: seed visible en menú de pausa, reroll sin borrar progreso y compartir mundos por seed.
 
 **B20 — Mapa más grande, chunks y generación dinámica**

@@ -41,7 +41,7 @@ make config                        # venv + wheelhouse
 make test                          # tests de regresión
 .venv/bin/python main.py --dev     # PC, teclado como mando
 .venv/bin/python main.py --dev --2x  # PC, ventana 2x para depurar
-.venv/bin/python main.py --dev --seed MI_SEED  # mundo reproducible
+.venv/bin/python main.py --dev --seed ABC-123  # mundo reproducible
 .venv/bin/python main.py --dev --world-size 1024  # mapa más chico para probar
 make dist                          # paquete PortMaster
 ./tools/dev_beta/build.sh          # beta PC Linux 1x (temporal)
@@ -65,7 +65,7 @@ tools\dev_beta\build.ps1           # beta PC Windows 1x (PowerShell)
 - Cables de colocación libre; los tramos desconectados no alimentan hasta conectar. El display del cable es **Enlace**.
 - A+A abre un menú declarativo desde `ModuleDef.menu_actions`, con acciones comunes generadas y un registro central de handlers. B ya no demuele módulos; queda para cables.
 - La cámara llega a los bordes del mapa; el cursor sigue limitado a lo explorado.
-- Cada partida nueva usa una **seed aleatoria**; `--seed`/`SOLITUDINE_SEED` permite reproducir un mundo. El save conserva `size` y `seed`. La pausa ofrece **Nueva partida** con confirmación y **Salir**.
+- Cada partida nueva usa una **seed aleatoria con formato `ABC-123`** (3 letras + 3 números); `--seed`/`SOLITUDINE_SEED` permite reproducir un mundo. El save conserva `size` y `seed`. La pausa ofrece **Nueva partida** con confirmación y **Salir**.
 - La estación de monitoreo requiere estar online y conectada para abrir la pantalla de red, con producción y consumo en dos columnas.
 - Todos los modales usan `ui_modals.draw_modal` (título/subtítulo/columnas/scroll/ayuda) y son anchos; no se redefinen cajas ni pies.
 - Beta PC pública 1x (`main.py`/`SolitudineBeta`); `--2x` queda para desarrollo local y no hay variante intermedia.

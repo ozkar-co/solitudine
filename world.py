@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 import random
 import secrets
+import string
 from array import array
 from dataclasses import dataclass, field
 from enum import IntEnum
@@ -296,8 +297,10 @@ class World:
 
 
 def new_seed() -> str:
-    """Semilla corta y legible para una partida nueva."""
-    return secrets.token_hex(4).upper()
+    """Nombre/semilla de mapa: 3 letras + 3 números (p. ej. NEP-325)."""
+    letters = "".join(secrets.choice(string.ascii_uppercase) for _ in range(3))
+    digits = "".join(secrets.choice(string.digits) for _ in range(3))
+    return f"{letters}-{digits}"
 
 
 def _seed_int(text: str) -> int:
