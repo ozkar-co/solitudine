@@ -38,7 +38,7 @@ def draw_tech_screen(
             color = COL_TEXT if is_selected else COL_DIM
         text = (
             f"{prefix} {status} {t(tech.name_key)}  T{tech.tier}  "
-            f"{format_cost_text(tech.cost)} / {tech.days:.0f}d"
+            f"{format_cost_text(tech.cost)} / {tech.days:.1f}d"
         )
         lines.append(ModalLine(text, color))
 
@@ -49,7 +49,7 @@ def draw_tech_screen(
     requires = ", ".join(t(tech_def(p).name_key) for p in selected.prereqs) if selected.prereqs else t("tech.lab")
     lines.append(ModalLine(t("tech.requires", value=requires), COL_DIM))
     if research.active == selected.id:
-        lines.append(ModalLine(t("tech.progress", value=f"{research.progress:.2f}", total=f"{selected.days:.0f}"), COL_WARN))
+        lines.append(ModalLine(t("tech.progress", value=f"{research.progress:.2f}", total=f"{selected.days:.1f}"), COL_WARN))
     elif research.active is not None:
         lines.append(ModalLine(t("tech.busy", name=t(tech_def(research.active).name_key)), COL_WARN))
     if selected.id in research.unlocked:
