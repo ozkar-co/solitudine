@@ -43,8 +43,9 @@ def draw_tech_screen(
         lines.append(ModalLine(text, color))
 
     lines.append(ModalLine(t(selected.desc_key), COL_DIM))
-    if selected.unlock_kind is not None:
-        lines.append(ModalLine(t("tech.unlocks", name=t(f"build.{selected.unlock_kind.value}")), COL_DIM))
+    if selected.unlock_kinds:
+        names = ", ".join(t(f"build.{kind.value}") for kind in selected.unlock_kinds)
+        lines.append(ModalLine(t("tech.unlocks", name=names), COL_DIM))
     requires = ", ".join(t(tech_def(p).name_key) for p in selected.prereqs) if selected.prereqs else t("tech.lab")
     lines.append(ModalLine(t("tech.requires", value=requires), COL_DIM))
     if research.active == selected.id:

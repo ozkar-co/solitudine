@@ -34,8 +34,9 @@ from credits import CREDITS_SCROLL_STEP
 from game_input import handle_frame_input
 from input_state import FrameInput, Input
 from logistics import network_caps
-from module_defs import buffer_cap, module_active
+from module_defs import GENERATOR_FUEL_POWER, buffer_cap, module_active, module_def
 from module_kind import ModuleKind
+from module_menu import ModuleMenu
 from module_power import module_energy_daily
 from network import get_connected, invalidate_network_cache
 from network_report import build_network_report
@@ -43,7 +44,7 @@ from research import ResearchState
 from resources import AlertLevel, Cost, ResourceId, ResourcePool
 from savegame import delete_save, load_game, save_game
 from simulation import Simulation
-from tech_defs import tech_def
+from tech_defs import TECHS, tech_def
 from vision import on_module_built
 from ui import MapLayer
 from ui_map import coast_overlay_plan
@@ -235,7 +236,7 @@ class BuildInputTests(unittest.TestCase):
     def test_build_menu_categories(self) -> None:
         build = BuildController()
         build.enter_menu()
-        self.assertEqual(build.selected, BuildKind.SOLAR)
+        self.assertEqual(build.selected, BuildKind.FUEL_GENERATOR)
 
         build.menu_right()
         self.assertEqual(build.menu_category, 1)
@@ -579,6 +580,9 @@ class ResearchTests(unittest.TestCase):
         sim = Simulation()
         sim.day_progress = 0.5
         lab = add_module(world, ModuleKind.LABORATORY, 1)
+        sim.research.selected = next(
+            index for index, tech in enumerate(TECHS) if tech.id == "electrolisis"
+        )
         before = sim.resources.components
         self.assertTrue(sim.start_research(world))
         self.assertEqual(sim.resources.components, before - 4.0)
@@ -1500,7 +1504,9 @@ class Stage5PrepTests(unittest.TestCase):
         sim.day_progress = 0.5
         sim.resources.fuel = 10.0
         sim.resources.power = 10.0
-        add_module(world, ModuleKind.FUEL_GENERATOR, 1)
+        mod = add_module(world, ModuleKind.FUEL_GENERATOR, 1)
+        mod.enabled = True
+        mod.fuel_resource = ResourceId.FUEL
         before = sim.resources.power
         run(sim, world, 1.0)
         self.assertAlmostEqual(10.0 - sim.resources.fuel, 1.0 / 48.0, places=4)
@@ -1518,3 +1524,144 @@ class Stage5PrepTests(unittest.TestCase):
         world.deposits[i] = Deposit.COAL
         world.deposit_amounts[i] = 100.0
         self.assertEqual(sim.build.preview(world, sim.resources, x, y), BuildPreview.OK)
+
+
+class PhaseFiveTechTests(unittest.TestCase):
+    def test_early_and_advanced_tech_gates(self) -> None:
+        gates = (
+            (BuildKind.SOLAR, "fotovoltaica"),
+            (BuildKind.COAL_EXTRACTOR, "carbon"),
+            (BuildKind.CRYSTAL_EXTRACTOR, "cristalografia"),
+            (BuildKind.BATTERY, "almacenamiento"),
+        )
+        for build, tech in gates:
+            self.assertTrue(kind_locked(build, set()))
+            self.assertFalse(kind_locked(build, {tech}))
+
+    def test_crystal_tech_uses_biodiesel_not_crystal(self) -> None:
+        tech = tech_def("cristalografia")
+        self.assertNotIn(ResourceId.CRYSTAL, tech.cost.amounts)
+        self.assertIn(ResourceId.FUEL, tech.cost.amounts)
+
+
+class FuelGeneratorTests(unittest.TestCase):
+    def _generator(self, world, sim, fuel: ResourceId, amount: float, enabled: bool = True) -> Module:
+        sim.resources.set_amount(fuel, amount)
+        mod = add_module(world, ModuleKind.FUEL_GENERATOR, 1, enabled=enabled)
+        mod.fuel_resource = fuel
+        return mod
+
+    def test_output_depends_on_fuel_and_burn_is_fixed(self) -> None:
+        for fuel, expected in GENERATOR_FUEL_POWER.items():
+            world = generate_world()
+            sim = Simulation()
+            sim.day_progress = 0.5
+            mod = self._generator(world, sim, fuel, 10.0)
+            self.assertAlmostEqual(module_energy_daily(mod, world), expected)
+            before = sim.resources.amount(fuel)
+            run(sim, world, 1.0)
+            self.assertAlmostEqual(before - sim.resources.amount(fuel), 1.0 / 48.0, places=4)
+
+    def test_generator_auto_off_without_selected_fuel(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        mod = add_module(world, ModuleKind.FUEL_GENERATOR, 1, enabled=True)
+        run(sim, world, 1.0)
+        self.assertFalse(mod.enabled)
+
+    def test_generator_auto_off_when_selected_fuel_runs_out(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        sim.resources.wood = 0.0
+        mod = add_module(world, ModuleKind.FUEL_GENERATOR, 1, enabled=True)
+        mod.fuel_resource = ResourceId.WOOD
+        run(sim, world, 1.0)
+        self.assertFalse(mod.enabled)
+
+    def test_build_creates_generator_off(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        x, y = HABITAT_X + 1, HABITAT_Y
+        prepare_tile(world, x, y)
+        sim.resources.components = 100.0
+        sim.resources.mineral = 100.0
+        sim.build.selected = BuildKind.FUEL_GENERATOR
+        self.assertTrue(sim.build.try_place(world, sim.resources, x, y))
+        mod = world.module_at(x, y)
+        self.assertIsNotNone(mod)
+        self.assertFalse(mod.enabled)
+        self.assertIsNone(mod.fuel_resource)
+
+
+class FuelMenuTests(unittest.TestCase):
+    def test_select_fuel_then_enable_generator(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        mod = add_module(world, ModuleKind.FUEL_GENERATOR, 1, enabled=False)
+        sim.resources.wood = 2.0
+        sim.resources.coal = 2.0
+        sim.module_menu = ModuleMenu.open(world, mod, sim.resources)
+        self.assertFalse(sim.module_menu.items[1].enabled)
+
+        inp = Input(dev_mode=False)
+
+        def press(key: str) -> None:
+            frame = FrameInput(frozenset({key}), frozenset({key}), frozenset())
+            handle_frame_input(
+                frame,
+                inp,
+                sim,
+                world,
+                layer=MapLayer.TERRAIN,
+                cursor_x=mod.x,
+                cursor_y=mod.y,
+                select_x=mod.x,
+                select_y=mod.y,
+            )
+
+        press("A")
+        self.assertEqual(sim.module_menu.page, "fuel")
+        press("DPAD_DOWN")
+        press("A")
+        self.assertEqual(mod.fuel_resource, ResourceId.COAL)
+        self.assertTrue(sim.module_menu.items[1].enabled)
+        press("DPAD_DOWN")
+        press("A")
+        self.assertTrue(mod.enabled)
+
+
+class StorageCapTests(unittest.TestCase):
+    def test_general_storage_excludes_power_and_o2(self) -> None:
+        world = generate_world()
+        base = network_caps(world)
+        add_module(world, ModuleKind.STORAGE, 1)
+        caps = network_caps(world)
+        self.assertEqual(caps[ResourceId.POWER], base[ResourceId.POWER])
+        self.assertEqual(caps[ResourceId.O2], base[ResourceId.O2])
+        self.assertGreater(caps[ResourceId.COMPONENTS], base[ResourceId.COMPONENTS])
+
+    def test_battery_adds_power_cap_only(self) -> None:
+        world = generate_world()
+        base = network_caps(world)
+        add_module(world, ModuleKind.BATTERY, 1)
+        caps = network_caps(world)
+        self.assertGreater(caps[ResourceId.POWER], base[ResourceId.POWER])
+        self.assertEqual(caps[ResourceId.O2], base[ResourceId.O2])
+        self.assertEqual(caps[ResourceId.COMPONENTS], base[ResourceId.COMPONENTS])
+
+
+class FuelSaveTests(unittest.TestCase):
+    def test_generator_fuel_roundtrip(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+        mod = add_module(world, ModuleKind.FUEL_GENERATOR, 1, enabled=False)
+        mod.fuel_resource = ResourceId.COAL
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "save.json"
+            save_game(world, sim, path)
+            loaded = load_game(path)
+            self.assertIsNotNone(loaded)
+            _world, _sim = loaded
+            saved = _world.module_at(mod.x, mod.y)
+            self.assertIsNotNone(saved)
+            self.assertEqual(saved.fuel_resource, ResourceId.COAL)

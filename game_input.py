@@ -94,6 +94,26 @@ def handle_frame_input(
     if sim.module_menu is not None:
         menu = sim.module_menu
         result.select_x, result.select_y = menu.x, menu.y
+        mod = world.module_at(menu.x, menu.y)
+        if mod is None:
+            sim.module_menu = None
+            return result
+
+        if menu.page == "fuel":
+            if inp.was_pressed(frame, "B") or inp.was_pressed(frame, "START"):
+                menu.page = "actions"
+            elif inp.was_pressed(frame, "DPAD_UP") or inp.was_pressed(frame, LJOY_UP):
+                menu.fuel_move(-1)
+            elif inp.was_pressed(frame, "DPAD_DOWN") or inp.was_pressed(frame, LJOY_DOWN):
+                menu.fuel_move(1)
+            elif inp.was_pressed(frame, "A"):
+                mod.fuel_resource = menu.current_fuel()
+                if sim.resources.amount(mod.fuel_resource) <= 0.0:
+                    mod.enabled = False
+                result.save_requested = True
+                sim.module_menu = ModuleMenu.open(world, mod, sim.resources)
+            return result
+
         if inp.was_pressed(frame, "B") or inp.was_pressed(frame, "START"):
             sim.module_menu = None
         elif inp.was_pressed(frame, "DPAD_UP") or inp.was_pressed(frame, LJOY_UP):
@@ -102,10 +122,7 @@ def handle_frame_input(
             menu.move(1)
         elif inp.was_pressed(frame, "A"):
             item = menu.current()
-            mod = world.module_at(menu.x, menu.y)
-            if mod is None:
-                sim.module_menu = None
-            elif item.enabled:
+            if item.enabled:
                 if item.action == "toggle":
                     mod.enabled = not mod.enabled
                     connected = (mod.x, mod.y) in get_connected(world)
@@ -122,6 +139,8 @@ def handle_frame_input(
                     sim.network_open = True
                     sim.network_scroll = 0
                     sim.module_menu = None
+                elif item.action == "fuel":
+                    menu.open_fuel(mod.fuel_resource)
                 elif item.action == "close":
                     sim.module_menu = None
         return result
@@ -254,7 +273,7 @@ def handle_frame_input(
                 result.layer = MapLayer.TERRAIN
             elif mod is not None:
                 if already_selected:
-                    sim.module_menu = ModuleMenu.open(world, mod)
+                    sim.module_menu = ModuleMenu.open(world, mod, sim.resources)
                     result.select_x, result.select_y = mod.x, mod.y
                 else:
                     result.select_x, result.select_y = cursor_x, cursor_y

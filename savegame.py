@@ -13,7 +13,7 @@ from pathlib import Path
 from config import WORLD_SEED, WORLD_SIZE
 from module_defs import module_def
 from module_kind import ModuleKind
-from resources import Cost, ResourcePool
+from resources import Cost, ResourceId, ResourcePool
 from simulation import Simulation
 from stats import Stats
 from world import Module, ModuleState, World
@@ -79,6 +79,9 @@ def _save_data(world: World, sim: Simulation) -> dict:
                     "clear_active": mod.clear_active,
                     "built_day": mod.built_day,
                     "cost_paid": mod.cost_paid.to_dict(),
+                    "fuel_resource": (
+                        mod.fuel_resource.value if mod.fuel_resource is not None else None
+                    ),
                 }
                 for mod in world.modules
             ],
@@ -173,6 +176,11 @@ def load_game(path: Path = SAVE_PATH) -> tuple[World, Simulation] | None:
             clear_active=raw["clear_active"],
             built_day=raw.get("built_day", 0),
             cost_paid=Cost.from_dict(raw.get("cost_paid")),
+            fuel_resource=(
+                ResourceId(raw["fuel_resource"])
+                if raw.get("fuel_resource") is not None
+                else None
+            ),
         )
         if not module_def(mod.kind).can_toggle:
             mod.enabled = True

@@ -40,7 +40,7 @@ from config import (
     WORLD_SIZE,
 )
 from module_kind import ModuleKind
-from resources import Cost
+from resources import Cost, ResourceId
 
 
 class Tile(IntEnum):
@@ -81,6 +81,7 @@ class Module:
     clear_active: bool = False
     built_day: int = 0
     cost_paid: Cost = field(default_factory=Cost.empty)
+    fuel_resource: ResourceId | None = None
 
     def __post_init__(self) -> None:
         if self.buffer_cap == 0.0 and self.kind.value not in MODULES_NO_BUFFER:

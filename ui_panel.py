@@ -123,7 +123,7 @@ def _module_status_key(mod, sim: Simulation, world: World, caps) -> str:
     defn = module_def(kind)
     if kind == ModuleKind.HABITAT:
         return "status.life_support"
-    if kind == ModuleKind.STORAGE:
+    if kind in (ModuleKind.STORAGE, ModuleKind.BATTERY):
         return "status.storage"
     if kind == ModuleKind.LAMP and darkness(sim.day_progress) <= 0.0:
         return "status.idle"
@@ -202,7 +202,9 @@ def _module_status_key(mod, sim: Simulation, world: World, caps) -> str:
         return "status.producing"
 
     if kind == ModuleKind.FUEL_GENERATOR:
-        if sim.resources.fuel <= 0.0:
+        if mod.fuel_resource is None:
+            return "status.no_fuel"
+        if sim.resources.amount(mod.fuel_resource) <= 0.0:
             return "status.no_fuel"
         if sim.resources.power >= caps[ResourceId.POWER]:
             return "status.no_output"
@@ -457,8 +459,29 @@ def _draw_module_inspection(
     if radius > 0:
         _panel_line(surf, font_sm, x, y, t("panel.light_radius", radius=radius))
         y += 16
+    if mod.kind == ModuleKind.FUEL_GENERATOR:
+        name = (
+            t(f"resource.{mod.fuel_resource.value}")
+            if mod.fuel_resource is not None
+            else t("panel.no_fuel")
+        )
+        _panel_line(surf, font_sm, x, y, t("panel.fuel", name=name))
+        y += 16
     if mod.kind == ModuleKind.STORAGE:
         _panel_line(surf, font_sm, x, y, t("panel.storage_bonus", value=format_amount(STORAGE_NETWORK_BONUS)))
+        y += 16
+    for resource, amount in module_def(mod.kind).storage_caps.items():
+        _panel_line(
+            surf,
+            font_sm,
+            x,
+            y,
+            t(
+                "panel.cap_resource",
+                resource=t(f"resource.{resource.value}"),
+                value=format_amount(amount),
+            ),
+        )
         y += 16
     if mod.buffer_cap > 0:
         _panel_line(

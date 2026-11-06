@@ -63,10 +63,10 @@ class ResourceDef:
 
 
 RESOURCES: tuple[ResourceDef, ...] = (
-    ResourceDef(ResourceId.O2, "resource.o2", "resource.o2.short", "o2", HABITAT_O2_CAP, lethal=True, top_bar=True, alert=True),
+    ResourceDef(ResourceId.O2, "resource.o2", "resource.o2.short", "o2", HABITAT_O2_CAP, lethal=True, top_bar=True, alert=True, storage_bonus=False),
     ResourceDef(ResourceId.WATER, "resource.water", "resource.water.short", "water", HABITAT_WATER_CAP, lethal=True, top_bar=True, alert=True),
     ResourceDef(ResourceId.FOOD, "resource.food", "resource.food.short", "food", HABITAT_FOOD_CAP, lethal=True, top_bar=True, alert=True),
-    ResourceDef(ResourceId.POWER, "resource.power", "resource.power.short", "power", HABITAT_POWER_CAP, top_bar=True, alert=True),
+    ResourceDef(ResourceId.POWER, "resource.power", "resource.power.short", "power", HABITAT_POWER_CAP, top_bar=True, alert=True, storage_bonus=False),
     ResourceDef(ResourceId.MINERAL, "resource.mineral", "resource.mineral.short", "mineral", HABITAT_MINERAL_CAP),
     ResourceDef(ResourceId.COMPONENTS, "resource.components", "resource.components.short", "components", HABITAT_COMPONENTS_CAP),
     ResourceDef(ResourceId.SCRAP, "resource.scrap", "resource.scrap.short", "scrap", HABITAT_SCRAP_CAP),

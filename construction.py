@@ -22,6 +22,7 @@ class BuildKind(Enum):
     FABRICATOR = auto()
     GREENHOUSE = auto()
     STORAGE = auto()
+    BATTERY = auto()
     RADAR = auto()
     LAMP = auto()
     LABORATORY = auto()
@@ -39,7 +40,7 @@ class BuildKind(Enum):
 BUILD_CATEGORIES: tuple[tuple[str, tuple[BuildKind, ...]], ...] = (
     (
         "category.energy",
-        (BuildKind.SOLAR, BuildKind.BIODIESEL, BuildKind.FUEL_GENERATOR),
+        (BuildKind.FUEL_GENERATOR, BuildKind.SOLAR, BuildKind.BIODIESEL, BuildKind.BATTERY),
     ),
     (
         "category.extraction",
@@ -101,6 +102,7 @@ BUILD_TO_MODULE: dict[BuildKind, ModuleKind] = {
     BuildKind.MINE: ModuleKind.MINE,
     BuildKind.FABRICATOR: ModuleKind.FABRICATOR,
     BuildKind.STORAGE: ModuleKind.STORAGE,
+    BuildKind.BATTERY: ModuleKind.BATTERY,
     BuildKind.LAMP: ModuleKind.LAMP,
     BuildKind.LABORATORY: ModuleKind.LABORATORY,
     BuildKind.ELECTROLYZER: ModuleKind.ELECTROLYZER,
@@ -355,6 +357,7 @@ class BuildController:
             build_progress=0.0,
             build_total=build_days,
             cost_paid=cost,
+            enabled=module_def(mod_kind).starts_enabled,
         )
         world.modules.append(mod)
         world.module_cells[(x, y)] = mod

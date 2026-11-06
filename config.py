@@ -72,7 +72,19 @@ STORAGE_NETWORK_BONUS = 40.0
 
 # Módulos que envían producción directo a la red (sin buffer local)
 MODULES_NO_BUFFER = frozenset(
-    {"habitat", "solar", "radar", "storage", "lamp", "laboratory", "electrolyzer", "condenser", "recycler"}
+    {
+        "habitat",
+        "solar",
+        "radar",
+        "storage",
+        "battery",
+        "fuel_generator",
+        "lamp",
+        "laboratory",
+        "electrolyzer",
+        "condenser",
+        "recycler",
+    }
 )
 
 ALERT_WARNING_DAYS = 3.0
@@ -108,11 +120,16 @@ COST_MONITOR = {"components": 6.0}
 COST_COAL_EXTRACTOR = {"components": 8.0, "mineral": 2.0}
 COST_CRYSTAL_EXTRACTOR = {"components": 10.0, "mineral": 4.0}
 COST_FUEL_GENERATOR = {"components": 8.0, "mineral": 2.0}
+COST_BATTERY = {"components": 8.0, "mineral": 4.0}
 
 # Costes de investigación
 COST_TECH_ELECTROLISIS = {"components": 4.0}
 COST_TECH_CONDENSADOR = {"components": 4.0}
 COST_TECH_RECICLAJE = {"scrap": 5.0, "components": 2.0, "mineral": 1.0}
+COST_TECH_FOTOVOLTAICA = {"components": 3.0}
+COST_TECH_CARBON = {"components": 4.0}
+COST_TECH_CRISTALOGRAFIA = {"components": 10.0, "fuel": 8.0}
+COST_TECH_ALMACENAMIENTO = {"components": 6.0, "mineral": 2.0}
 
 BUILD_DAYS_SOLAR = 1.0
 BUILD_DAYS_RADAR = 1.5
@@ -132,6 +149,7 @@ BUILD_DAYS_MONITOR = 1.5
 BUILD_DAYS_COAL_EXTRACTOR = 1.5
 BUILD_DAYS_CRYSTAL_EXTRACTOR = 2.0
 BUILD_DAYS_FUEL_GENERATOR = 1.5
+BUILD_DAYS_BATTERY = 2.0
 
 # Producción / consumo de módulos (por día)
 SOLAR_POWER_DAILY = 12.0
@@ -176,8 +194,12 @@ COAL_EXTRACTOR_POWER_DAILY = 3.0
 COAL_EXTRACTOR_COAL_DAILY = 6.0
 CRYSTAL_EXTRACTOR_POWER_DAILY = 4.0
 CRYSTAL_EXTRACTOR_CRYSTAL_DAILY = 2.0
-FUEL_GENERATOR_POWER_DAILY = 20.0
+# Generador eléctrico: consumo fijo de 1 unidad/día y salida según densidad.
 FUEL_GENERATOR_FUEL_DAILY = 1.0
+FUEL_GENERATOR_WOOD_POWER_DAILY = 5.0
+FUEL_GENERATOR_COAL_POWER_DAILY = 12.0
+FUEL_GENERATOR_BIODIESEL_POWER_DAILY = 20.0
+BATTERY_POWER_CAP = 100.0
 
 # Equivalencia usada para demoler: 4 componentes requieren 6 mineral.
 COMPONENT_MINERAL_VALUE = FABRICATOR_MINERAL_DAILY / FABRICATOR_COMPONENTS_DAILY

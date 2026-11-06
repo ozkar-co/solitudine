@@ -8,7 +8,12 @@ import pygame
 
 import demolition
 import ui_assets
-from config import BUILD_MENU_VISIBLE_CARDS, SCREEN_W
+from config import (
+    BUILD_MENU_VISIBLE_CARDS,
+    FUEL_GENERATOR_BIODIESEL_POWER_DAILY,
+    FUEL_GENERATOR_WOOD_POWER_DAILY,
+    SCREEN_W,
+)
 from ui_layout import bottom_bar_rect, top_bar_rect
 from construction import BUILD_CATEGORIES, BuildKind, BuildMode, kind_cost, kind_locked, module_kind_for
 from credits import CREDITS_SECTIONS, CREDITS_VISIBLE_LINES
@@ -222,6 +227,7 @@ def _build_kind_label(kind: BuildKind) -> str:
         BuildKind.FABRICATOR: t("build.fabricator"),
         BuildKind.GREENHOUSE: t("build.greenhouse"),
         BuildKind.STORAGE: t("build.storage"),
+        BuildKind.BATTERY: t("build.battery"),
         BuildKind.LAMP: t("build.lamp"),
         BuildKind.LABORATORY: t("build.laboratory"),
         BuildKind.ELECTROLYZER: t("build.electrolyzer"),
@@ -267,6 +273,30 @@ def _build_effect_line(
     if kind == BuildKind.STORAGE:
         return ModalLine(
             t("build.cap_bonus", value=format_amount(defn.storage_cap_bonus)),
+            COL_DIM,
+        )
+    if kind == BuildKind.BATTERY:
+        resource, amount = next(iter(defn.storage_caps.items()))
+        return ModalLine(
+            t(
+                "build.cap_resource",
+                resource=t(f"resource.{resource.value}"),
+                value=format_amount(amount),
+            ),
+            COL_DIM,
+        )
+    if kind == BuildKind.FUEL_GENERATOR:
+        return ModalLine(
+            t(
+                "build.generator_output",
+                low=format_amount(FUEL_GENERATOR_WOOD_POWER_DAILY),
+                high=format_amount(FUEL_GENERATOR_BIODIESEL_POWER_DAILY),
+            ),
+            COL_DIM,
+        )
+    if kind == BuildKind.FISH_TRAP:
+        return ModalLine(
+            t("build.fish_trap_output", value=format_amount(defn.nominal.food)),
             COL_DIM,
         )
 

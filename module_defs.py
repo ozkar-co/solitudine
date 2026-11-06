@@ -24,6 +24,7 @@ from config import (
     BUILD_DAYS_COAL_EXTRACTOR,
     BUILD_DAYS_CRYSTAL_EXTRACTOR,
     BUILD_DAYS_FUEL_GENERATOR,
+    BUILD_DAYS_BATTERY,
     BUILD_DAYS_RADAR,
     BUILD_DAYS_RECYCLER,
     BUILD_DAYS_SOLAR,
@@ -43,6 +44,7 @@ from config import (
     COST_COAL_EXTRACTOR,
     COST_CRYSTAL_EXTRACTOR,
     COST_FUEL_GENERATOR,
+    COST_BATTERY,
     COST_RADAR,
     COST_RECYCLER,
     COST_SOLAR,
@@ -80,8 +82,11 @@ from config import (
     COAL_EXTRACTOR_COAL_DAILY,
     CRYSTAL_EXTRACTOR_POWER_DAILY,
     CRYSTAL_EXTRACTOR_CRYSTAL_DAILY,
-    FUEL_GENERATOR_POWER_DAILY,
+    FUEL_GENERATOR_BIODIESEL_POWER_DAILY,
+    FUEL_GENERATOR_COAL_POWER_DAILY,
     FUEL_GENERATOR_FUEL_DAILY,
+    FUEL_GENERATOR_WOOD_POWER_DAILY,
+    BATTERY_POWER_CAP,
     MODULE_BUFFER_CAP,
     RADAR_POWER_DAILY,
     RECYCLER_COMPONENTS_DAILY,
@@ -95,7 +100,7 @@ from config import (
     STORAGE_NETWORK_BONUS,
 )
 from module_kind import ModuleKind
-from resources import Cost
+from resources import Cost, ResourceId
 from world import Deposit, Module, ModuleState, Tile, World
 from daylight import darkness
 
@@ -140,10 +145,12 @@ class ModuleDef:
     solar_producer: bool = False
     night_producer: bool = False
     storage_cap_bonus: float = 0.0
+    storage_caps: dict[ResourceId, float] = field(default_factory=dict)
     always_online: bool = False
     can_toggle: bool = True
+    starts_enabled: bool = True
     light_radius: int = 0
-    special_action: str | None = None
+    menu_actions: tuple[str, ...] = ()
 
 
 MODULE_DEFS: dict[ModuleKind, ModuleDef] = {
@@ -223,6 +230,14 @@ MODULE_DEFS: dict[ModuleKind, ModuleDef] = {
         storage_cap_bonus=STORAGE_NETWORK_BONUS,
         can_toggle=False,
     ),
+    ModuleKind.BATTERY: ModuleDef(
+        kind=ModuleKind.BATTERY,
+        nominal=ResourceFlow(),
+        cost=Cost(COST_BATTERY),
+        build_days=BUILD_DAYS_BATTERY,
+        storage_caps={ResourceId.POWER: BATTERY_POWER_CAP},
+        can_toggle=False,
+    ),
     ModuleKind.LAMP: ModuleDef(
         kind=ModuleKind.LAMP,
         nominal=ResourceFlow(power=-LAMP_POWER_DAILY),
@@ -235,7 +250,7 @@ MODULE_DEFS: dict[ModuleKind, ModuleDef] = {
         nominal=ResourceFlow(power=-LABORATORY_POWER_DAILY),
         cost=Cost(COST_LABORATORY),
         build_days=BUILD_DAYS_LABORATORY,
-        special_action="research",
+        menu_actions=("research",),
     ),
     ModuleKind.ELECTROLYZER: ModuleDef(
         kind=ModuleKind.ELECTROLYZER,
@@ -293,7 +308,7 @@ MODULE_DEFS: dict[ModuleKind, ModuleDef] = {
         nominal=ResourceFlow(power=-MONITOR_POWER_DAILY),
         cost=Cost(COST_MONITOR),
         build_days=BUILD_DAYS_MONITOR,
-        special_action="network",
+        menu_actions=("network",),
     ),
     ModuleKind.COAL_EXTRACTOR: ModuleDef(
         kind=ModuleKind.COAL_EXTRACTOR,
@@ -321,12 +336,12 @@ MODULE_DEFS: dict[ModuleKind, ModuleDef] = {
     ),
     ModuleKind.FUEL_GENERATOR: ModuleDef(
         kind=ModuleKind.FUEL_GENERATOR,
-        nominal=ResourceFlow(
-            power=FUEL_GENERATOR_POWER_DAILY,
-            fuel=-FUEL_GENERATOR_FUEL_DAILY,
-        ),
+        nominal=ResourceFlow(power=FUEL_GENERATOR_BIODIESEL_POWER_DAILY),
         cost=Cost(COST_FUEL_GENERATOR),
         build_days=BUILD_DAYS_FUEL_GENERATOR,
+        can_toggle=True,
+        starts_enabled=False,
+        menu_actions=("fuel",),
     ),
 }
 
@@ -337,6 +352,7 @@ BUILDABLE_KINDS: tuple[ModuleKind, ...] = (
     ModuleKind.FABRICATOR,
     ModuleKind.GREENHOUSE,
     ModuleKind.STORAGE,
+    ModuleKind.BATTERY,
     ModuleKind.RADAR,
     ModuleKind.LAMP,
     ModuleKind.LABORATORY,
@@ -365,6 +381,14 @@ _FLOW_KEYS: tuple[tuple[str, str, str], ...] = (
     ("fuel", "flow.fuel", "flow.fuel"),
     ("crystal", "flow.crystal", "flow.crystal"),
 )
+
+
+GENERATOR_FUEL_POWER: dict[ResourceId, float] = {
+    ResourceId.WOOD: FUEL_GENERATOR_WOOD_POWER_DAILY,
+    ResourceId.COAL: FUEL_GENERATOR_COAL_POWER_DAILY,
+    ResourceId.FUEL: FUEL_GENERATOR_BIODIESEL_POWER_DAILY,
+}
+GENERATOR_FUELS: tuple[ResourceId, ...] = tuple(GENERATOR_FUEL_POWER)
 
 
 def module_def(kind: ModuleKind) -> ModuleDef:
@@ -428,6 +452,16 @@ def effective_flow(mod: Module, ctx: ModuleContext) -> ResourceFlow:
         return ResourceFlow()
     if (defn.placement_deposit is not None or defn.placement_tile is not None) and not _has_deposit(mod, ctx):
         return ResourceFlow()
+    if mod.kind == ModuleKind.FUEL_GENERATOR:
+        if mod.fuel_resource is None:
+            return ResourceFlow()
+        power = GENERATOR_FUEL_POWER.get(mod.fuel_resource, 0.0)
+        if power <= 0.0:
+            return ResourceFlow()
+        return ResourceFlow(
+            power=power,
+            **{mod.fuel_resource.value: -FUEL_GENERATOR_FUEL_DAILY},
+        )
     if mod.kind == ModuleKind.LAMP:
         return ResourceFlow(power=defn.nominal.power * darkness(ctx.hour_float / HOURS_PER_DAY))
     return flow

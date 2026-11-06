@@ -19,13 +19,12 @@ from config import (
     GREENHOUSE_POWER_DAILY,
     GREENHOUSE_WATER_DAILY,
     FUEL_GENERATOR_FUEL_DAILY,
-    FUEL_GENERATOR_POWER_DAILY,
     HOURS_PER_DAY,
     SOLAR_HOUR_END,
     SOLAR_HOUR_START,
 )
 from daylight import darkness
-from module_defs import BufferOutput, ModuleKind, module_active, module_def
+from module_defs import GENERATOR_FUEL_POWER, BufferOutput, ModuleKind, module_active, module_def
 from resources import ResourceId, ResourcePool
 from stats import Stats
 from world import Deposit, Module, World
@@ -101,17 +100,32 @@ def tick_solar_production(ctx: TickContext) -> None:
 
 def tick_fuel_production(ctx: TickContext) -> None:
     for mod in ctx.world.modules:
-        if mod.kind != ModuleKind.FUEL_GENERATOR or not _mod_online(mod, ctx):
+        if mod.kind != ModuleKind.FUEL_GENERATOR:
+            continue
+        if not mod.enabled:
+            continue
+        if mod.fuel_resource is None:
+            mod.enabled = False
+            continue
+        if not _mod_online(mod, ctx):
+            continue
+        fuel = mod.fuel_resource
+        available = ctx.resources.amount(fuel)
+        if available <= 0.0:
+            mod.enabled = False
             continue
         power_space = max(0.0, ctx.caps[ResourceId.POWER] - ctx.resources.power)
-        if power_space <= 0.0 or ctx.resources.fuel <= 0.0:
+        if power_space <= 0.0:
             continue
-        want = FUEL_GENERATOR_POWER_DAILY * ctx.scale
+        want = GENERATOR_FUEL_POWER.get(fuel, 0.0) * ctx.scale
+        if want <= 0.0:
+            mod.enabled = False
+            continue
         fuel_need = FUEL_GENERATOR_FUEL_DAILY * ctx.scale
-        factor = min(1.0, power_space / want, ctx.resources.fuel / fuel_need)
+        factor = min(1.0, power_space / want, available / fuel_need)
         if factor <= 0.0:
             continue
-        ctx.resources.fuel = max(0.0, ctx.resources.fuel - fuel_need * factor)
+        ctx.resources.add(fuel, -fuel_need * factor)
         ctx.resources.power += want * factor
 
 

@@ -23,14 +23,23 @@ class SimulationProxy:
     stats: Stats
 
 
-def storage_bonus(world: World, connected: set[tuple[int, int]]) -> float:
-    bonus = module_def(ModuleKind.STORAGE).storage_cap_bonus
-    return sum(
-        bonus
-        for mod in world.modules
-        if mod.kind == ModuleKind.STORAGE
-        and module_active(mod, (mod.x, mod.y) in connected)
-    )
+def storage_bonuses(
+    world: World,
+    connected: set[tuple[int, int]],
+) -> dict[ResourceId, float]:
+    """Bonos de cap por recurso: general y almacenamientos especializados."""
+    bonuses = {defn.id: 0.0 for defn in RESOURCES}
+    for mod in world.modules:
+        if not module_active(mod, (mod.x, mod.y) in connected):
+            continue
+        defn = module_def(mod.kind)
+        if defn.storage_cap_bonus > 0.0:
+            for resource in RESOURCES:
+                if resource.storage_bonus:
+                    bonuses[resource.id] += defn.storage_cap_bonus
+        for resource, amount in defn.storage_caps.items():
+            bonuses[resource] += amount
+    return bonuses
 
 
 def network_caps(
@@ -39,9 +48,9 @@ def network_caps(
 ) -> dict[ResourceId, float]:
     if connected is None:
         connected = get_connected(world)
-    bonus = storage_bonus(world, connected)
+    bonuses = storage_bonuses(world, connected)
     return {
-        defn.id: defn.base_cap + (bonus if defn.storage_bonus else 0.0)
+        defn.id: defn.base_cap + bonuses[defn.id]
         for defn in RESOURCES
     }
 
