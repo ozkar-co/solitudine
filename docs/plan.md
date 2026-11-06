@@ -83,7 +83,7 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 ### Recursos
 
 - La regla de **2 fuentes / 2 usos** es una heurística, no una regla estricta. Se acepta una excepción si resuelve un problema claro y no deja un recurso de un solo uso.
-- Recursos actuales: O₂, agua, comida, energía, mineral, componentes, **chatarra**, **madera**, **carbón**, **combustible** y **cristales**.
+- Recursos actuales: O₂, agua, comida, energía, mineral, componentes, **chatarra**, **madera**, **carbón**, **biodiésel** y **cristales**.
 - Recursos incorporados (2026-11-05): **madera**, **carbón**, **biodiésel** (producido) y **cristales**. Madera sale de árboles; el biodiésel se produce en el procesador; el carbón y los cristales tienen extractores con tecnología.
 - La matriz completa vive en este plan; el catálogo define módulos/tecnologías.
 
@@ -121,7 +121,8 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 
 - Extractores y minas sin recursos **no se auto-apagan**: consumen **50% de su energía nominal** mientras estén encendidos y el panel muestra **“sin recursos disponibles” en rojo**. Se apagan manualmente; aplica a futuros extractores.
 - **Generador eléctrico:** disponible desde el inicio, sin tecnología. Se crea **apagado y sin combustible elegido**. Consume **1 unidad/día** y produce según el combustible: madera **5 E/d**, carbón **12 E/d**, biodiésel **20 E/d**. El menú A+A permite elegir combustible; si no hay selección o se agota, pasa a apagado.
-- **Panel solar:** requiere la tecnología barata **Fotovoltaica**. Sigue produciendo 12 E/d repartidos durante el día.
+- **Panel solar:** requiere la tecnología barata **Fotovoltaica**. Sigue produciendo 12 E/d repartidos durante el día; no es variable, así que no lleva `~`.
+- **Notación `~`:** se usa para promedios/rangos (trampa `~3/noche`, generador `5~20 E/d`), no para valores exactos.
 - **Almacén general:** +40 a los recursos generales, pero **no energía ni O₂**. Esos caps quedan para almacenamientos especializados.
 - **Batería:** módulo especializado detrás de **Almacenamiento especializado**; suma **+100 de cap de energía**. No reemplaza al almacén general.
 - El tanque de O₂ y los tanques de agua especializados quedan para v6, con investigación propia.
@@ -213,7 +214,7 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 | Radar | 8 Cmp, 1,5 d, 12 E/d |
 | Invernadero | 10 Cmp, 1,5 d, 3 E/d, 4 agua/d → 6 comida/d + 3 O₂/d (O₂ requiere agua) |
 | Trampa de peces | 2 Cmp, 0,5 d, sin energía; ~3 comida/noche (1 tirada/hora, 0 permitido) |
-| Procesador de biodiésel | 4 Cmp, 1 d, 2 E/d, 2 agua/d, 4 comida/d → 1 combustible/d |
+| Procesador de biodiésel | 4 Cmp, 1 d, 2 E/d, 2 agua/d, 4 comida/d → 1 biodiésel/d |
 | Extractor de carbón | 8 Cmp + 2 mineral, 1,5 d, 3 E/d → 6 carbón/d; requiere Minería de carbón (4 Cmp, 0,75 d) |
 | Extractor de cristales | 10 Cmp + 4 mineral, 2 d, 4 E/d → 2 cristales/d; requiere Cristalografía (10 Cmp + 8 biodiésel, 3 d) |
 | Generador eléctrico | 8 Cmp + 2 mineral, 1,5 d, 1 unidad/d → 5/12/20 E/d (madera/carbón/biodiésel); arranca apagado |
