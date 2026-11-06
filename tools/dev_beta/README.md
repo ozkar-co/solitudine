@@ -10,9 +10,9 @@ Build temporal para betatesters. **No forma parte de la distribución PortMaster
 
 ## Salida
 
-- Linux: `dist/linux/SolitudineBeta-linux.tar.gz`.
-- Windows: `dist/windows/SolitudineBeta-windows.zip`.
-- Cada archivo incluye el ejecutable 2x y `LEEME.txt`.
+- Local: `dist/<plataforma>/SolitudineBeta-<plataforma>.*`.
+- CI en tag `v*`: GitHub Release con `Solitudine-<tag>-linux-x86_64.tar.gz`, `Solitudine-<tag>-windows-x64.zip` y `SHA256SUMS.txt`.
+- Cada paquete incluye el ejecutable 2x, `LEEME.txt` y `VERSION.txt`.
 - Guarda en `saves/save.json` y loguea a `solitudine-beta.log`.
 - `savegame.py` respeta `SOLITUDINE_SAVE_DIR`; solo la beta lo define.
 
@@ -32,7 +32,7 @@ Windows (PowerShell):
 
 ## CI
 
-`.github/workflows/dev-beta.yml` compila Linux y Windows con `workflow_dispatch` o un tag `beta-*` y sube los artefactos. No se dispara en cada push.
+`.github/workflows/dev-beta.yml` compila Linux y Windows con `workflow_dispatch` o un tag `v*`. En un tag, además, publica un GitHub Release con los dos paquetes versionados y `SHA256SUMS.txt`; en `workflow_dispatch` solo deja artefactos. No se dispara en cada push.
 
 ## Notas
 

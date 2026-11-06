@@ -4,7 +4,10 @@ on:
   workflow_dispatch:
   push:
     tags:
-      - "beta-*"
+      - "v*"
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -33,3 +36,57 @@ jobs:
         with:
           name: ${{ matrix.artifact }}
           path: tools/dev_beta/dist/
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: SolitudineBeta-*
+          path: artifacts
+          merge-multiple: true
+      - name: Preparar paquetes versionados
+        env:
+          VERSION: ${{ github.ref_name }}
+          COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p release/linux release/windows
+          cp -R artifacts/linux/package-SolitudineBeta "release/linux/Solitudine-${VERSION}"
+          cp -R artifacts/windows/package-SolitudineBeta "release/windows/Solitudine-${VERSION}"
+          printf 'Solitudine %s\nCommit: %s\nFecha: %s\nPlataforma: Linux x86_64\n' \
+            "$VERSION" "$COMMIT" "$(date -u +%F)" \
+            > "release/linux/Solitudine-${VERSION}/VERSION.txt"
+          printf 'Solitudine %s\nCommit: %s\nFecha: %s\nPlataforma: Windows 10/11 x64\n' \
+            "$VERSION" "$COMMIT" "$(date -u +%F)" \
+            > "release/windows/Solitudine-${VERSION}/VERSION.txt"
+          tar -czf "release/Solitudine-${VERSION}-linux-x86_64.tar.gz" \
+            -C release/linux "Solitudine-${VERSION}"
+          (cd release/windows && python3 -m zipfile -c "../Solitudine-${VERSION}-windows-x64.zip" "Solitudine-${VERSION}")
+          (cd release && sha256sum \
+            "Solitudine-${VERSION}-linux-x86_64.tar.gz" \
+            "Solitudine-${VERSION}-windows-x64.zip" > SHA256SUMS.txt)
+      - name: Publicar release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          PRE=()
+          case "$VERSION" in
+            *-*) PRE=(--prerelease) ;;
+          esac
+          if ! gh release view "$VERSION" >/dev/null 2>&1; then
+            gh release create "$VERSION" \
+              --title "Solitudine $VERSION" \
+              --generate-notes \
+              "${PRE[@]}"
+          fi
+          gh release upload "$VERSION" \
+            "release/Solitudine-${VERSION}-linux-x86_64.tar.gz" \
+            "release/Solitudine-${VERSION}-windows-x64.zip" \
+            release/SHA256SUMS.txt \
+            --clobber
