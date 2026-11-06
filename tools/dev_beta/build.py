@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Empaqueta las betas de PC (2x y 1.5x) para el sistema actual."""
+"""Empaqueta la beta de PC (2x) para el sistema actual."""
 
 from __future__ import annotations
 
@@ -14,7 +14,6 @@ DIST = HERE / "dist" / PLATFORM
 BUILD = HERE / "build" / PLATFORM
 VARIANTS = (
     ("SolitudineBeta", "main.py"),
-    ("SolitudineBeta15", "main_15.py"),
 )
 
 

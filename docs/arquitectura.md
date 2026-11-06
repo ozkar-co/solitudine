@@ -83,9 +83,9 @@ En PC, `--dev --2x` mantiene el render interno en 640×480 y escala la ventana a
 | `ui_module_menu.py` | Dibujo del menú contextual A+A. |
 | `ui_network.py` | Pantalla de red de la estación de monitoreo. |
 | `ui_tech.py` | Pantalla de Tecnología mínima. |
-| `ui_modals.py` | Modales reutilizables (pausa, créditos, construcción, game over). |
+| `ui_modals.py` | `draw_modal` único: título, subtítulo, columnas, scroll, ayuda y ancho completo; lo usan todos los modales. |
 | `ui_input.py` / `game_help.py` | Política de input / texto contextual. |
-| `ui.py` | HUD, modales (incluida demolición), menú de construcción en tarjetas, badges de modo y fachada de mapa/panel. |
+| `ui.py` | HUD, contenido de construcción/demolición/pausa/créditos/game over sobre `draw_modal`, badges de modo y fachada de mapa/panel. |
 | `credits.py` | Datos de créditos y secuencia Konami; sin lógica de UI. |
 | `test_sim.py` | Tests de regresión. |
 
@@ -97,6 +97,8 @@ En PC, `--dev --2x` mantiene el render interno en 640×480 y escala la ventana a
 - Textos siempre por `t()`.
 - La UI no modifica `sim`/`world`; `game_input.py` aplica acciones.
 - No crear `ui_state`, `ui_widgets` ni `ui_console` hasta que existan varias pantallas.
+- Todos los modales pasan por `ui_modals.draw_modal`; no duplicar overlay, caja, título, pie ni scrollbar.
+- Los modales son anchos por defecto; `fill_height` solo cuando la pantalla lo necesita (red, créditos, construcción). La red usa dos columnas con icono + nombre.
 - Dithering por tile; no alpha por frame.
 
 ## Añadir un módulo

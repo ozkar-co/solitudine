@@ -63,8 +63,10 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 - Cables de **colocación libre**, también desconectados; la red se recalcula al construir/demoler.
 - **Menú contextual A+A** en todos los módulos: investigación, red, encender/apagar, demoler y cerrar. Se retiró el apagado con R1 y la demolición de módulos con B; B queda para cables.
 - **Cámara hasta los bordes** del mapa; el cursor sigue limitado a lo explorado.
-- **Estación de monitoreo** (6 Cmp, 1,5 d, 2 E/d) con pantalla de red: balance por recurso, energía, módulos online/offline/en obra y caps.
+- **Estación de monitoreo** (6 Cmp, 1,5 d, 2 E/d) con pantalla de red en dos columnas (producción/consumo) por recurso, energía y módulos online/offline/en obra.
 - Rename visible de **Cable → Enlace**; el ID `cable` no cambia.
+- **Modales unificados:** `ui_modals.draw_modal` centraliza título, subtítulo, columnas, scroll y ayuda; todos son anchos. La red usa dos columnas (producción/consumo) con icono + nombre.
+- **Beta PC:** solo 2x; se eliminó la variante intermedia.
 
 ## Prep etapa 5 (2026-11-05)
 
@@ -140,7 +142,7 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 - **Cables de colocación libre:** cualquier tile válido (suelo o agua), incluso desconectado; al tocar la red se conecta y al cortar se recalcula.
 - **Menú contextual A+A:** A selecciona, A abre el menú; desde ahí se investiga, se ve la red, se enciende/apaga, se demuele o se cierra. Se retiraron R1 (toggle) y B (demolición de módulos); B queda para cables.
 - **Cámara dinámica:** puede llegar a los cuatro bordes del mapa; el cursor sigue limitado a lo explorado.
-- **Estación de monitoreo:** 6 Cmp, 1,5 d, 2 E/d; si está online y conectada desbloquea la pantalla de red con balance por recurso, energía, módulos online/offline/en obra y caps.
+- **Estación de monitoreo:** 6 Cmp, 1,5 d, 2 E/d; si está online y conectada desbloquea la pantalla de red con producción y consumo en dos columnas, energía y módulos online/offline/en obra.
 - **Rename visible:** Cable → **Enlace**; el ID interno `cable` no cambia para no romper saves.
 - **Prep etapa 5:** extractores de carbón/cristal y generador de combustible disponibles sin árbol tecnológico; el combustible ya tiene un uso (20 E/d).
 

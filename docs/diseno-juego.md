@@ -98,6 +98,8 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 - Ruinas dibujadas en el mapa y modal de demolición/cancelación con confirmación A/B.
 - Badges de modo/pausa y celda seleccionada; X cambia capa también en modo colocar.
 - Consola de tecnología: una pantalla simple, sin pestañas vacías.
+- Pantalla de red (estación de monitoreo): producción y consumo en dos columnas, con icono + nombre de cada recurso, energía y estado de módulos.
+- Modales anchos y unificados: título, subtítulo, columnas, scroll y ayuda; construcción, red, tecnología, créditos, pausa, demolición y game over comparten `draw_modal`.
 - Menú de pausa con Continuar/Créditos; créditos con scroll y easter egg.
 
 ## Implementado / planificado

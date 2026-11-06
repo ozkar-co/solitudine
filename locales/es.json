@@ -320,9 +320,10 @@
   "menu.close": "Cerrar",
   "menu.hint": "Arriba/Abajo: elegir  A: aceptar  B: volver",
   "network.title": "RED LOGÍSTICA",
-  "network.power": "Energía: +{produced}/d  {consumed}/d  factor {factor}",
   "network.modules": "Módulos: {online} online · {offline} offline · {building} en obra",
-  "network.resource": "{name}: {amount}/{cap}  +{produced}/d  {consumed}/d  net {net}/d",
+  "network.production": "PRODUCCIÓN",
+  "network.consumption": "CONSUMO",
+  "network.empty": "—",
   "network.hint": "Arriba/Abajo: desplazar  B: volver",
   "status.monitoring": "Vigilando"
 }

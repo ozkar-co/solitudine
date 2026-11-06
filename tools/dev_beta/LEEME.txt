@@ -11,39 +11,32 @@ Requisitos
 Cómo ejecutar
 -------------
 Windows:  SolitudineBeta.exe      -> 1280x960 (2x)
-          SolitudineBeta15.exe    -> 960x720 (1.5x)
 Linux:    ./SolitudineBeta        -> 1280x960 (2x)
-          ./SolitudineBeta15      -> 960x720 (1.5x)
 
-Ambas abren en modo dev y no tienen menú de opciones.
+Abre en modo dev y no tiene menú de opciones.
 
 Esta build no está firmada. En Windows puede aparecer SmartScreen:
 elegir "Más información" -> "Ejecutar de todas formas".
-En Linux, si no arranca: chmod +x SolitudineBeta SolitudineBeta15
+En Linux, si no arranca: chmod +x SolitudineBeta
 
 Controles de teclado
 --------------------
-Z = A        X = B        C = X        V = Y
-Q = L1       E = R1       [ = L2       ] = R2
-1/2 = L2/R2  U = L3       O = R3       F = FN
-IJKL = DPAD  WASD = stick izquierdo   Flechas = stick derecho
-Enter = START             Bksp = SELECT
+E = A        Esc = B       Q = recursos    Tab = construir
+J = A        K = B         T = acelerar tiempo (dev)
+1 = zoom in  2 = zoom out  3 = minimapa   4 = libre
+WASD = cursor              Flechas = cámara
+Enter = START              Bksp = SELECT
 Bksp + Enter = salir
 
 También acepta mando si el sistema lo detecta.
 
 Guardado y log
 --------------
-2x:
 - Guardado:      saves/save.json
 - Log de la run: solitudine-beta.log
 
-1.5x:
-- Guardado:      saves-1.5x/save.json
-- Log de la run: solitudine-beta-1.5x.log
-
-Ambos quedan junto al ejecutable. Los saves son de beta y no migran entre
-versiones. Si el juego falla, enviá el log de la variante junto con una
-descripción breve de lo que estabas haciendo.
+Quedan junto al ejecutable. Los saves son de beta y no migran entre
+versiones. Si el juego falla, enviá el log junto con una descripción breve
+de lo que estabas haciendo.
 
 Gracias por probar.

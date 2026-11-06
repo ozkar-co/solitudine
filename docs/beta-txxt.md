@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-05
 **Tester:** TxxT
-**Build:** beta PC 2x/1.5x (`tools/dev_beta/`)
+**Build:** beta PC 2x (`tools/dev_beta/`)
 **Estado:** etapas 0-4 implementadas y prep etapa 5 (2026-11-05).
 
 > Este archivo conserva el feedback crudo y las decisiones acordadas. La tabla de implementación de abajo es el estado real; las secciones de feedback conservan el texto original.
@@ -159,13 +159,12 @@ Notas de implementación (2026-11-05):
 **B30 — Créditos: pie, borde inferior y scroll**
 - Feedback: “la línea del borde inferior y los controles se pintan por encima del texto y no hace scroll hasta abajo”.
 - Causa confirmada: `draw_credits_modal` calcula `fixed_height` con `line_h = font_sm.get_height() + 2 = 18`, pero el paso real de las líneas es 19 (`surface.get_height() + 2`). Con 14 líneas visibles el contenido crece 14 px y el separador/pie tapa la última línea; por eso tampoco se ve el final al scrollear.
-- Fix propuesto: dejar que `draw_map_modal` calcule la altura (quitar `fixed_height`) o calcularla con `_line_step` real. Añadir un test de layout que verifique que el pie no solapa la última línea.
-- Estado: bug confirmado; fix simple.
+- Fix aplicado: `draw_modal` calcula la altura con el paso real de línea y el pie queda fuera del área de contenido.
+- Estado: **resuelto** en el refactor de modales. `draw_modal` usa el paso real de línea y calcula el scroll; los créditos ya no tienen altura fija ni pie superpuesto.
 
 **B31 — Modal de construcción con scroll**
 - Feedback: debe soportar varias tarjetas y hacer scroll; se van a añadir más módulos y DLCs.
-- Estado: decidido.
-- Propuesta: ventana de 4 tarjetas visibles (la altura actual), scroll de 1, selección con arriba/abajo, indicador de scroll/flechas y pie fijo. Evaluar wrap en los extremos.
+- Estado: **implementado**. El modal ocupa la pantalla, muestra 4 tarjetas con scroll animado, selección con arriba/abajo, indicador de scroll y pie fijo.
 - Impacto: `ui.py`, `construction.BuildController` (índice/scroll), tests de navegación.
 
 **B32 — Selector de categorías circular**
@@ -178,9 +177,8 @@ Notas de implementación (2026-11-05):
 
 **B11 — Estación de monitoreo**
 - Feedback: “crear un módulo ‘estación de monitoreo’ o similar para ver cuánto consume y produce toda la red”.
-- Estado: **decidido (D7)**: híbrido. La Estación de monitoreo desbloquea la pantalla de red mientras esté online y conectada.
-- Nota: definir coste, obra, energía y tecnología; la pantalla muestra consumo/producción por recurso, balance neto, módulos activos/offline, caps y cuellos de botella.
-- Datos: consumo/producción por recurso, balance neto, módulos activos/offline, caps y cuellos de botella.
+- Estado: **implementado (D7)**: 6 Cmp, 1,5 d, 2 E/d; online y conectada desbloquea la pantalla de red.
+- Nota: la pantalla muestra producción y consumo por recurso en dos columnas (icono + nombre), energía y módulos activos/offline. Cantidades, caps y cuellos de botella quedan en el modo recursos.
 
 **B12 — Icono de agua**
 - Feedback: “el icono de agua que sea una gotica”.
@@ -410,7 +408,7 @@ Estas ideas dependen de combate/late game y no entran en el slice actual:
 
 ### D7 — Estación de monitoreo
 
-**Decisión:** **híbrido**. Se construye una **Estación de monitoreo**; mientras esté online y conectada, desbloquea una pantalla de red con consumo/producción por recurso, balance neto, módulos activos/offline, caps y cuellos de botella.
+**Decisión:** **híbrido**. Se construye una **Estación de monitoreo**; mientras esté online y conectada, desbloquea una pantalla de red con producción y consumo por recurso en dos columnas, energía y módulos activos/offline. Las cantidades, caps y cuellos de botella siguen en el modo recursos.
 **Contexto:** el modo recursos ya muestra cantidades, caps y tendencia global; no hay desglose por módulo ni balance de red en un solo lugar.
 **Pendiente:** coste, obra, energía, tecnología y si la pantalla requiere el módulo online o alcanza con tenerlo construido.
 **Impacto:** `module_defs`, `module_kind`, `config`, UI, save y tests.

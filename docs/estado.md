@@ -42,8 +42,8 @@ make test                          # tests de regresión
 .venv/bin/python main.py --dev --2x  # PC, ventana 2x para depurar
 .venv/bin/python main.py --dev --world-size 1024  # mapa más chico para probar
 make dist                          # paquete PortMaster
-./tools/dev_beta/build.sh          # betas PC Linux 2x/1.5x (temporal)
-tools\dev_beta\build.ps1           # betas PC Windows 2x/1.5x (PowerShell)
+./tools/dev_beta/build.sh          # beta PC Linux 2x (temporal)
+tools\dev_beta\build.ps1           # beta PC Windows 2x (PowerShell)
 ```
 
 ## Decisiones vigentes
@@ -63,7 +63,9 @@ tools\dev_beta\build.ps1           # betas PC Windows 2x/1.5x (PowerShell)
 - Cables de colocación libre; los tramos desconectados no alimentan hasta conectar. El display del cable es **Enlace**.
 - A+A abre el menú contextual de cada módulo: investigar, ver red, encender/apagar, demoler o cerrar. B ya no demuele módulos; queda para cables.
 - La cámara llega a los bordes del mapa; el cursor sigue limitado a lo explorado.
-- La estación de monitoreo requiere estar online y conectada para abrir la pantalla de red.
+- La estación de monitoreo requiere estar online y conectada para abrir la pantalla de red, con producción y consumo en dos columnas.
+- Todos los modales usan `ui_modals.draw_modal` (título/subtítulo/columnas/scroll/ayuda) y son anchos; no se redefinen cajas ni pies.
+- Beta PC solo 2x (`main.py`/`SolitudineBeta`); no hay variante intermedia.
 - Extractores de carbón/cristal y generador de combustible son prep de etapa 5; no tienen tecnología todavía.
 
 ## Documentación

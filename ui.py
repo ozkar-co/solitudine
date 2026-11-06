@@ -30,14 +30,12 @@ from ui_modals import (
     BUILD_CARD_GAP,
     BUILD_CARD_HEIGHT,
     BUILD_CARD_ICON,
-    BUILD_MODAL_HEIGHT,
-    BUILD_MODAL_WIDTH,
-    MODAL_DIM_ALPHA,
-    MODAL_FOOTER_GAP,
     MODAL_PAD_X,
-    MODAL_PAD_Y,
+    ModalColumn,
     ModalLine,
-    draw_map_modal,
+    ModalSpec,
+    draw_modal,
+    draw_scrollbar,
     render_items,
     render_segments,
 )
@@ -359,19 +357,20 @@ def draw_build_menu_modal(
     if build.mode != BuildMode.MENU:
         return
 
-    overlay = pygame.Surface(surf.get_size(), pygame.SRCALPHA)
-    overlay.fill((0, 0, 0, MODAL_DIM_ALPHA))
-    surf.blit(overlay, (0, 0))
-
-    box = pygame.Rect(0, 0, BUILD_MODAL_WIDTH, BUILD_MODAL_HEIGHT)
-    box.center = (surf.get_width() // 2, surf.get_height() // 2)
-    pygame.draw.rect(surf, COL_PANEL, box)
-    pygame.draw.rect(surf, COL_BORDER, box, 2)
-
-    y = box.y + MODAL_PAD_Y
-    title = font.render(t("build.title"), False, COL_TEXT)
-    surf.blit(title, (box.centerx - title.get_width() // 2, y))
-    y += title.get_height() + 4
+    frame = draw_modal(
+        surf,
+        font,
+        font_sm,
+        ModalSpec(
+            title=t("build.title"),
+            help_text=t("build.hint_menu"),
+            wide=True,
+            fill_height=True,
+            dim_map=True,
+        ),
+    )
+    box = frame.box
+    y = frame.content.y
 
     for line in _resource_modal_lines(sim):
         row = render_items(line.items, font_sm, line.item_gap)
@@ -393,9 +392,7 @@ def draw_build_menu_modal(
     card_w = box.w - MODAL_PAD_X * 2
     step = BUILD_CARD_HEIGHT + BUILD_CARD_GAP
     content_top = y
-    footer_h = font_sm.get_height() + 2
-    footer_top = box.bottom - MODAL_PAD_Y - footer_h
-    content_bottom = footer_top - MODAL_FOOTER_GAP
+    content_bottom = frame.content.bottom
     clip = pygame.Rect(
         card_x,
         content_top,
@@ -481,25 +478,16 @@ def draw_build_menu_modal(
     surf.set_clip(prev_clip)
 
     if len(kinds) > BUILD_MENU_VISIBLE_CARDS:
-        track_x = box.right - 8
-        track_top = content_top
-        track_h = max(1, content_bottom - content_top)
-        max_scroll = max(1.0, len(kinds) - BUILD_MENU_VISIBLE_CARDS)
-        thumb_h = max(10, int(track_h * BUILD_MENU_VISIBLE_CARDS / len(kinds)))
-        thumb_y = track_top + int(
-            (track_h - thumb_h) * min(1.0, build.menu_scroll / max_scroll)
+        draw_scrollbar(
+            surf,
+            box.right - 8,
+            content_top,
+            max(1, content_bottom - content_top),
+            BUILD_MENU_VISIBLE_CARDS,
+            len(kinds),
+            build.menu_scroll,
         )
-        pygame.draw.rect(surf, COL_DIM, (track_x, track_top, 2, track_h))
-        pygame.draw.rect(surf, COL_TEXT, (track_x, thumb_y, 2, thumb_h))
 
-    pygame.draw.line(
-        surf,
-        COL_DIM,
-        (box.x + MODAL_PAD_X, footer_top - MODAL_FOOTER_GAP),
-        (box.right - MODAL_PAD_X, footer_top - MODAL_FOOTER_GAP),
-    )
-    hint = font_sm.render(t("build.hint_menu"), False, COL_DIM)
-    surf.blit(hint, (box.centerx - hint.get_width() // 2, footer_top))
 
 
 def draw_demolish_modal(
@@ -513,10 +501,7 @@ def draw_demolish_modal(
         return
     x, y = sim.demolish
     mod = world.module_at(x, y)
-    lines = [
-        ModalLine(t("demolish.title"), COL_TEXT, large=True),
-        ModalLine(t("panel.coords", x=x, y=y), COL_DIM),
-    ]
+    lines: list[ModalLine] = []
     if mod is not None:
         if mod.kind == ModuleKind.HABITAT:
             return
@@ -550,15 +535,15 @@ def draw_demolish_modal(
         lines.append(ModalLine(t("demolish.components", value=format_amount(refund)), COL_WARN))
     else:
         return
-    draw_map_modal(
-        surf,
-        font,
-        font_sm,
-        lines,
+    spec = ModalSpec(
+        title=t("demolish.title"),
+        subtitle=t("panel.coords", x=x, y=y),
+        columns=(ModalColumn(lines=tuple(lines)),),
+        help_text=t("demolish.hint"),
+        wide=True,
         dim_map=True,
-        min_width=420,
-        footer=[ModalLine(t("demolish.hint"), COL_DIM)],
     )
+    draw_modal(surf, font, font_sm, spec)
 
 
 def draw_pause_modal(
@@ -568,19 +553,19 @@ def draw_pause_modal(
     sim: Simulation,
 ) -> None:
     options = (t("pause.menu_continue"), t("pause.menu_credits"))
-    lines = [ModalLine(t("pause.title"), COL_TEXT, large=True)]
+    lines: list[ModalLine] = []
     for index, label in enumerate(options):
         selected = index == sim.pause_index
         prefix = ">" if selected else " "
         lines.append(ModalLine(f"{prefix} {label}", COL_TEXT if selected else COL_DIM))
-    draw_map_modal(
-        surf,
-        font,
-        font_sm,
-        lines,
+    spec = ModalSpec(
+        title=t("pause.title"),
+        columns=(ModalColumn(lines=tuple(lines)),),
+        help_text=t("pause.hint_menu"),
+        wide=True,
         dim_map=True,
-        footer=[ModalLine(t("pause.hint_menu"), COL_DIM)],
     )
+    draw_modal(surf, font, font_sm, spec)
 
 
 def _credits_content() -> list[ModalLine]:
@@ -600,43 +585,16 @@ def draw_credits_modal(
     sim: Simulation,
 ) -> None:
     content = _credits_content()
-    max_scroll = max(0, len(content) - CREDITS_VISIBLE_LINES)
-    scroll = min(max(sim.credits_scroll, 0), max_scroll)
-    window = content[scroll : scroll + CREDITS_VISIBLE_LINES]
-    window += [ModalLine("", COL_DIM)] * (CREDITS_VISIBLE_LINES - len(window))
-
-    title = ModalLine(t("credits.title"), COL_TEXT, large=True)
-    lines = [title] + window
-
-    title_h = font.get_height() + 4
-    footer_h = font_sm.get_height() + 3
-    min_width = (
-        max(
-            font.render(title.text, False, title.color).get_width(),
-            *(font_sm.render(line.text, False, line.color).get_width() for line in content),
-        )
-        + MODAL_PAD_X * 2
-        + 8
-    )
-    box = draw_map_modal(
-        surf,
-        font,
-        font_sm,
-        lines,
+    spec = ModalSpec(
+        title=t("credits.title"),
+        columns=(ModalColumn(lines=tuple(content)),),
+        help_text=t("help.credits"),
+        wide=True,
+        visible_lines=CREDITS_VISIBLE_LINES,
+        fill_height=True,
         dim_map=True,
-        min_width=min_width,
-        footer=[ModalLine(t("help.credits"), COL_DIM)],
     )
-
-    if max_scroll > 0:
-        track_x = box.right - 8
-        track_top = box.y + MODAL_PAD_Y + title_h + 2
-        track_bottom = box.bottom - MODAL_PAD_Y - footer_h - MODAL_FOOTER_GAP + 2
-        track_h = max(1, track_bottom - track_top)
-        pygame.draw.rect(surf, COL_DIM, (track_x, track_top, 2, track_h))
-        thumb_h = max(8, int(track_h * CREDITS_VISIBLE_LINES / len(content)))
-        thumb_y = track_top + int((track_h - thumb_h) * scroll / max_scroll)
-        pygame.draw.rect(surf, COL_TEXT, (track_x, thumb_y, 2, thumb_h))
+    draw_modal(surf, font, font_sm, spec, scroll=sim.credits_scroll)
 
 
 def draw_easter_egg(surf: pygame.Surface) -> None:
@@ -654,14 +612,12 @@ def draw_game_over(
     font_sm: pygame.font.Font,
     sim: Simulation,
 ) -> None:
-    draw_map_modal(
-        surf,
-        font,
-        font_sm,
-        [
-            ModalLine(t("game_over.title"), COL_CRITICAL, large=True),
-            ModalLine(t(sim.death_cause), COL_TEXT),
-        ],
+    spec = ModalSpec(
+        title=t("game_over.title"),
+        title_color=COL_CRITICAL,
+        columns=(ModalColumn(lines=(ModalLine(t(sim.death_cause), COL_TEXT),)),),
+        help_text=t("game_over.restart"),
+        wide=True,
         dim_map=True,
-        footer=[ModalLine(t("game_over.restart"), COL_DIM)],
     )
+    draw_modal(surf, font, font_sm, spec)

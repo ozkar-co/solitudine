@@ -7,14 +7,13 @@ from dataclasses import dataclass
 import pygame
 
 import ui_assets
-from ui_theme import COL_BORDER, COL_DIM, COL_PANEL, COL_TEXT, map_rect
+from ui_theme import COL_BORDER, COL_DIM, COL_PANEL, COL_TEXT, COL_WARN, map_rect
 
 MODAL_PAD_X = 16
 MODAL_PAD_Y = 12
+MODAL_MARGIN = 8
 MODAL_DIM_ALPHA = 100
-MODAL_HEIGHT = 256
-BUILD_MODAL_WIDTH = 608
-BUILD_MODAL_HEIGHT = 440
+MODAL_COLUMN_GAP = 24
 BUILD_CARD_HEIGHT = 58
 BUILD_CARD_GAP = 6
 BUILD_CARD_ICON = 32
@@ -116,73 +115,179 @@ def _line_step(line: ModalLine, surface: pygame.Surface) -> int:
     return surface.get_height() + (4 if line.large else 2)
 
 
-def draw_map_modal(
+@dataclass(frozen=True)
+class ModalColumn:
+    header: str = ""
+    lines: tuple[ModalLine, ...] = ()
+    align: str = "center"
+
+
+@dataclass(frozen=True)
+class ModalSpec:
+    title: str = ""
+    subtitle: str = ""
+    columns: tuple[ModalColumn, ...] = ()
+    help_text: str = ""
+    wide: bool = True
+    visible_lines: int = 0
+    min_height: int = 0
+    fill_height: bool = False
+    min_width: int = 0
+    dim_map: bool = True
+    title_color: ModalColor = COL_TEXT
+
+
+@dataclass(frozen=True)
+class ModalResult:
+    box: pygame.Rect
+    content: pygame.Rect
+    max_scroll: int
+
+
+def draw_scrollbar(
+    surf: pygame.Surface,
+    track_x: int,
+    track_top: int,
+    track_h: int,
+    visible: int,
+    total: int,
+    scroll: float,
+) -> None:
+    """Barra de scroll compartida por modales de líneas y de tarjetas."""
+    if total <= visible or track_h <= 0:
+        return
+    visible = max(1, visible)
+    max_scroll = max(1, total - visible)
+    scroll = max(0.0, min(float(scroll), float(max_scroll)))
+    track_h = max(1, track_h)
+    thumb_h = max(10, int(track_h * visible / total))
+    thumb_y = track_top + int((track_h - thumb_h) * scroll / max_scroll)
+    pygame.draw.rect(surf, COL_DIM, (track_x, track_top, 2, track_h))
+    pygame.draw.rect(surf, COL_TEXT, (track_x, thumb_y, 2, thumb_h))
+
+
+def draw_modal(
     surf: pygame.Surface,
     font: pygame.font.Font,
     font_sm: pygame.font.Font,
-    lines: list[ModalLine],
+    spec: ModalSpec,
     *,
-    dim_map: bool = False,
-    min_width: int = 0,
-    fixed_height: int = 0,
-    footer: list[ModalLine] | None = None,
-    wide: bool = False,
-) -> pygame.Rect:
-    """Dibuja un recuadro centrado en el mapa. Una sola implementación para todos los modales."""
-    footer = footer or []
-    if not lines and not footer:
-        return pygame.Rect(0, 0, 0, 0)
+    scroll: int = 0,
+) -> ModalResult:
+    """Modal paramétrico: título, subtítulo, columnas, scroll y barra de ayuda."""
+    if spec.wide:
+        bounds = pygame.Rect(
+            MODAL_MARGIN,
+            MODAL_MARGIN,
+            surf.get_width() - MODAL_MARGIN * 2,
+            surf.get_height() - MODAL_MARGIN * 2,
+        )
+    else:
+        bounds = map_rect()
 
-    mrect = map_rect()
-    bounds = pygame.Rect(0, 0, *surf.get_size()) if wide else mrect
-    if dim_map:
+    if spec.dim_map:
         overlay = pygame.Surface((bounds.w, bounds.h), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, MODAL_DIM_ALPHA))
         surf.blit(overlay, (bounds.x, bounds.y))
 
-    pad_x, pad_y = MODAL_PAD_X, MODAL_PAD_Y
-    rendered = [(line, _render_line(line, font, font_sm)) for line in lines]
-    footer_rendered = [(line, _render_line(line, font, font_sm)) for line in footer]
+    title = font.render(spec.title, False, spec.title_color) if spec.title else None
+    subtitle = font_sm.render(spec.subtitle, False, COL_DIM) if spec.subtitle else None
+    help_surface = font_sm.render(spec.help_text, False, COL_DIM) if spec.help_text else None
 
-    w = pad_x * 2
-    h = pad_y * 2
-    for line, s in rendered:
-        w = max(w, s.get_width() + pad_x * 2)
-        h += _line_step(line, s)
-    for line, s in footer_rendered:
-        w = max(w, s.get_width() + pad_x * 2)
+    rendered_columns: list[tuple[ModalColumn, pygame.Surface | None, list[tuple[ModalLine, pygame.Surface]]]] = []
+    max_lines = 0
+    row_step = font_sm.get_height() + 3
+    has_headers = False
+    for column in spec.columns:
+        header = font_sm.render(column.header, False, COL_WARN) if column.header else None
+        rendered = [(line, _render_line(line, font, font_sm)) for line in column.lines]
+        rendered_columns.append((column, header, rendered))
+        max_lines = max(max_lines, len(rendered))
+        has_headers = has_headers or header is not None
+        for line, surface in rendered:
+            row_step = max(row_step, _line_step(line, surface))
 
-    footer_h = sum(_line_step(line, s) for line, s in footer_rendered)
-    if footer_rendered:
-        footer_h += MODAL_FOOTER_GAP
+    visible = spec.visible_lines if spec.visible_lines > 0 else max_lines
+    visible = max(0, visible)
+    max_scroll = max(0, max_lines - visible)
+    scroll = max(0, min(scroll, max_scroll))
 
-    w = max(w, min_width)
-    if fixed_height > 0:
-        h = fixed_height
-    else:
-        h += footer_h
+    title_h = (title.get_height() + 4) if title else 0
+    subtitle_h = (subtitle.get_height() + 4) if subtitle else 0
+    header_h = (font_sm.get_height() + 6) if has_headers else 0
+    content_h = visible * row_step
+    help_h = (help_surface.get_height() + MODAL_FOOTER_GAP + 1) if help_surface else 0
 
-    box = pygame.Rect(0, 0, w, h)
-    box.center = (bounds.centerx, bounds.centery)
+    box_w = bounds.w if spec.wide else max(spec.min_width, 0)
+    box_h = MODAL_PAD_Y * 2 + title_h + subtitle_h + header_h + content_h + help_h
+    if spec.fill_height:
+        box_h = max(box_h, bounds.h)
+    box_h = max(box_h, spec.min_height)
+    box_h = min(box_h, bounds.h)
+    box_w = min(max(box_w, spec.min_width), bounds.w)
+
+    box = pygame.Rect(0, 0, box_w, box_h)
+    box.center = bounds.center
     pygame.draw.rect(surf, COL_PANEL, box)
     pygame.draw.rect(surf, COL_BORDER, box, 2)
 
-    y = box.y + pad_y
-    for line, s in rendered:
-        surf.blit(s, (box.centerx - s.get_width() // 2, y))
-        y += _line_step(line, s)
+    y = box.y + MODAL_PAD_Y
+    if title:
+        surf.blit(title, (box.centerx - title.get_width() // 2, y))
+        y += title_h
+    if subtitle:
+        surf.blit(subtitle, (box.centerx - subtitle.get_width() // 2, y))
+        y += subtitle_h
 
-    if footer_rendered:
-        footer_top = box.bottom - pad_y - footer_h + MODAL_FOOTER_GAP
+    content_top = y + header_h
+    content_bottom = box.bottom - MODAL_PAD_Y - help_h
+    content_rect = pygame.Rect(
+        box.x + MODAL_PAD_X,
+        content_top,
+        max(0, box.w - MODAL_PAD_X * 2),
+        max(0, content_bottom - content_top),
+    )
+
+    column_count = max(1, len(rendered_columns))
+    total_gap = MODAL_COLUMN_GAP * (column_count - 1)
+    column_w = max(0, (content_rect.w - total_gap) // column_count)
+
+    for index, (column, header, rendered) in enumerate(rendered_columns):
+        column_x = content_rect.x + index * (column_w + MODAL_COLUMN_GAP)
+        if header:
+            header_x = column_x + (column_w - header.get_width()) // 2 if column.align == "center" else column_x
+            surf.blit(header, (header_x, y))
+        for row in range(visible):
+            line_index = scroll + row
+            if line_index >= len(rendered):
+                break
+            line, surface = rendered[line_index]
+            if column.align == "center":
+                x = column_x + (column_w - surface.get_width()) // 2
+            else:
+                x = column_x
+            surf.blit(surface, (x, content_top + row * row_step))
+
+    if max_scroll > 0 and content_rect.h > 0:
+        draw_scrollbar(
+            surf,
+            box.right - 8,
+            content_rect.y,
+            content_rect.h,
+            visible,
+            max_lines,
+            scroll,
+        )
+
+    if help_surface:
+        help_top = box.bottom - MODAL_PAD_Y - help_surface.get_height()
+        divider_y = help_top - MODAL_FOOTER_GAP
         pygame.draw.line(
             surf,
             COL_DIM,
-            (box.x + pad_x, footer_top - MODAL_FOOTER_GAP),
-            (box.right - pad_x, footer_top - MODAL_FOOTER_GAP),
+            (box.x + MODAL_PAD_X, divider_y),
+            (box.right - MODAL_PAD_X, divider_y),
         )
-        y = footer_top
-        for line, s in footer_rendered:
-            surf.blit(s, (box.centerx - s.get_width() // 2, y))
-            y += _line_step(line, s)
+        surf.blit(help_surface, (box.centerx - help_surface.get_width() // 2, help_top))
 
-    return box
+    return ModalResult(box=box, content=content_rect, max_scroll=max_scroll)
