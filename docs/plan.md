@@ -66,7 +66,7 @@ Gestión y supervivencia en un mapa 2D: red de módulos, recursos, luz y manteni
 - **Estación de monitoreo** (6 Cmp, 1,5 d, 2 E/d) con pantalla de red en dos columnas (producción/consumo) por recurso, energía y módulos online/offline/en obra.
 - Rename visible de **Cable → Enlace**; el ID `cable` no cambia.
 - **Modales unificados:** `ui_modals.draw_modal` centraliza título, subtítulo, columnas, scroll y ayuda; todos son anchos. La red usa dos columnas (producción/consumo) con icono + nombre.
-- **Beta PC:** solo 2x; se eliminó la variante intermedia.
+- **Beta PC pública:** 1x (640×480); el modo `--2x` queda solo para desarrollo local. Se eliminó la variante intermedia.
 
 ## Hecho: fase 5 — energía, cristales y almacenamiento (2026-11-06)
 

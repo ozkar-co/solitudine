@@ -693,9 +693,9 @@ class LampTests(unittest.TestCase):
 
 
 class PauseMenuTests(unittest.TestCase):
-    def _press(self, sim: Simulation, world, *keys: str) -> None:
+    def _press(self, sim: Simulation, world, *keys: str):
         frame = FrameInput(held=frozenset(), pressed=frozenset(keys), released=frozenset())
-        handle_frame_input(
+        return handle_frame_input(
             frame,
             Input(False),
             sim,
@@ -742,6 +742,17 @@ class PauseMenuTests(unittest.TestCase):
         self._press(sim, world, "A")
         self.assertFalse(sim.user_paused)
         self.assertEqual(sim.pause_index, 0)
+
+    def test_pause_menu_exit(self) -> None:
+        world = generate_world()
+        sim = Simulation()
+
+        self._press(sim, world, "START")
+        self._press(sim, world, "DPAD_DOWN")
+        self._press(sim, world, "DPAD_DOWN")
+        self.assertEqual(sim.pause_index, 2)
+        result = self._press(sim, world, "A")
+        self.assertTrue(result.quit_requested)
 
     def test_credits_konami_opens_cat_photo(self) -> None:
         world = generate_world()

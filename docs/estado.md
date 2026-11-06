@@ -32,7 +32,7 @@ El juego es jugable en PC y en R36S. La UI (grilla de 16 px, sprites, zoom, mini
 2. **v6 — almacenamiento especializado:** tanque de O₂ con investigación propia y tanques de agua/mineral.
 3. **v6 — árbol tecnológico:** prerequisitos y tecnologías que solo desbloquean otras tecnologías; después combate/eventos.
 
-**Estado beta:** etapas 0-4 y fase 5 implementadas (92 tests). Detalle en [beta-txxt.md](beta-txxt.md).
+**Estado beta:** etapas 0-4 y fase 5 implementadas (93 tests). Detalle en [beta-txxt.md](beta-txxt.md).
 
 ## Comandos
 
@@ -43,8 +43,8 @@ make test                          # tests de regresión
 .venv/bin/python main.py --dev --2x  # PC, ventana 2x para depurar
 .venv/bin/python main.py --dev --world-size 1024  # mapa más chico para probar
 make dist                          # paquete PortMaster
-./tools/dev_beta/build.sh          # beta PC Linux 2x (temporal)
-tools\dev_beta\build.ps1           # beta PC Windows 2x (PowerShell)
+./tools/dev_beta/build.sh          # beta PC Linux 1x (temporal)
+tools\dev_beta\build.ps1           # beta PC Windows 1x (PowerShell)
 ```
 
 ## Decisiones vigentes
@@ -66,7 +66,7 @@ tools\dev_beta\build.ps1           # beta PC Windows 2x (PowerShell)
 - La cámara llega a los bordes del mapa; el cursor sigue limitado a lo explorado.
 - La estación de monitoreo requiere estar online y conectada para abrir la pantalla de red, con producción y consumo en dos columnas.
 - Todos los modales usan `ui_modals.draw_modal` (título/subtítulo/columnas/scroll/ayuda) y son anchos; no se redefinen cajas ni pies.
-- Beta PC solo 2x (`main.py`/`SolitudineBeta`); no hay variante intermedia.
+- Beta PC pública 1x (`main.py`/`SolitudineBeta`); `--2x` queda para desarrollo local y no hay variante intermedia.
 - **Generador eléctrico:** empieza apagado y sin combustible; consume 1 unidad/día y produce 5/12/20 E/d con madera/carbón/biodiésel. Sin combustible seleccionado o disponible se apaga solo.
 - **Solar y carbón:** exigen Fotovoltaica (3 Cmp, 0,5 d) y Minería de carbón (4 Cmp, 0,75 d). **Cristalografía** cuesta 10 Cmp + 8 biodiésel y 3 d; **Almacenamiento especializado** cuesta 6 Cmp + 2 mineral y 2 d.
 - **Almacén general:** +40 a recursos generales, sin energía ni O₂. **Batería:** +100 cap de energía.

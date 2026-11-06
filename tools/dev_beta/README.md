@@ -2,7 +2,7 @@
 
 Build temporal para betatesters. **No forma parte de la distribución PortMaster/R36S** y se puede borrar cuando termine el testing.
 
-- `main.py`: beta **2x** (1280×960), sin opciones.
+- `main.py`: beta **1x** (640×480), sin opciones.
 - `bootstrap.py`: arranque compartido, log y `SOLITUDINE_SAVE_DIR`.
 - `build.py`: PyInstaller onefile; incluye assets de runtime y `locales/`.
 - `LEEME.txt`: instrucciones que viajan dentro del paquete.
@@ -12,7 +12,7 @@ Build temporal para betatesters. **No forma parte de la distribución PortMaster
 
 - Local: `dist/<plataforma>/SolitudineBeta-<plataforma>.*`.
 - CI en tag `v*`: GitHub Release con `Solitudine-<tag>-linux-x86_64.tar.gz`, `Solitudine-<tag>-windows-x64.zip` y `SHA256SUMS.txt`.
-- Cada paquete incluye el ejecutable 2x, `LEEME.txt` y `VERSION.txt`.
+- Cada paquete incluye el ejecutable 1x, `LEEME.txt` y `VERSION.txt`.
 - Guarda en `saves/save.json` y loguea a `solitudine-beta.log`.
 - `savegame.py` respeta `SOLITUDINE_SAVE_DIR`; solo la beta lo define.
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Empaqueta la beta de PC (2x) para el sistema actual."""
+"""Empaqueta la beta de PC (1x) para el sistema actual."""
 
 from __future__ import annotations
 

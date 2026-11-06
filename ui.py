@@ -582,7 +582,7 @@ def draw_pause_modal(
     font_sm: pygame.font.Font,
     sim: Simulation,
 ) -> None:
-    options = (t("pause.menu_continue"), t("pause.menu_credits"))
+    options = (t("pause.menu_continue"), t("pause.menu_credits"), t("pause.menu_exit"))
     lines: list[ModalLine] = []
     for index, label in enumerate(options):
         selected = index == sim.pause_index

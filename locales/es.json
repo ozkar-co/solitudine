@@ -158,6 +158,7 @@
   "pause.hint": "START = continuar",
   "pause.menu_continue": "Continuar",
   "pause.menu_credits": "Créditos",
+  "pause.menu_exit": "Salir",
   "pause.hint_menu": "LJOY/DPAD = elegir  A = confirmar  START = continuar",
   "credits.title": "CRÉDITOS",
   "credits.section_team": "EQUIPO",

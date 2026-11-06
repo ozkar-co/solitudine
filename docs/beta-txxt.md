@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-05
 **Tester:** TxxT
-**Build:** beta PC 2x (`tools/dev_beta/`)
+**Build:** beta PC 1x (`tools/dev_beta/`)
 **Estado:** etapas 0-4 y fase 5 implementadas (2026-11-06).
 
 > Este archivo conserva el feedback crudo y las decisiones acordadas. La tabla de implementación de abajo es el estado real; las secciones de feedback conservan el texto original.

@@ -24,6 +24,6 @@ La consola monta el runtime pygame-ce (squashfs) incluido en `port/runtime/`; no
 
 ## Beta para testers (PC)
 
-Build temporal dev 2x para Windows/Linux; no afecta la distribución PortMaster. Los tags `v*` publican los paquetes en [Releases](https://github.com/ozkar-co/solitudine/releases). Instrucciones en [tools/dev_beta/README.md](tools/dev_beta/README.md).
+Build temporal dev 1x para Windows/Linux; no afecta la distribución PortMaster. Los tags `v*` publican los paquetes en [Releases](https://github.com/ozkar-co/solitudine/releases). Instrucciones en [tools/dev_beta/README.md](tools/dev_beta/README.md).
 
 Más documentación en [docs/](docs/).

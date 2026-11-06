@@ -83,7 +83,7 @@ Eres el astronauta de **NEP-325**, atrapado en un hábitat de un planeta hostil.
 | Minimapa | 3 | R2 |
 | Acelerar tiempo (dev) | T | — |
 | Iniciar partida (pantalla de carga) | Enter | START |
-| Pausa / créditos | Enter, luego menú | START, luego menú |
+| Pausa / créditos | Enter, luego menú (Continuar/Créditos/Salir) | START, luego menú |
 | Salir | Backspace+Enter | SELECT+START |
 
 > **Controles PC implementados (2026-11-05):** `1/2` zoom, `Tab` construir, `E` aceptar, `Q` recursos, `Esc` B, `J/K` duplicados de A/B; `3` minimapa, `4` libre, `T` acelera el tiempo en dev. Apagar/demoler módulos pasan por el menú A+A; B queda para cables. Ver [beta-txxt.md](beta-txxt.md).

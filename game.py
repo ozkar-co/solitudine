@@ -267,6 +267,10 @@ def run(dev: bool = False, handheld: bool = False, scale: float = 1.0) -> int:
             select_x=select_x,
             select_y=select_y,
         )
+        if input_result.quit_requested:
+            save_now()
+            pygame.quit()
+            return 0
         if input_result.reset_session:
             reset_session()
             continue

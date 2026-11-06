@@ -10,8 +10,8 @@ Requisitos
 
 Cómo ejecutar
 -------------
-Windows:  SolitudineBeta.exe      -> 1280x960 (2x)
-Linux:    ./SolitudineBeta        -> 1280x960 (2x)
+Windows:  SolitudineBeta.exe      -> 640x480 (1x)
+Linux:    ./SolitudineBeta        -> 640x480 (1x)
 
 Abre en modo dev y no tiene menú de opciones.
 
@@ -27,6 +27,7 @@ J = A        K = B         T = acelerar tiempo (dev)
 WASD = cursor              Flechas = cámara
 Enter = START              Bksp = SELECT
 Bksp + Enter = salir
+Pausa (Enter) -> Salir
 
 También acepta mando si el sistema lo detecta.
 
